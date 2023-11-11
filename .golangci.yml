@@ -1,0 +1,82 @@
+run:
+  deadline: 1m
+  tests: true
+
+linters-settings:
+  dupl:
+    threshold: 100  # tokens count to trigger issue
+  funlen:
+    lines: 80
+    statements: 60
+  gocognit:
+    min-complexity: 20
+  govet:
+    check-shadowing: true
+  golint:
+    min-confidence: 0
+  gocyclo:
+    min-complexity: 12
+  maligned:
+    suggest-new: true
+  goconst:
+    min-len: 2
+    min-occurrences: 2
+  misspell:
+    locale: US
+  lll:
+    line-length: 120
+  gocritic: # See: https://go-critic.github.io/overview#checks-overview
+    enabled-tags:
+      - performance
+      - style
+      - diagnostic
+    disabled-checks:
+      - elseif
+      - ifElseChain
+      - unnamedResult
+      - unnecessaryDefer
+      - whyNoLint
+      - commentFormatting
+
+linters:
+  enable:
+    - dupl # Tool for code clone detection.
+    - durationcheck # Check for two durations multiplied together.
+    - errname # Checks that sentinel errors are prefixed with the Err and error types are suffixed with the Error.
+    - errorlint # Check for error wrapping scheme introduced in Go 1.13.
+    - exhaustive # Check exhaustiveness of enum switch statements.
+    - exhaustruct # Checks if all structure fields are initialized.
+    - exportloopref # Checks for pointers to enclosing loop variables.
+    - forbidigo # Forbids identifiers.
+    - funlen # Tool for detection of long functions.
+    - gci # Gci controls Go package import order and makes it always deterministic.
+    - gocheckcompilerdirectives # Checks for compiler directives.
+    - gocognit # Computes and checks the cognitive complexity of functions.
+    - goconst # Finds repeated strings that could be replaced by a constant.
+    - gocritic # Multilinter, see: https://go-critic.github.io/overview#checks-overview.
+    - gofmt # Gofmt checks whether code was gofmt-ed (with -s).
+    - goimports # Check imports order.
+    - gosec # Inspects source code for security problems.
+    - lll # Check lines length.
+    - makezero # Finds slice declarations with non-zero initial length.
+    - nakedret # Finds naked returns in functions greater than a specified function length.
+    - nilerr # Finds the code that returns nil even if it checks that the error is not nil.
+    - paralleltest # Paralleltest detects missing usage of t.Parallel() method in your Go test.
+    - prealloc # Finds slice declarations that could potentially be preallocated.
+    - predeclared # Find code that shadows one of Go's predeclared identifiers.
+    - testifylint # Checks usage of github.com/stretchr/testify.
+    - unparam # Reports unused function parameters.
+    - unconvert # Remove unnecessary type conversions.
+    - wastedassign # wastedassign finds wasted assignment statements.
+    - wrapcheck # Checks that errors returned from external packages are wrapped.
+
+
+issues:
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - dupl
+        - goconst
+        - funlen
+        - lll
