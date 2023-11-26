@@ -32,7 +32,7 @@ func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 	}
 }
 
-func (bwa *BWArr[T]) Append(element T) {
+func (bwa *BWArr[T]) Insert(element T) {
 	if bwa.total&1 == 0 { // whiteSegments[0] is free
 		bwa.whiteSegments[0].elements[0] = element
 		bwa.whiteSegments[0].deleted[0] = false
@@ -52,6 +52,32 @@ func (bwa *BWArr[T]) Append(element T) {
 		}
 		mergeSegments(bwa.whiteSegments[segNum-1], bwa.blackSegments[segNum-1], bwa.cmp, &bwa.blackSegments[segNum])
 	}
+}
+
+func (bwa *BWArr[T]) Has(element T) bool {
+	if _, index := bwa.search(element); index >= 0 {
+		return true
+	}
+	return false
+}
+
+func (bwa *BWArr[T]) Get(element T) (res T, found bool) {
+	if segNum, index := bwa.search(element); index >= 0 {
+		return bwa.whiteSegments[segNum].elements[index], true
+	}
+	return
+}
+
+func (bwa *BWArr[T]) search(element T) (segNum, index int) {
+	for segNum = len(bwa.whiteSegments) - 1; segNum >= 0; segNum-- {
+		if bwa.total&(1<<segNum) == 0 {
+			continue
+		}
+		if index = findRightmostNotDeleted(bwa.whiteSegments[segNum], bwa.cmp, element); index >= 0 {
+			return segNum, index
+		}
+	}
+	return -1, -1
 }
 
 const maxSegmentNumber = 62
@@ -85,6 +111,41 @@ func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment
 	copy(result.deleted[k:], seg2.deleted[j:])
 
 	result.deletedNum = seg1.deletedNum + seg2.deletedNum
+}
+
+func findRightmostNotDeleted[T any](seg segment[T], cmp CmpFunc[T], val T) int {
+	b, e := uint64(0), uint64(len(seg.elements))
+	elems := seg.elements
+	del := seg.deleted
+	for b < e {
+		m := (b + e) >> 1
+		cmpRes := cmp(val, elems[m])
+		switch {
+		case cmpRes < 0:
+			e = m
+		case cmpRes > 0:
+			b = m + 1
+		case cmpRes == 0:
+			if del[m] {
+				e = m
+			} else {
+				b = m + 1
+			}
+		}
+	}
+	idx := int(b)
+
+	if idx == 0 {
+		return -1
+	}
+	idx--
+	if seg.deleted[idx] {
+		return -1
+	}
+	if cmp(seg.elements[idx], val) != 0 {
+		return -1
+	}
+	return idx
 }
 
 func calculateWhiteSegmentsQuantity(capacity int) int {
