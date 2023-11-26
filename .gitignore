@@ -7,3 +7,6 @@ go.work
 
 # IDE files
 .idea/
+
+# Misc
+coverage.html
