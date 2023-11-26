@@ -18,7 +18,7 @@ func TestNewBWArrTestStruct(t *testing.T) {
 	testNewBWArr(t, testStructCmp)
 }
 
-func TestBlackWhiteArray_Append(t *testing.T) {
+func TestBWArr_Insert(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name         string
@@ -47,9 +47,70 @@ func TestBlackWhiteArray_Append(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
-			tt.bwaBefore.Append(tt.addedElement)
+			tt.bwaBefore.Insert(tt.addedElement)
 			validateBWArr(t, tt.bwaBefore)
 			bwaEqual(t, tt.bwaAfter, tt.bwaBefore)
+		})
+	}
+}
+
+func TestBWArr_HasAndGet(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name            string
+		elemsToAdd      []int64
+		elementToSearch int64
+		want            bool
+	}{
+		{
+			name:            "empty",
+			elemsToAdd:      []int64{},
+			elementToSearch: 23,
+			want:            false,
+		},
+		{
+			name:            "one match",
+			elemsToAdd:      []int64{23},
+			elementToSearch: 23,
+			want:            true,
+		},
+		{
+			name:            "match from two",
+			elemsToAdd:      []int64{23, 42},
+			elementToSearch: 42,
+			want:            true,
+		},
+		{
+			name:            "match from three",
+			elemsToAdd:      []int64{23, 42, 37},
+			elementToSearch: 37,
+			want:            true,
+		},
+		{
+			name:            "match from seven",
+			elemsToAdd:      []int64{23, 42, 37, 17, 31, 29, 41},
+			elementToSearch: 37,
+			want:            true,
+		},
+		{
+			name:            "not match",
+			elemsToAdd:      []int64{23, 42, 37, 17, 31, 29, 41},
+			elementToSearch: 13,
+			want:            false,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(int64Cmp, 0)
+			for _, elem := range tt.elemsToAdd {
+				bwa.Insert(elem)
+			}
+			assert.Equalf(t, tt.want, bwa.Has(tt.elementToSearch), "Contains(%v)", tt.elementToSearch)
+			elem, found := bwa.Get(tt.elementToSearch)
+			assert.Equal(t, tt.want, found)
+			if tt.want {
+				assert.Equal(t, tt.elementToSearch, elem)
+			}
 		})
 	}
 }
@@ -141,6 +202,95 @@ func Test_mergeSegments(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			mergeSegments(tt.seg1, tt.seg2, int64Cmp, tt.result)
 			require.Equal(t, tt.expected, *tt.result)
+		})
+	}
+}
+
+//nolint:exhaustruct
+func Test_findRightmostNotDeleted(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		seg  segment[int64]
+		val  int64
+		want int
+	}{
+		{
+			name: "empty",
+			seg:  segment[int64]{elements: []int64{}, deleted: []bool{}},
+			val:  23,
+			want: -1,
+		},
+		{
+			name: "one match",
+			seg:  segment[int64]{elements: []int64{23}, deleted: []bool{false}},
+			val:  23,
+			want: 0,
+		},
+		{
+			name: "one not match",
+			seg:  segment[int64]{elements: []int64{23}, deleted: []bool{false}},
+			val:  42,
+			want: -1,
+		},
+		{
+			name: "in the middle",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}},
+			val:  23,
+			want: 1,
+		},
+		{
+			name: "in the beginning",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}},
+			val:  17,
+			want: 0,
+		},
+		{
+			name: "in the end",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}},
+			val:  42,
+			want: 3,
+		},
+		{
+			name: "with deleted",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{true, true, false, true}},
+			val:  37,
+			want: 2,
+		},
+		{
+			name: "with deleted not match",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, true, false, false}},
+			val:  23,
+			want: -1,
+		},
+		{
+			name: "with deleted postfix",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42, 49, 51, 69, 88}, deleted: []bool{false, false, false, true, true, true, true, true}},
+			val:  37,
+			want: 2,
+		},
+		{
+			name: "should find rightmost",
+			seg:  segment[int64]{elements: []int64{17, 23, 23, 23, 37, 42, 49, 51}, deleted: []bool{false, false, false, false, false, false, false, false}},
+			val:  23,
+			want: 3,
+		},
+		{
+			name: "should find rightmost not deleted",
+			seg:  segment[int64]{elements: []int64{17, 23, 23, 23, 37, 42, 49, 51}, deleted: []bool{false, false, true, true, false, false, false, false}},
+			val:  23,
+			want: 1,
+		},
+		{
+			name: "should find rightmost not deleted in the middle",
+			seg:  segment[int64]{elements: []int64{17, 23, 23, 23, 37, 42, 49, 51}, deleted: []bool{false, true, false, true, false, false, false, false}},
+			val:  23,
+			want: 2,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, findRightmostNotDeleted(tt.seg, int64Cmp, tt.val), "searchInSegment(%v, %v)", tt.seg, tt.val)
 		})
 	}
 }
