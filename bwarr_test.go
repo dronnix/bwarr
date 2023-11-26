@@ -18,6 +18,42 @@ func TestNewBWArrTestStruct(t *testing.T) {
 	testNewBWArr(t, testStructCmp)
 }
 
+func TestBlackWhiteArray_Append(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name         string
+		bwaBefore    *BWArr[int64]
+		addedElement int64
+		bwaAfter     *BWArr[int64]
+	}{
+		{
+			name:         "add to empty",
+			bwaBefore:    New(int64Cmp, 0),
+			addedElement: 23,
+			bwaAfter:     makeInt64BWAFromWhite([][]int64{{23}, {0, 0}}, 1),
+		},
+		{
+			name:         "add having one element",
+			bwaBefore:    makeInt64BWAFromWhite([][]int64{{23}, {0, 0}}, 1),
+			addedElement: 42,
+			bwaAfter:     makeInt64BWAFromWhite([][]int64{{0}, {23, 42}}, 2),
+		},
+		{
+			name:         "add to full",
+			bwaBefore:    makeInt64BWAFromWhite([][]int64{{31}, {23, 42}}, 3),
+			addedElement: 37,
+			bwaAfter:     makeInt64BWAFromWhite([][]int64{{0}, {0, 0}, {23, 31, 37, 42}}, 4),
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			tt.bwaBefore.Append(tt.addedElement)
+			validateBWArr(t, tt.bwaBefore)
+			bwaEqual(t, tt.bwaAfter, tt.bwaBefore)
+		})
+	}
+}
+
 func Test_calculateWhiteSegmentsQuantity(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -58,6 +94,53 @@ func Test_calculateWhiteSegmentsQuantity(t *testing.T) {
 			} else {
 				require.Equal(t, tt.want, calculateWhiteSegmentsQuantity(tt.capacity))
 			}
+		})
+	}
+}
+
+//nolint:exhaustruct
+func Test_mergeSegments(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		seg1     segment[int64]
+		seg2     segment[int64]
+		result   *segment[int64]
+		expected segment[int64]
+	}{
+		{
+			name:     "two elements",
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, false}},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, false}},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: make([]bool, 4)},
+		},
+		{
+			name:     "rewind from first",
+			seg1:     segment[int64]{elements: []int64{3, 4}, deleted: []bool{false, false}},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, false}},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{3, 4, 17, 37}, deleted: make([]bool, 4)},
+		},
+		{
+			name:     "two with one deleted element",
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, false}},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, true}, deletedNum: 1},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, true, false}, deletedNum: 1},
+		},
+		{
+			name:     "two with two deleted elements",
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{true, false}, deletedNum: 1},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, true}, deletedNum: 1},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, true, true, false}, deletedNum: 2},
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			mergeSegments(tt.seg1, tt.seg2, int64Cmp, tt.result)
+			require.Equal(t, tt.expected, *tt.result)
 		})
 	}
 }
@@ -134,7 +217,7 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 	require.Len(t, bwa.whiteSegments, len(bwa.blackSegments)+1)
 
 	for i := 0; i < len(bwa.whiteSegments); i++ {
-		require.Len(t, len(bwa.whiteSegments[i].elements), 1<<i)
+		require.Len(t, bwa.whiteSegments[i].elements, 1<<i)
 		validateSegment(t, bwa.whiteSegments[i], bwa.cmp)
 	}
 
@@ -159,4 +242,43 @@ func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 		assert.LessOrEqual(t, cmp(seg.elements[i], seg.elements[i+1]), 0)
 	}
 	assert.Equal(t, deleted, seg.deletedNum)
+}
+
+//nolint:exhaustruct
+func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
+	bwa := BWArr[int64]{
+		whiteSegments: make([]segment[int64], len(segs)),
+		blackSegments: make([]segment[int64], len(segs)),
+		cmp:           int64Cmp,
+		total:         total,
+	}
+	for i, seg := range segs {
+		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, len(seg))}
+		bwa.blackSegments[i] = segment[int64]{elements: make([]int64, len(seg)), deleted: make([]bool, len(seg))}
+	}
+	bwa.blackSegments = bwa.blackSegments[:len(bwa.blackSegments)-1]
+	return &bwa
+}
+
+func bwaEqual[T any](t *testing.T, expected, actual *BWArr[T]) {
+	require.GreaterOrEqual(t, len(expected.whiteSegments), len(actual.whiteSegments))
+	require.Equal(t, expected.total, actual.total)
+	for seg := 0; seg < len(expected.whiteSegments); seg++ {
+		if expected.total&(1<<seg) == 0 {
+			continue
+		}
+		segmentsEqual(t, expected.whiteSegments[seg], actual.whiteSegments[seg])
+	}
+}
+
+func segmentsEqual[T any](t *testing.T, expected, actual segment[T]) {
+	require.Equal(t, len(expected.elements), len(expected.deleted))
+	require.Equal(t, len(expected.elements), len(actual.elements))
+	require.Equal(t, len(expected.deleted), len(actual.deleted))
+	for i := range expected.elements {
+		assert.Equal(t, expected.deleted[i], actual.deleted[i])
+		if !expected.deleted[i] {
+			assert.Equal(t, expected.elements[i], actual.elements[i])
+		}
+	}
 }
