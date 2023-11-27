@@ -68,6 +68,35 @@ func (bwa *BWArr[T]) Get(element T) (res T, found bool) {
 	return
 }
 
+func (bwa *BWArr[T]) Delete(element T) (deleted T, found bool) {
+	segNum, index := bwa.search(element)
+	if segNum < 0 {
+		return deleted, false
+	}
+	seg := &bwa.whiteSegments[segNum]
+	deleted, _ = seg.elements[index], true
+	seg.deleted[index] = true
+	seg.deletedNum++
+	segmentCapacity := 1 << segNum
+	if seg.deletedNum < segmentCapacity/2 {
+		return deleted, true
+	}
+	if segNum == 0 {
+		bwa.total--
+		return deleted, true
+	}
+	if (1<<(segNum-1))&bwa.total == 0 {
+		demote(*seg, &bwa.whiteSegments[segNum-1])
+		bwa.total -= 1 << segNum
+		bwa.total += 1 << (segNum - 1)
+	} else {
+		demote(*seg, &bwa.blackSegments[segNum-1])
+		mergeSegments(bwa.blackSegments[segNum-1], bwa.whiteSegments[segNum-1], bwa.cmp, seg)
+		bwa.total -= 1 << (segNum - 1)
+	}
+	return deleted, true
+}
+
 func (bwa *BWArr[T]) search(element T) (segNum, index int) {
 	for segNum = len(bwa.whiteSegments) - 1; segNum >= 0; segNum-- {
 		if bwa.total&(1<<segNum) == 0 {
@@ -146,6 +175,18 @@ func findRightmostNotDeleted[T any](seg segment[T], cmp CmpFunc[T], val T) int {
 		return -1
 	}
 	return idx
+}
+
+func demote[T any](from segment[T], to *segment[T]) {
+	for r, w := 0, 0; r < len(from.elements); r++ {
+		if from.deleted[r] {
+			continue
+		}
+		to.elements[w] = from.elements[r]
+		to.deleted[w] = false
+		w++
+	}
+	to.deletedNum = 0 // Since demote is called only when we have exact len(to.elements) undeleted elements in from.
 }
 
 func calculateWhiteSegmentsQuantity(capacity int) int {

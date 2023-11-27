@@ -1,6 +1,7 @@
 package bwarr
 
 import (
+	"math/rand"
 	"strings"
 	"testing"
 
@@ -111,6 +112,124 @@ func TestBWArr_HasAndGet(t *testing.T) {
 			if tt.want {
 				assert.Equal(t, tt.elementToSearch, elem)
 			}
+		})
+	}
+}
+
+func TestBlackWhiteArray_Delete(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name            string
+		before          *BWArr[int64]
+		elementToDelete int64
+		after           *BWArr[int64]
+		expected        bool
+	}{
+		{
+			name:            "not found",
+			before:          makeInt64BWAFromWhite([][]int64{{23}}, 1),
+			elementToDelete: 42,
+			after:           makeInt64BWAFromWhite([][]int64{{23}}, 1),
+			expected:        false,
+		},
+		{
+			name:            "remove from first segment",
+			before:          makeInt64BWAFromWhite([][]int64{{17}, {23, 42}}, 3),
+			elementToDelete: 17,
+			after:           makeInt64BWAFromWhite([][]int64{{0}, {23, 42}}, 2),
+			expected:        true,
+		},
+		{
+			name:            "remove from second segment with demote to first",
+			before:          makeInt64BWAFromWhite([][]int64{{0}, {23, 42}}, 2),
+			elementToDelete: 23,
+			after:           makeInt64BWAFromWhite([][]int64{{42}, {0, 0}}, 1),
+			expected:        true,
+		},
+		{
+			name:            "remove from second segment with merge",
+			before:          makeInt64BWAFromWhite([][]int64{{17}, {23, 42}}, 3),
+			elementToDelete: 23,
+			after:           makeInt64BWAFromWhite([][]int64{{0}, {17, 42}}, 2),
+			expected:        true,
+		},
+		{
+			name:            "remove from third without demote",
+			before:          makeInt64BWAFromWhite([][]int64{{0}, {0, 0}, {17, 23, 37, 42}}, 4),
+			elementToDelete: 23,
+			after:           markDel(makeInt64BWAFromWhite([][]int64{{0}, {0, 0}, {17, 23, 37, 42}}, 4), bwaIdx{2, 1}),
+			expected:        true,
+		},
+		{
+			name:            "remove from third with demote to second",
+			before:          markDel(makeInt64BWAFromWhite([][]int64{{1}, {0, 0}, {17, 23, 37, 42}}, 5), bwaIdx{2, 2}),
+			elementToDelete: 23,
+			after:           makeInt64BWAFromWhite([][]int64{{1}, {17, 42}, {0, 0, 0, 0}}, 3),
+			expected:        true,
+		},
+		{
+			name:            "remove from third with merge with second",
+			before:          markDel(makeInt64BWAFromWhite([][]int64{{0}, {19, 41}, {17, 23, 37, 42}}, 6), bwaIdx{2, 2}),
+			elementToDelete: 23,
+			after:           makeInt64BWAFromWhite([][]int64{{0}, {0, 0}, {17, 19, 41, 42}}, 4),
+			expected:        true,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			got, found := tt.before.Delete(tt.elementToDelete)
+			assert.Equal(t, tt.expected, found)
+			if found {
+				assert.Equal(t, tt.elementToDelete, got)
+			}
+			validateBWArr(t, tt.before)
+			bwaEqual(t, tt.after, tt.before)
+		})
+	}
+}
+
+func Test_RandomDelete(t *testing.T) {
+	t.Parallel()
+	rand.Seed(42) //nolint:staticcheck
+	const elements = 63
+	bwa := New(int64Cmp, 0)
+	toDel := make([]int64, elements)
+	for i := 0; i < elements; i++ {
+		toDel[i] = int64(i)
+	}
+	rand.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
+
+	for i := range toDel {
+		bwa.Insert(toDel[i])
+	}
+	rand.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
+
+	for i := 0; i < len(toDel); i++ {
+		if elem, found := bwa.Delete(toDel[i]); !found || elem != toDel[i] {
+			t.Logf("failed to delete %d on %d iteration", toDel[i], i)
+			t.Fail()
+		}
+	}
+}
+
+func Test_demote(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name     string
+		from     segment[int64]
+		to       *segment[int64]
+		expected *segment[int64]
+	}{
+		{
+			name:     "demote 4 to 2",
+			from:     segment[int64]{elements: []int64{23, 0, 0, 42}, deleted: []bool{false, true, true, false}, deletedNum: 2},
+			to:       &segment[int64]{elements: []int64{16, 32}, deleted: []bool{true, true}, deletedNum: 2},
+			expected: &segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, false}, deletedNum: 0},
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			demote(tt.from, tt.to)
 		})
 	}
 }
@@ -431,4 +550,17 @@ func segmentsEqual[T any](t *testing.T, expected, actual segment[T]) {
 			assert.Equal(t, expected.elements[i], actual.elements[i])
 		}
 	}
+}
+
+type bwaIdx struct {
+	segNum int
+	idx    int
+}
+
+func markDel[T any](bwa *BWArr[T], toDel ...bwaIdx) *BWArr[T] {
+	for i := range toDel {
+		bwa.whiteSegments[toDel[i].segNum].deleted[toDel[i].idx] = true
+		bwa.whiteSegments[toDel[i].segNum].deletedNum++
+	}
+	return bwa
 }
