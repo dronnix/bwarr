@@ -1,5 +1,6 @@
 ### P0
 
+- [ ] Refactor internal benchmarks, track regress;
 - [ ] Add CI for linter, tests and coverage;
 - [ ] Ensure, that library has zero dependencies (especially no `testify`);
 - [ ] Remove static black segments array. Use dynamic via method;

@@ -1,0 +1,150 @@
+package bwarr // TODO: Move it to the separate repo or refactor to use to track regressions.
+import (
+	"math/rand"
+	"strings"
+	"testing"
+	"unsafe"
+
+	"github.com/google/btree"
+)
+
+func BenchmarkBTreeAdd4M(b *testing.B) {
+	bt := createGenericBTree()
+	const elemsOnStart = 4 * 1024 * 1024
+	for i := 0; i < elemsOnStart; i++ {
+		bt.ReplaceOrInsert(rand.Int63()) //nolint:gosec
+	}
+	preparedData := make([]int64, b.N)
+	for i := 0; i < b.N; i++ {
+		preparedData[i] = rand.Int63() //nolint:gosec
+	}
+
+	b.SetBytes(8)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bt.ReplaceOrInsert(preparedData[i])
+	}
+}
+
+func BenchmarkBTreeAdd4MHugeStruct(b *testing.B) {
+	bt := createGenericBTreeHugeStruct()
+	const elemsOnStart = 64 * 1024
+	for i := 0; i < elemsOnStart; i++ {
+		bt.ReplaceOrInsert(makeHugeStruct()) //nolint:gosec
+	}
+	preparedData := make([]hugeStruct, b.N)
+	for i := 0; i < b.N; i++ {
+		preparedData[i] = makeHugeStruct()
+	}
+
+	b.SetBytes(int64(unsafe.Sizeof(hugeStruct{}))) //nolint:exhaustruct
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bt.ReplaceOrInsert(preparedData[i])
+	}
+}
+
+func BenchmarkAppend4MZeroCapacityHugeStruct(b *testing.B) {
+	const elemsOnStart = 64 * 1024
+	bwa := New(hugeStructCmp, 0)
+
+	for i := 0; i < elemsOnStart; i++ {
+		bwa.Insert(makeHugeStruct())
+	}
+	preparedData := make([]hugeStruct, b.N)
+	for i := 0; i < b.N; i++ {
+		preparedData[i] = makeHugeStruct()
+	}
+
+	b.SetBytes(int64(unsafe.Sizeof(hugeStruct{}))) //nolint:exhaustruct
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.Insert(preparedData[i])
+	}
+}
+
+func BenchmarkAppend4MZeroCapacity(b *testing.B) {
+	const elemsOnStart = 4 * 1024 * 1024
+	benchmarkAppend(b, elemsOnStart, 0)
+}
+
+func BenchmarkAppend4MEnoughCapacity(b *testing.B) {
+	const elemsOnStart = 4 * 1024 * 1024
+	benchmarkAppend(b, elemsOnStart, elemsOnStart+b.N)
+}
+
+func benchmarkAppend(b *testing.B, elemsOnStart, capacity int) {
+	bwa := New(int64Cmp, capacity)
+
+	for i := 0; i < elemsOnStart; i++ {
+		bwa.Insert(rand.Int63())
+	}
+	preparedData := make([]int64, b.N)
+	for i := 0; i < b.N; i++ {
+		preparedData[i] = rand.Int63()
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.Insert(preparedData[i])
+	}
+}
+
+func createGenericBTree() *btree.BTreeG[int64] {
+	const degree = 4
+	return btree.NewG(degree, func(a, b int64) bool {
+		return a < b
+	})
+}
+
+func createGenericBTreeHugeStruct() *btree.BTreeG[hugeStruct] {
+	const degree = 4
+	return btree.NewG(degree, func(a, b hugeStruct) bool {
+		return hugeStructCmp(a, b) < 0
+	})
+}
+
+type hugeStruct struct {
+	A1 [17]int64
+	S1 string
+	A2 [41]int64
+	I  int
+}
+
+func makeHugeStruct() hugeStruct {
+	hs := hugeStruct{I: 42, S1: "Some string"} //nolint:exhaustruct
+	hs.A2[40] = rand.Int63()
+	return hs
+}
+
+func hugeStructCmp(a, b hugeStruct) int { // nolint:gocritic
+	iCmp := a.I - b.I
+	if iCmp != 0 {
+		return iCmp
+	}
+
+	sCmp := strings.Compare(a.S1, b.S1)
+	if sCmp != 0 {
+		return sCmp
+	}
+
+	for i := 0; i < len(a.A1); i++ {
+		arrCmp := a.A1[i] - b.A1[i]
+		if arrCmp != 0 {
+			return int(arrCmp)
+		}
+	}
+
+	for i := 0; i < len(a.A2); i++ {
+		arrCmp := a.A2[i] - b.A2[i]
+		if arrCmp != 0 {
+			return int(arrCmp)
+		}
+	}
+
+	return 0
+}
