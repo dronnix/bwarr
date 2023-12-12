@@ -54,6 +54,17 @@ func (bwa *BWArr[T]) Insert(element T) {
 	}
 }
 
+func (bwa *BWArr[T]) ReplaceOrInsert(element T) (old T, found bool) {
+	seg, ind := bwa.search(element)
+	if ind < 0 {
+		bwa.Insert(element)
+		return old, false
+	}
+	old = bwa.whiteSegments[seg].elements[ind]
+	bwa.whiteSegments[seg].elements[ind] = element
+	return old, true
+}
+
 func (bwa *BWArr[T]) Has(element T) bool {
 	if _, index := bwa.search(element); index >= 0 {
 		return true

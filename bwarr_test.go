@@ -55,6 +55,62 @@ func TestBWArr_Insert(t *testing.T) {
 	}
 }
 
+//nolint:exhaustruct
+func TestBWArr_ReplaceOrInsert(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name              string
+		toInsertBefore    []testStruct
+		toReplaceOrInsert testStruct
+		expectedFound     bool
+		expectedOld       testStruct
+	}{
+		{
+			name:              "empty",
+			toInsertBefore:    []testStruct{},
+			toReplaceOrInsert: testStruct{I: 23},
+			expectedFound:     false,
+		},
+		{
+			name:              "no match",
+			toInsertBefore:    []testStruct{{I: 23}, {I: 42}},
+			toReplaceOrInsert: testStruct{I: 37},
+			expectedFound:     false,
+		},
+		{
+			name:              "one match",
+			toInsertBefore:    []testStruct{{I: 23}, {I: 42, Lbl: "Foo"}, {I: 37}},
+			toReplaceOrInsert: testStruct{I: 42, Lbl: "Bar"},
+			expectedFound:     true,
+			expectedOld:       testStruct{I: 42, Lbl: "Foo"},
+		},
+		{
+			name:              "two matches",
+			toInsertBefore:    []testStruct{{I: 23}, {I: 42, Lbl: "Foo"}, {I: 42, Lbl: "Bar"}, {I: 37}},
+			toReplaceOrInsert: testStruct{I: 42, Lbl: "Baz"},
+			expectedFound:     true,
+			expectedOld:       testStruct{I: 42, Lbl: "Foo"},
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(testStructCmp, 0)
+			for _, elem := range tt.toInsertBefore {
+				bwa.Insert(elem)
+			}
+			old, found := bwa.ReplaceOrInsert(tt.toReplaceOrInsert)
+			validateBWArr(t, bwa)
+			assert.Equal(t, tt.expectedFound, found)
+			if tt.expectedFound {
+				assert.Equal(t, tt.expectedOld, old)
+			} else {
+				assert.Equal(t, testStruct{}, old)
+			}
+			assert.True(t, bwa.Has(tt.toReplaceOrInsert))
+		})
+	}
+}
+
 func TestBWArr_HasAndGet(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -422,6 +478,7 @@ type testStruct struct {
 	I   int
 	S   string
 	Arr []int
+	Lbl string // Non-comparable label to distinguish elements
 }
 
 func testStructCmp(a, b testStruct) int {
