@@ -108,6 +108,34 @@ func (bwa *BWArr[T]) Delete(element T) (deleted T, found bool) {
 	return deleted, true
 }
 
+func (bwa *BWArr[T]) DeleteMax() (deleted T, found bool) {
+	panic("implement me")
+}
+
+func (bwa *BWArr[T]) DeleteMin() (deleted T, found bool) {
+	panic("implement me")
+}
+
+func (bwa *BWArr[T]) Len() int {
+	panic("implement me")
+}
+
+func (bwa *BWArr[T]) Max() (deleted T, found bool) {
+	panic("implement me")
+}
+
+func (bwa *BWArr[T]) Min() (deleted T, found bool) {
+	panic("implement me")
+}
+
+func (bwa *BWArr[T]) Clear(dropSegments bool) {
+	panic("implement me")
+}
+
+func (bwa *BWArr[T]) Clone() *BWArr[T] {
+	panic("implement me")
+}
+
 func (bwa *BWArr[T]) search(element T) (segNum, index int) {
 	for segNum = len(bwa.whiteSegments) - 1; segNum >= 0; segNum-- {
 		if bwa.total&(1<<segNum) == 0 {
