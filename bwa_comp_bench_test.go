@@ -46,6 +46,26 @@ func BenchmarkBTreeAdd4MHugeStruct(b *testing.B) {
 	}
 }
 
+func BenchmarkReplace4MZeroCapacityHugeStruct(b *testing.B) {
+	const elemsOnStart = 64 * 1024
+	bwa := New(hugeStructCmp, 0)
+
+	for i := 0; i < elemsOnStart; i++ {
+		bwa.Insert(makeHugeStruct())
+	}
+	preparedData := make([]hugeStruct, b.N)
+	for i := 0; i < b.N; i++ {
+		preparedData[i] = makeHugeStruct()
+	}
+
+	b.SetBytes(int64(unsafe.Sizeof(hugeStruct{}))) //nolint:exhaustruct
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.ReplaceOrInsert(preparedData[i])
+	}
+}
+
 func BenchmarkAppend4MZeroCapacityHugeStruct(b *testing.B) {
 	const elemsOnStart = 64 * 1024
 	bwa := New(hugeStructCmp, 0)
@@ -64,6 +84,11 @@ func BenchmarkAppend4MZeroCapacityHugeStruct(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		bwa.Insert(preparedData[i])
 	}
+}
+
+func BenchmarkReplace4MEnoughCapacity(b *testing.B) {
+	const elemsOnStart = 4 * 1024 * 1024
+	benchmarkReplace(b, elemsOnStart, elemsOnStart+b.N)
 }
 
 func BenchmarkAppend4MZeroCapacity(b *testing.B) {
@@ -91,6 +116,24 @@ func benchmarkAppend(b *testing.B, elemsOnStart, capacity int) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		bwa.Insert(preparedData[i])
+	}
+}
+
+func benchmarkReplace(b *testing.B, elemsOnStart, capacity int) {
+	bwa := New(int64Cmp, capacity)
+
+	for i := 0; i < elemsOnStart; i++ {
+		bwa.Insert(rand.Int63())
+	}
+	preparedData := make([]int64, b.N)
+	for i := 0; i < b.N; i++ {
+		preparedData[i] = rand.Int63()
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.ReplaceOrInsert(preparedData[i])
 	}
 }
 
