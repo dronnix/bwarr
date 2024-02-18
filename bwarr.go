@@ -120,12 +120,15 @@ func (bwa *BWArr[T]) Len() int {
 	panic("implement me")
 }
 
-func (bwa *BWArr[T]) Max() (deleted T, found bool) {
+func (bwa *BWArr[T]) Max() (maxElem T, found bool) {
 	panic("implement me")
 }
 
-func (bwa *BWArr[T]) Min() (deleted T, found bool) {
-	panic("implement me")
+func (bwa *BWArr[T]) Min() (minElem T, found bool) {
+	if bwa.total == 0 {
+		return minElem, false
+	}
+	return bwa.whiteSegments[bwa.min()].elements[0], true
 }
 
 func (bwa *BWArr[T]) Clear(dropSegments bool) {
@@ -134,6 +137,29 @@ func (bwa *BWArr[T]) Clear(dropSegments bool) {
 
 func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	panic("implement me")
+}
+
+// min assumes that there is at least one segment with elements!
+func (bwa *BWArr[T]) min() (segNum int) {
+	// First set result to the first segment with elements.
+	for i := 0; i < len(bwa.whiteSegments); i++ {
+		if bwa.total&(1<<i) != 0 {
+			segNum = i
+			break
+		}
+
+	}
+	// Then find the segment with the smallest element:
+	for i := segNum + 1; i < len(bwa.whiteSegments); i++ {
+		if bwa.total&(1<<i) == 0 {
+			continue
+		}
+		// Less or equal is used to provide stable behavior (return the oldest one).
+		if bwa.cmp(bwa.whiteSegments[i].elements[0], bwa.whiteSegments[segNum].elements[0]) <= 0 {
+			segNum = i
+		}
+	}
+	return segNum
 }
 
 func (bwa *BWArr[T]) search(element T) (segNum, index int) {

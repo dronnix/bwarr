@@ -172,6 +172,80 @@ func TestBWArr_HasAndGet(t *testing.T) {
 	}
 }
 
+func TestBWArr_Min(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		elemsToAdd []int64
+		want       int64
+		found      bool
+	}{
+		{
+			name:       "empty",
+			elemsToAdd: []int64{},
+			want:       0,
+			found:      false,
+		},
+		{
+			name:       "one",
+			elemsToAdd: []int64{23},
+			want:       23,
+			found:      true,
+		},
+		{
+			name:       "two",
+			elemsToAdd: []int64{42, 23},
+			want:       23,
+			found:      true,
+		},
+		{
+			name:       "7",
+			elemsToAdd: []int64{24, 42, 23, 27, 23, 7, 61},
+			want:       7,
+			found:      true,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(int64Cmp, 0)
+			for _, elem := range tt.elemsToAdd {
+				bwa.Insert(elem)
+			}
+			validateBWArr(t, bwa)
+			elem, found := bwa.Min()
+			validateBWArr(t, bwa)
+			assert.Equal(t, tt.found, found)
+			assert.Equal(t, tt.want, elem)
+		})
+	}
+}
+
+func TestBWArr_minStability(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		elemsToAdd []int64
+		index      int
+	}{
+		{
+			name:       "two",
+			elemsToAdd: []int64{23, 42, 23, 27, 23, 29, 61},
+			index:      2,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(int64Cmp, 0)
+			for _, elem := range tt.elemsToAdd {
+				bwa.Insert(elem)
+			}
+			validateBWArr(t, bwa)
+			assert.Equal(t, 2, bwa.min())
+			validateBWArr(t, bwa)
+		})
+	}
+}
+
 func TestBlackWhiteArray_Delete(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
