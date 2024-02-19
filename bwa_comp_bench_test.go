@@ -121,6 +121,37 @@ func BenchmarkBTree_Min(b *testing.B) {
 	}
 }
 
+func BenchmarkBWArr_DeleteMin(b *testing.B) {
+	const elemsOnStart = 4 * 1024 * 1024
+	elems := elemsOnStart + b.N
+	bwa := New(int64Cmp, elems)
+
+	for i := 0; i < elems; i++ {
+		bwa.Insert(rand.Int63())
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.DeleteMin()
+	}
+}
+
+func BenchmarkBTree_DeleteMin(b *testing.B) {
+	bt := createGenericBTree()
+	const elemsOnStart = 4 * 1024 * 1024
+	elems := elemsOnStart + b.N
+	for i := 0; i < elems; i++ {
+		bt.ReplaceOrInsert(rand.Int63()) //nolint:gosec
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bt.DeleteMin()
+	}
+}
+
 func BenchmarkReplace4MEnoughCapacity(b *testing.B) {
 	const elemsOnStart = 4 * 1024 * 1024
 	benchmarkReplace(b, elemsOnStart, elemsOnStart+b.N)
