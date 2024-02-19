@@ -2,6 +2,7 @@ package bwarr
 
 import (
 	"math/rand"
+	"slices"
 	"strings"
 	"testing"
 
@@ -225,11 +226,13 @@ func TestBWArr_minStability(t *testing.T) {
 	tests := []struct {
 		name       string
 		elemsToAdd []int64
+		segment    int
 		index      int
 	}{
 		{
 			name:       "two",
 			elemsToAdd: []int64{23, 42, 23, 27, 23, 29, 61},
+			segment:    2,
 			index:      2,
 		},
 	}
@@ -240,9 +243,29 @@ func TestBWArr_minStability(t *testing.T) {
 				bwa.Insert(elem)
 			}
 			validateBWArr(t, bwa)
-			assert.Equal(t, 2, bwa.min())
+			seg, ind := bwa.min()
+			assert.Equal(t, 2, seg)
+			assert.Equal(t, 0, ind)
 			validateBWArr(t, bwa)
 		})
+	}
+}
+
+func TestBWArr_DeleteMin(t *testing.T) {
+	t.Parallel()
+	elems := []int64{87, 42, 23, 27, 23, 29, 61}
+	bwa := New(int64Cmp, len(elems))
+	for _, elem := range elems {
+		bwa.Insert(elem)
+	}
+	validateBWArr(t, bwa)
+	slices.Sort(elems)
+
+	for i := 0; i < len(elems); i++ {
+		elem, found := bwa.DeleteMin()
+		validateBWArr(t, bwa)
+		assert.True(t, found)
+		assert.Equal(t, elems[i], elem)
 	}
 }
 

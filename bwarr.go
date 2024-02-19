@@ -84,28 +84,7 @@ func (bwa *BWArr[T]) Delete(element T) (deleted T, found bool) {
 	if segNum < 0 {
 		return deleted, false
 	}
-	seg := &bwa.whiteSegments[segNum]
-	deleted, _ = seg.elements[index], true
-	seg.deleted[index] = true
-	seg.deletedNum++
-	segmentCapacity := 1 << segNum
-	if seg.deletedNum < segmentCapacity/2 {
-		return deleted, true
-	}
-	if segNum == 0 {
-		bwa.total--
-		return deleted, true
-	}
-	if (1<<(segNum-1))&bwa.total == 0 {
-		demote(*seg, &bwa.whiteSegments[segNum-1])
-		bwa.total -= 1 << segNum
-		bwa.total += 1 << (segNum - 1)
-	} else {
-		demote(*seg, &bwa.blackSegments[segNum-1])
-		mergeSegments(bwa.blackSegments[segNum-1], bwa.whiteSegments[segNum-1], bwa.cmp, seg)
-		bwa.total -= 1 << (segNum - 1)
-	}
-	return deleted, true
+	return bwa.del(segNum, index), true
 }
 
 func (bwa *BWArr[T]) DeleteMax() (deleted T, found bool) {
@@ -113,7 +92,11 @@ func (bwa *BWArr[T]) DeleteMax() (deleted T, found bool) {
 }
 
 func (bwa *BWArr[T]) DeleteMin() (deleted T, found bool) {
-	panic("implement me")
+	if bwa.total == 0 {
+		return deleted, false
+	}
+	seg, ind := bwa.min()
+	return bwa.del(seg, ind), true
 }
 
 func (bwa *BWArr[T]) Len() int {
@@ -128,7 +111,8 @@ func (bwa *BWArr[T]) Min() (minElem T, found bool) {
 	if bwa.total == 0 {
 		return minElem, false
 	}
-	return bwa.whiteSegments[bwa.min()].elements[0], true
+	seg, ind := bwa.min()
+	return bwa.whiteSegments[seg].elements[ind], true
 }
 
 func (bwa *BWArr[T]) Clear(dropSegments bool) {
@@ -139,27 +123,64 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	panic("implement me")
 }
 
+func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
+	seg := &bwa.whiteSegments[segNum]
+	deleted = seg.elements[index]
+	seg.deleted[index] = true
+	seg.deletedNum++
+	segmentCapacity := 1 << segNum
+	if seg.deletedNum < segmentCapacity/2 {
+		return deleted
+	}
+	if segNum == 0 {
+		bwa.total--
+		return deleted
+	}
+	if (1<<(segNum-1))&bwa.total == 0 {
+		demote(*seg, &bwa.whiteSegments[segNum-1])
+		bwa.total -= 1 << segNum
+		bwa.total += 1 << (segNum - 1)
+	} else {
+		demote(*seg, &bwa.blackSegments[segNum-1])
+		mergeSegments(bwa.blackSegments[segNum-1], bwa.whiteSegments[segNum-1], bwa.cmp, seg)
+		bwa.total -= 1 << (segNum - 1)
+	}
+	return deleted
+}
+
 // min assumes that there is at least one segment with elements!
-func (bwa *BWArr[T]) min() (segNum int) {
+func (bwa *BWArr[T]) min() (segNum, index int) {
 	// First set result to the first segment with elements.
 	for i := 0; i < len(bwa.whiteSegments); i++ {
 		if bwa.total&(1<<i) != 0 {
 			segNum = i
 			break
 		}
-
 	}
+	index = bwa.minNonDeletedIndex(segNum)
 	// Then find the segment with the smallest element:
-	for i := segNum + 1; i < len(bwa.whiteSegments); i++ {
-		if bwa.total&(1<<i) == 0 {
+	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
+		if bwa.total&(1<<seg) == 0 {
 			continue
 		}
 		// Less or equal is used to provide stable behavior (return the oldest one).
-		if bwa.cmp(bwa.whiteSegments[i].elements[0], bwa.whiteSegments[segNum].elements[0]) <= 0 {
-			segNum = i
+		ind := bwa.minNonDeletedIndex(seg)
+		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) <= 0 {
+			segNum, index = seg, ind
 		}
 	}
-	return segNum
+	return segNum, index
+}
+
+func (bwa *BWArr[T]) minNonDeletedIndex(segNum int) (index int) {
+	seg := bwa.whiteSegments[segNum]
+	// TODO: optimize this loop.
+	for i := 0; i < len(seg.elements); i++ {
+		if !seg.deleted[i] {
+			return i
+		}
+	}
+	return -1
 }
 
 func (bwa *BWArr[T]) search(element T) (segNum, index int) {
