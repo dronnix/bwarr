@@ -10,8 +10,6 @@ linters-settings:
     statements: 60
   gocognit:
     min-complexity: 20
-  govet:
-    check-shadowing: true
   golint:
     min-confidence: 0
   gocyclo:

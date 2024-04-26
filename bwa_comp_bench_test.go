@@ -104,11 +104,60 @@ func BenchmarkBWArr_Min4M(b *testing.B) {
 	}
 }
 
+func BenchmarkBWArr_Min4M_Fragmented(b *testing.B) {
+	const elemsOnStart = 4 * 1024 * 1024
+	bwa := New(int64Cmp, elemsOnStart)
+
+	elems := make([]int64, elemsOnStart)
+	for i := 0; i < elemsOnStart; i++ {
+		x := rand.Int63()
+		bwa.Insert(x)
+		elems[i] = x
+	}
+
+	for range elemsOnStart / 3 {
+		bwa.DeleteMin()
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		elem, found := bwa.Min()
+		if !found {
+			b.Fatalf("Element %d not found", elem)
+		}
+	}
+}
+
 func BenchmarkBTree_Min(b *testing.B) {
 	bt := createGenericBTree()
 	const elems = 4 * 1024 * 1024
 	for i := 0; i < elems; i++ {
 		bt.ReplaceOrInsert(rand.Int63()) //nolint:gosec
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		elem, found := bt.Min()
+		if !found {
+			b.Fatalf("Element %d not found", elem)
+		}
+	}
+}
+
+func BenchmarkBTree_Min_Fragmented(b *testing.B) {
+	bt := createGenericBTree()
+	const elemsOnStart = 4 * 1024 * 1024
+	elems := make([]int64, elemsOnStart)
+	for i := 0; i < elemsOnStart; i++ {
+		x := rand.Int63()     //nolint:gosec
+		bt.ReplaceOrInsert(x) //nolint:gosec
+		elems[i] = x
+	}
+
+	for i := range elemsOnStart / 3 {
+		bt.Delete(elems[i])
 	}
 
 	b.ResetTimer()
