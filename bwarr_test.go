@@ -265,7 +265,7 @@ func TestBWArr_DeleteMin(t *testing.T) {
 		elem, found := bwa.DeleteMin()
 		validateBWArr(t, bwa)
 		assert.True(t, found)
-		assert.Equal(t, elems[i], elem)
+		assert.Equal(t, elems[i], elem, "DeleteMin() on %d iteration", i)
 	}
 }
 
@@ -365,6 +365,7 @@ func Test_RandomDelete(t *testing.T) {
 	}
 }
 
+//nolint:exhaustruct
 func Test_demote(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -652,11 +653,16 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 
 func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 	require.Equal(t, len(seg.elements), len(seg.deleted))
-	deleted := 0
+	deleted, firstNonDelIdx := 0, 0
+	metNonDel := false
 	for i := 0; i < len(seg.elements); i++ {
 		if seg.deleted[i] {
 			deleted++
 			continue
+		}
+		if !metNonDel {
+			firstNonDelIdx = i
+			metNonDel = true
 		}
 
 		if i >= len(seg.elements)-1 || seg.deleted[i+1] {
@@ -665,6 +671,7 @@ func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 		assert.LessOrEqual(t, cmp(seg.elements[i], seg.elements[i+1]), 0)
 	}
 	assert.Equal(t, deleted, seg.deletedNum)
+	assert.Equal(t, firstNonDelIdx, seg.minNonDeletedIdx)
 }
 
 //nolint:exhaustruct
@@ -698,6 +705,7 @@ func segmentsEqual[T any](t *testing.T, expected, actual segment[T]) {
 	require.Equal(t, len(expected.elements), len(expected.deleted))
 	require.Equal(t, len(expected.elements), len(actual.elements))
 	require.Equal(t, len(expected.deleted), len(actual.deleted))
+	require.Equal(t, expected.deletedNum, actual.deletedNum)
 	for i := range expected.elements {
 		assert.Equal(t, expected.deleted[i], actual.deleted[i])
 		if !expected.deleted[i] {
