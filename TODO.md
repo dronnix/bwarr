@@ -1,12 +1,33 @@
-### P0
+### Compare with competitors
+- [X] Find competitor data structures(b-tree, avl-tree, b-plus tree, red-black tree, skip list).
+- [X] Add test against B-Tree Generic edition.
+- [X] Measure memory consumption.
+- [X] Benchmark for 80% deleted case.
+- [ ] Add mixed test (insert/find/delete) with specified ratio.
+- [ ] Add test against red-black tree.
+- [ ] Add test against skip list.
 
-- [ ] Refactor internal benchmarks, track regress;
-- [ ] Add CI for linter, tests and coverage;
-- [ ] Ensure, that library has zero dependencies (especially no `testify`);
-- [ ] Remove static black segments array. Use dynamic via method;
+#### Nearest optimization
+- [X] Implement bitset for segment.
+- [X] Try to do only one comparison for main data, seq scan or chord method for bits. Benchmark it.
+- [ ] For each segment add indexes of leftmost and rightmost non-deleted elements.
+- [ ] use copy() in demote and merging methods.
+- [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
+- [ ] Implement special method Init: just split all data to segments and sort it.
+
+#### Lack of functionality
+- [ ] Implement max/min methods.
+- [ ] Implement Range methods.
+
+#### Optimization ideas
+- [ ] Delete unused highest segment (or provide a method).
+- [ ] Reusable black segment 1/2 of the size of the biggest white segment.
+- [ ] Make compaction experiment: move all deleted elements to the end of the segment.
+- [ ] Combo of previous two: method Compact() that get rid of all deleted elements and keep only used segments.
 - [ ] Cmp func based on pointers;
-- [ ] Switch to no allocations with 0 capacity;
-- [ ] Tunable size of compacted segments, and black segment pre-allocated size
 
-### P2
-- [ ] Get rid of `math` package;
+
+
+
+
+ 
