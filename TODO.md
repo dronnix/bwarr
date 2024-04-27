@@ -1,3 +1,9 @@
+### Fast release
+- [ ] Track benchmarks trends, compare with previous commits;
+- [ ] Add benchmarks to CI;
+- [ ] Refactor code: move out segment, it's methods and tests;
+- [ ] Plan further steps;
+
 ### Compare with competitors
 - [X] Find competitor data structures(b-tree, avl-tree, b-plus tree, red-black tree, skip list).
 - [X] Add test against B-Tree Generic edition.
