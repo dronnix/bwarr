@@ -253,7 +253,7 @@ func TestBWArr_minStability(t *testing.T) {
 
 func TestBWArr_DeleteMin(t *testing.T) {
 	t.Parallel()
-	elems := []int64{87, 42, 23, 27, 23, 29, 61}
+	elems := []int64{87, 42, 23, 27, 23, 29, 61, 17, 51, 50, 11, 90}
 	bwa := New(int64Cmp, len(elems))
 	for _, elem := range elems {
 		bwa.Insert(elem)
@@ -671,7 +671,7 @@ func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 		assert.LessOrEqual(t, cmp(seg.elements[i], seg.elements[i+1]), 0)
 	}
 	assert.Equal(t, deleted, seg.deletedNum)
-	assert.Equal(t, firstNonDelIdx, seg.minNonDeletedIdx)
+	assert.GreaterOrEqual(t, firstNonDelIdx, seg.minNonDeletedIdx)
 }
 
 //nolint:exhaustruct

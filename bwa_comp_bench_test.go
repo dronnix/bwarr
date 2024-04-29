@@ -205,6 +205,28 @@ func BenchmarkBWArr_DeleteMin(b *testing.B) {
 	}
 }
 
+func BenchmarkDelete4M(b *testing.B) {
+	elements := 4*1024*1024 + b.N
+	bwa := New(int64Cmp, elements)
+	toDel := make([]int64, elements)
+	for i := 0; i < elements; i++ {
+		toDel[i] = int64(i + 1)
+	}
+	rand.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
+	for i := range toDel {
+		bwa.Insert(toDel[i])
+	}
+	rand.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		if _, found := bwa.Delete(toDel[i]); !found {
+			b.Fail()
+		}
+	}
+}
+
 func BenchmarkBTree_DeleteMin(b *testing.B) {
 	bt := createGenericBTree()
 	const elemsOnStart = 4 * 1024 * 1024

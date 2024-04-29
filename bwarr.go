@@ -179,8 +179,7 @@ func (bwa *BWArr[T]) min() (segNum, index int) {
 }
 
 func (bwa *BWArr[T]) minNonDeletedIndex(segNum int) (index int) {
-	seg := bwa.whiteSegments[segNum]
-	// TODO: optimize this loop.
+	seg := &bwa.whiteSegments[segNum]
 	for i := seg.minNonDeletedIdx; i < len(seg.elements); i++ {
 		if !seg.deleted[i] {
 			seg.minNonDeletedIdx = i
@@ -258,7 +257,7 @@ func findRightmostNotDeleted[T any](seg segment[T], cmp CmpFunc[T], val T) int {
 			e = m
 		case cmpRes > 0:
 			b = m + 1
-		case cmpRes == 0:
+		default:
 			if del[m] {
 				e = m
 			} else {
