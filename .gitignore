@@ -8,5 +8,12 @@ go.work
 # IDE files
 .idea/
 
+#QA things
+qa/bench.tmp
+qa/rep.json
+qa/web_tmp/
+qa/cur_bench.json
+
+
 # Misc
 coverage.html
