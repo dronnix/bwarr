@@ -1,0 +1,8 @@
+checks:
+    - name:
+      description: Checks the main BWA public operations regress
+      package: .
+      benchmarks: []
+      diff: (current.NsPerOp - base.NsPerOp) / base.NsPerOp * 100
+      thresholds:
+        max: 10
