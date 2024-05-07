@@ -8,25 +8,6 @@ import (
 	"github.com/google/btree"
 )
 
-func BenchmarkBWA_Add4M(b *testing.B) {
-	const elemsOnStart = 4 * 1024 * 1024
-	bwa := New(int64Cmp, elemsOnStart*2)
-
-	for i := 0; i < elemsOnStart; i++ {
-		bwa.Insert(rand.Int63())
-	}
-	preparedData := make([]int64, b.N)
-	for i := 0; i < b.N; i++ {
-		preparedData[i] = rand.Int63() //nolint:gosec
-	}
-	b.SetBytes(8) //nolint:exhaustruct
-	b.ResetTimer()
-	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
-		bwa.Insert(preparedData[i])
-	}
-}
-
 func BenchmarkBTreeAdd4M(b *testing.B) {
 	bt := createGenericBTree()
 	const elemsOnStart = 4 * 1024 * 1024

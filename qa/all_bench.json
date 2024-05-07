@@ -1,6 +1,6 @@
 [
   {
-    "Date": 1714916681,
+    "Date": 1715073815,
     "Suites": [
       {
         "Goos": "darwin",
@@ -8,153 +8,53 @@
         "Pkg": "github.com/dronnix/bwarr",
         "Benchmarks": [
           {
-            "Name": "BenchmarkBWA_Add4M-10",
-            "Runs": 1,
-            "NsPerOp": 666,
+            "Name": "BenchmarkQA_Insert-10",
+            "Runs": 1000000,
+            "NsPerOp": 173.2,
             "Mem": {
-              "BytesPerOp": 0,
+              "BytesPerOp": 56,
               "AllocsPerOp": 0,
-              "MBPerSec": 12.01
+              "MBPerSec": 46.19
             }
           },
           {
-            "Name": "BenchmarkBTreeAdd4M-10",
-            "Runs": 1,
-            "NsPerOp": 1792,
+            "Name": "BenchmarkQA_ReplaceOrInsertNotFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 1559,
             "Mem": {
-              "BytesPerOp": 0,
+              "BytesPerOp": 56,
               "AllocsPerOp": 0,
-              "MBPerSec": 4.46
+              "MBPerSec": 5.13
             }
           },
           {
-            "Name": "BenchmarkBTreeAdd4MHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 3958,
-            "Mem": {
-              "BytesPerOp": 6144,
-              "AllocsPerOp": 1,
-              "MBPerSec": 123.29
-            }
-          },
-          {
-            "Name": "BenchmarkReplace4MZeroCapacityHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 4041,
+            "Name": "BenchmarkQA_ReplaceOrInsertFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 285.1,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 120.76
+              "MBPerSec": 28.06
             }
           },
           {
-            "Name": "BenchmarkAppend4MZeroCapacityHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 458,
+            "Name": "BenchmarkQA_HasFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 309.6,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 1065.5
+              "MBPerSec": 25.84
             }
           },
           {
-            "Name": "BenchmarkBWArr_Min4M-10",
-            "Runs": 1,
-            "NsPerOp": 708,
+            "Name": "BenchmarkQA_HasNotFoundWorst-10",
+            "Runs": 1000000,
+            "NsPerOp": 2728,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_Min4M_Fragmented-10",
-            "Runs": 1,
-            "NsPerOp": 709,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_Min-10",
-            "Runs": 1,
-            "NsPerOp": 2083,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_Min_Fragmented-10",
-            "Runs": 1,
-            "NsPerOp": 1167,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_DeleteMin-10",
-            "Runs": 1,
-            "NsPerOp": 500,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkDelete4M-10",
-            "Runs": 1,
-            "NsPerOp": 2708,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_DeleteMin-10",
-            "Runs": 1,
-            "NsPerOp": 5375,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkReplace4MEnoughCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 2125,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MZeroCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 500,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MEnoughCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 709,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
+              "MBPerSec": 2.93
             }
           }
         ]
@@ -162,7 +62,7 @@
     ]
   },
   {
-    "Date": 1714905849,
+    "Date": 1715073483,
     "Suites": [
       {
         "Goos": "darwin",
@@ -170,477 +70,53 @@
         "Pkg": "github.com/dronnix/bwarr",
         "Benchmarks": [
           {
-            "Name": "BenchmarkBWA_Add4M-10",
-            "Runs": 1,
-            "NsPerOp": 750,
+            "Name": "BenchmarkQA_Insert-10",
+            "Runs": 1000000,
+            "NsPerOp": 174.7,
             "Mem": {
-              "BytesPerOp": 0,
+              "BytesPerOp": 56,
               "AllocsPerOp": 0,
-              "MBPerSec": 10.67
+              "MBPerSec": 45.79
             }
           },
           {
-            "Name": "BenchmarkBTreeAdd4M-10",
-            "Runs": 1,
-            "NsPerOp": 1666,
+            "Name": "BenchmarkQA_ReplaceOrInsertNotFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 1540,
             "Mem": {
-              "BytesPerOp": 0,
+              "BytesPerOp": 56,
               "AllocsPerOp": 0,
-              "MBPerSec": 4.8
+              "MBPerSec": 5.2
             }
           },
           {
-            "Name": "BenchmarkBTreeAdd4MHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 3792,
-            "Mem": {
-              "BytesPerOp": 6144,
-              "AllocsPerOp": 1,
-              "MBPerSec": 128.69
-            }
-          },
-          {
-            "Name": "BenchmarkReplace4MZeroCapacityHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 4125,
+            "Name": "BenchmarkQA_ReplaceOrInsertFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 299.2,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 118.3
+              "MBPerSec": 26.74
             }
           },
           {
-            "Name": "BenchmarkAppend4MZeroCapacityHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 667,
+            "Name": "BenchmarkQA_HasFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 289.9,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 731.63
+              "MBPerSec": 27.59
             }
           },
           {
-            "Name": "BenchmarkBWArr_Min4M-10",
-            "Runs": 1,
-            "NsPerOp": 1333,
+            "Name": "BenchmarkQA_HasNotFoundWorst-10",
+            "Runs": 1000000,
+            "NsPerOp": 2596,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_Min4M_Fragmented-10",
-            "Runs": 1,
-            "NsPerOp": 625,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_Min-10",
-            "Runs": 1,
-            "NsPerOp": 1000,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_Min_Fragmented-10",
-            "Runs": 1,
-            "NsPerOp": 1000,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_DeleteMin-10",
-            "Runs": 1,
-            "NsPerOp": 1083,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkDelete4M-10",
-            "Runs": 1,
-            "NsPerOp": 3583,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_DeleteMin-10",
-            "Runs": 1,
-            "NsPerOp": 2041,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkReplace4MEnoughCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 2375,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MZeroCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 625,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MEnoughCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 417,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "Date": 1714905809,
-    "Suites": [
-      {
-        "Goos": "darwin",
-        "Goarch": "arm64",
-        "Pkg": "github.com/dronnix/bwarr",
-        "Benchmarks": [
-          {
-            "Name": "BenchmarkBWA_Add4M-10",
-            "Runs": 1,
-            "NsPerOp": 500,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 16
-            }
-          },
-          {
-            "Name": "BenchmarkBTreeAdd4M-10",
-            "Runs": 1,
-            "NsPerOp": 1375,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 5.82
-            }
-          },
-          {
-            "Name": "BenchmarkBTreeAdd4MHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 3833,
-            "Mem": {
-              "BytesPerOp": 6144,
-              "AllocsPerOp": 1,
-              "MBPerSec": 127.32
-            }
-          },
-          {
-            "Name": "BenchmarkReplace4MZeroCapacityHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 5083,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 96.01
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MZeroCapacityHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 750,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 650.67
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_Min4M-10",
-            "Runs": 1,
-            "NsPerOp": 541,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_Min4M_Fragmented-10",
-            "Runs": 1,
-            "NsPerOp": 625,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_Min-10",
-            "Runs": 1,
-            "NsPerOp": 2792,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_Min_Fragmented-10",
-            "Runs": 1,
-            "NsPerOp": 709,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_DeleteMin-10",
-            "Runs": 1,
-            "NsPerOp": 625,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkDelete4M-10",
-            "Runs": 1,
-            "NsPerOp": 2333,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_DeleteMin-10",
-            "Runs": 1,
-            "NsPerOp": 3584,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkReplace4MEnoughCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 2250,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MZeroCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 1833,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MEnoughCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 1000,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          }
-        ]
-      }
-    ]
-  },
-  {
-    "Date": 1714905774,
-    "Suites": [
-      {
-        "Goos": "darwin",
-        "Goarch": "arm64",
-        "Pkg": "github.com/dronnix/bwarr",
-        "Benchmarks": [
-          {
-            "Name": "BenchmarkBWA_Add4M-10",
-            "Runs": 1,
-            "NsPerOp": 541,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 14.79
-            }
-          },
-          {
-            "Name": "BenchmarkBTreeAdd4M-10",
-            "Runs": 1,
-            "NsPerOp": 1792,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 4.46
-            }
-          },
-          {
-            "Name": "BenchmarkBTreeAdd4MHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 3791,
-            "Mem": {
-              "BytesPerOp": 6144,
-              "AllocsPerOp": 1,
-              "MBPerSec": 128.73
-            }
-          },
-          {
-            "Name": "BenchmarkReplace4MZeroCapacityHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 4334,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 112.6
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MZeroCapacityHugeStruct-10",
-            "Runs": 1,
-            "NsPerOp": 416,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 1173.08
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_Min4M-10",
-            "Runs": 1,
-            "NsPerOp": 1125,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_Min4M_Fragmented-10",
-            "Runs": 1,
-            "NsPerOp": 500,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_Min-10",
-            "Runs": 1,
-            "NsPerOp": 959,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_Min_Fragmented-10",
-            "Runs": 1,
-            "NsPerOp": 875,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBWArr_DeleteMin-10",
-            "Runs": 1,
-            "NsPerOp": 2792,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkDelete4M-10",
-            "Runs": 1,
-            "NsPerOp": 2917,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkBTree_DeleteMin-10",
-            "Runs": 1,
-            "NsPerOp": 2708,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkReplace4MEnoughCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 2750,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MZeroCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 666,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkAppend4MEnoughCapacity-10",
-            "Runs": 1,
-            "NsPerOp": 542,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
+              "MBPerSec": 3.08
             }
           }
         ]

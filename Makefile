@@ -12,7 +12,7 @@ coverage:
 	rm qa/cover.tmp
 
 bench:
-	go test -bench=. -benchtime 1x ./... | tee qa/bench.tmp
+	go test -bench=BenchmarkQA -benchtime 1000000x ./... | tee qa/bench.tmp
 	cat qa/bench.tmp | gobenchdata --json qa/cur_bench.json
 	gobenchdata checks eval --checks.config qa/gobenchdata-checks.yml qa/cur_bench.json qa/last_bench.json --json qa/rep.json
 	gobenchdata checks --checks.config qa/gobenchdata-checks.yml report qa/rep.json
