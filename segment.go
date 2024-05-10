@@ -1,0 +1,116 @@
+package bwarr
+
+import "math"
+
+type segment[T any] struct {
+	elements         []T    // Stores user's data.
+	deleted          []bool // Stores whether i-th element is deleted.
+	deletedNum       int    // Number of deleted elements in the segment.
+	minNonDeletedIdx int    // Index of the first non-deleted element in the segment.
+}
+
+func createSegments[T any](num int) []segment[T] {
+	segments := make([]segment[T], num)
+	for i := 0; i < num; i++ {
+		segments[i] = segment[T]{
+			elements:         make([]T, 1<<i),
+			deleted:          make([]bool, 1<<i),
+			deletedNum:       0,
+			minNonDeletedIdx: 0,
+		}
+	}
+	return segments
+}
+
+func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment[T]) {
+	i, j, k := 0, 0, 0
+	for i < len(seg1.elements) && j < len(seg2.elements) {
+		if cmp(seg1.elements[i], seg2.elements[j]) < 0 {
+			result.elements[k] = seg1.elements[i]
+			result.deleted[k] = seg1.deleted[i]
+			i++
+		} else {
+			result.elements[k] = seg2.elements[j]
+			result.deleted[k] = seg2.deleted[j]
+			j++
+		}
+		k++
+	}
+
+	copy(result.elements[k:], seg1.elements[i:])
+	copy(result.deleted[k:], seg1.deleted[i:])
+	copy(result.elements[k:], seg2.elements[j:])
+	copy(result.deleted[k:], seg2.deleted[j:])
+
+	result.deletedNum = seg1.deletedNum + seg2.deletedNum
+	result.minNonDeletedIdx = 0
+}
+
+func demoteSegment[T any](from segment[T], to *segment[T]) {
+	for r, w := 0, 0; r < len(from.elements); r++ {
+		if from.deleted[r] {
+			continue
+		}
+		to.elements[w] = from.elements[r]
+		to.deleted[w] = false
+		w++
+	}
+	to.deletedNum = 0 // Since demoteSegment is called only when we have exact len(to.elements) undeleted elements in from.
+	to.minNonDeletedIdx = 0
+}
+
+func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
+	b, e := uint64(s.minNonDeletedIdx), uint64(len(s.elements))
+	elems := s.elements
+	del := s.deleted
+	for b < e {
+		m := (b + e) >> 1
+		cmpRes := cmp(val, elems[m])
+		switch {
+		case cmpRes < 0:
+			e = m
+		case cmpRes > 0:
+			b = m + 1
+		default:
+			if del[m] {
+				e = m
+			} else {
+				b = m + 1
+			}
+		}
+	}
+	idx := int(b)
+
+	if idx == 0 {
+		return -1
+	}
+	idx--
+	if s.deleted[idx] {
+		return -1
+	}
+	if cmp(s.elements[idx], val) != 0 {
+		return -1
+	}
+	return idx
+}
+
+func (s *segment[T]) minNonDeletedIndex() (index int) {
+	for i := s.minNonDeletedIdx; i < len(s.deleted); i++ {
+		if !s.deleted[i] {
+			s.minNonDeletedIdx = i
+			return i
+		}
+	}
+	return -1
+}
+
+func calculateWhiteSegmentsQuantity(capacity int) int {
+	switch {
+	case capacity == 0:
+		return 2 // to avoid every time checking if capacity is 0
+	case capacity < 0:
+		panic("negative capacity")
+	default:
+		return int(math.Log2(float64(capacity)) + 1) // TODO: rewrite without using math?
+	}
+}

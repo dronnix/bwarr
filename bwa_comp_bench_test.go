@@ -87,7 +87,7 @@ func BenchmarkAppend4MZeroCapacityHugeStruct(b *testing.B) {
 }
 
 func BenchmarkBWArr_Min4M_Fragmented(b *testing.B) {
-	const elemsOnStart = 4 * 1024 * 1024
+	const elemsOnStart = 4*1024*1024 - 1
 	bwa := New(int64Cmp, elemsOnStart)
 
 	elems := make([]int64, elemsOnStart)
@@ -165,21 +165,6 @@ func BenchmarkBTree_DeleteMin(b *testing.B) {
 	for i := 0; i < b.N; i++ {
 		bt.DeleteMin()
 	}
-}
-
-func BenchmarkReplace4MEnoughCapacity(b *testing.B) {
-	const elemsOnStart = 4 * 1024 * 1024
-	benchmarkReplace(b, elemsOnStart, elemsOnStart+b.N)
-}
-
-func BenchmarkAppend4MZeroCapacity(b *testing.B) {
-	const elemsOnStart = 4 * 1024 * 1024
-	benchmarkAppend(b, elemsOnStart, 0)
-}
-
-func BenchmarkAppend4MEnoughCapacity(b *testing.B) {
-	const elemsOnStart = 4 * 1024 * 1024
-	benchmarkAppend(b, elemsOnStart, elemsOnStart+b.N)
 }
 
 func createGenericBTree() *btree.BTreeG[int64] {

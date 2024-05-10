@@ -1,19 +1,10 @@
 package bwarr
 
-import "math"
-
 type BWArr[T any] struct {
 	blackSegments []segment[T]
 	whiteSegments []segment[T]
 	total         int // Total number of elements in the array, including deleted ones.
 	cmp           CmpFunc[T]
-}
-
-type segment[T any] struct {
-	elements         []T    // Stores user's data.
-	deleted          []bool // Stores whether i-th element is deleted.
-	deletedNum       int    // Number of deleted elements in the segment.
-	minNonDeletedIdx int    // Index of the first non-deleted element in the segment.
 }
 
 type CmpFunc[T any] func(a, b T) int
@@ -143,11 +134,11 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		return deleted
 	}
 	if (1<<(segNum-1))&bwa.total == 0 {
-		demote(*seg, &bwa.whiteSegments[segNum-1])
+		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
 		bwa.total -= 1 << segNum
 		bwa.total += 1 << (segNum - 1)
 	} else {
-		demote(*seg, &bwa.blackSegments[segNum-1])
+		demoteSegment(*seg, &bwa.blackSegments[segNum-1])
 		mergeSegments(bwa.blackSegments[segNum-1], bwa.whiteSegments[segNum-1], bwa.cmp, seg)
 		bwa.total -= 1 << (segNum - 1)
 	}
@@ -163,14 +154,14 @@ func (bwa *BWArr[T]) min() (segNum, index int) {
 			break
 		}
 	}
-	index = bwa.minNonDeletedIndex(segNum)
+	index = bwa.whiteSegments[segNum].minNonDeletedIndex()
 	// Then find the segment with the smallest element:
 	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
 		if bwa.total&(1<<seg) == 0 {
 			continue
 		}
 		// Less or equal is used to provide stable behavior (return the oldest one).
-		ind := bwa.minNonDeletedIndex(seg)
+		ind := bwa.whiteSegments[seg].minNonDeletedIndex()
 		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) <= 0 {
 			segNum, index = seg, ind
 		}
@@ -178,23 +169,12 @@ func (bwa *BWArr[T]) min() (segNum, index int) {
 	return segNum, index
 }
 
-func (bwa *BWArr[T]) minNonDeletedIndex(segNum int) (index int) {
-	seg := &bwa.whiteSegments[segNum]
-	for i := seg.minNonDeletedIdx; i < len(seg.elements); i++ {
-		if !seg.deleted[i] {
-			seg.minNonDeletedIdx = i
-			return i
-		}
-	}
-	return -1
-}
-
 func (bwa *BWArr[T]) search(element T) (segNum, index int) {
 	for segNum = len(bwa.whiteSegments) - 1; segNum >= 0; segNum-- {
 		if bwa.total&(1<<segNum) == 0 {
 			continue
 		}
-		if index = findRightmostNotDeleted(bwa.whiteSegments[segNum], bwa.cmp, element); index >= 0 {
+		if index = bwa.whiteSegments[segNum].findRightmostNotDeleted(bwa.cmp, element); index >= 0 {
 			return segNum, index
 		}
 	}
@@ -219,100 +199,4 @@ func (bwa *BWArr[T]) extend() {
 			deletedNum:       0,
 			minNonDeletedIdx: 0,
 		})
-}
-
-func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment[T]) {
-	i, j, k := 0, 0, 0
-	for i < len(seg1.elements) && j < len(seg2.elements) {
-		if cmp(seg1.elements[i], seg2.elements[j]) < 0 {
-			result.elements[k] = seg1.elements[i]
-			result.deleted[k] = seg1.deleted[i]
-			i++
-		} else {
-			result.elements[k] = seg2.elements[j]
-			result.deleted[k] = seg2.deleted[j]
-			j++
-		}
-		k++
-	}
-
-	copy(result.elements[k:], seg1.elements[i:])
-	copy(result.deleted[k:], seg1.deleted[i:])
-	copy(result.elements[k:], seg2.elements[j:])
-	copy(result.deleted[k:], seg2.deleted[j:])
-
-	result.deletedNum = seg1.deletedNum + seg2.deletedNum
-	result.minNonDeletedIdx = 0
-}
-
-func findRightmostNotDeleted[T any](seg segment[T], cmp CmpFunc[T], val T) int {
-	b, e := uint64(seg.minNonDeletedIdx), uint64(len(seg.elements))
-	elems := seg.elements
-	del := seg.deleted
-	for b < e {
-		m := (b + e) >> 1
-		cmpRes := cmp(val, elems[m])
-		switch {
-		case cmpRes < 0:
-			e = m
-		case cmpRes > 0:
-			b = m + 1
-		default:
-			if del[m] {
-				e = m
-			} else {
-				b = m + 1
-			}
-		}
-	}
-	idx := int(b)
-
-	if idx == 0 {
-		return -1
-	}
-	idx--
-	if seg.deleted[idx] {
-		return -1
-	}
-	if cmp(seg.elements[idx], val) != 0 {
-		return -1
-	}
-	return idx
-}
-
-func demote[T any](from segment[T], to *segment[T]) {
-	for r, w := 0, 0; r < len(from.elements); r++ {
-		if from.deleted[r] {
-			continue
-		}
-		to.elements[w] = from.elements[r]
-		to.deleted[w] = false
-		w++
-	}
-	to.deletedNum = 0 // Since demote is called only when we have exact len(to.elements) undeleted elements in from.
-	to.minNonDeletedIdx = 0
-}
-
-func calculateWhiteSegmentsQuantity(capacity int) int {
-	switch {
-	case capacity == 0:
-		return 2 // to avoid every time checking if capacity is 0
-	case capacity < 0:
-		panic("negative capacity")
-	default:
-		return int(math.Log2(float64(capacity)) + 1) // TODO: rewrite without using math?
-	}
-}
-
-func createSegments[T any](num int) []segment[T] {
-	segments := make([]segment[T], num)
-	for i := 0; i < num; i++ {
-		segments[i] = segment[T]{
-			elements:         make([]T, 1<<i),
-			deleted:          make([]bool, 1<<i),
-			deletedNum:       0,
-			minNonDeletedIdx: 0,
-		}
-	}
-	return segments
 }
