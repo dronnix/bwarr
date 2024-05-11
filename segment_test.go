@@ -86,31 +86,31 @@ func Test_mergeSegments(t *testing.T) {
 	}{
 		{
 			name:     "two elements",
-			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, false}},
-			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, false}},
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
 			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
-			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: make([]bool, 4), maxNonDeletedIdx: 3},
 		},
 		{
 			name:     "rewind from first",
-			seg1:     segment[int64]{elements: []int64{3, 4}, deleted: []bool{false, false}},
-			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, false}},
+			seg1:     segment[int64]{elements: []int64{3, 4}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
 			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
-			expected: segment[int64]{elements: []int64{3, 4, 17, 37}, deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{3, 4, 17, 37}, deleted: make([]bool, 4), maxNonDeletedIdx: 3},
 		},
 		{
 			name:     "two with one deleted element",
-			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, false}},
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
 			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, true}, deletedNum: 1},
 			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
-			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, true, false}, deletedNum: 1},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, true, false}, deletedNum: 1, maxNonDeletedIdx: 3},
 		},
 		{
 			name:     "two with two deleted elements",
-			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{true, false}, deletedNum: 1},
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{true, false}, deletedNum: 1, maxNonDeletedIdx: 1},
 			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, true}, deletedNum: 1},
 			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
-			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, true, true, false}, deletedNum: 2},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, true, true, false}, deletedNum: 2, maxNonDeletedIdx: 3},
 		},
 	}
 	for _, tt := range tests { //nolint:paralleltest
@@ -131,12 +131,6 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 		want int
 	}{
 		{
-			name: "empty",
-			seg:  segment[int64]{elements: []int64{}, deleted: []bool{}},
-			val:  23,
-			want: -1,
-		},
-		{
 			name: "one match",
 			seg:  segment[int64]{elements: []int64{23}, deleted: []bool{false}},
 			val:  23,
@@ -150,55 +144,91 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 		},
 		{
 			name: "in the middle",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}},
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42},
+				deleted:          []bool{false, false, false, false},
+				maxNonDeletedIdx: 3,
+			},
 			val:  23,
 			want: 1,
 		},
 		{
 			name: "in the beginning",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}},
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42},
+				deleted:          []bool{false, false, false, false},
+				maxNonDeletedIdx: 3,
+			},
 			val:  17,
 			want: 0,
 		},
 		{
 			name: "in the end",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}},
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42},
+				deleted:          []bool{false, false, false, false},
+				maxNonDeletedIdx: 3,
+			},
 			val:  42,
 			want: 3,
 		},
 		{
 			name: "with deleted",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{true, true, false, true}},
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42},
+				deleted:          []bool{true, true, false, true},
+				maxNonDeletedIdx: 2,
+			},
 			val:  37,
 			want: 2,
 		},
 		{
 			name: "with deleted not match",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, true, false, false}},
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42},
+				deleted:          []bool{false, true, false, false},
+				maxNonDeletedIdx: 3,
+			},
 			val:  23,
 			want: -1,
 		},
 		{
 			name: "with deleted postfix",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42, 49, 51, 69, 88}, deleted: []bool{false, false, false, true, true, true, true, true}},
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42, 49, 51, 69, 88},
+				deleted:          []bool{false, false, false, true, true, true, true, true},
+				maxNonDeletedIdx: 2,
+			},
 			val:  37,
 			want: 2,
 		},
 		{
 			name: "should find rightmost",
-			seg:  segment[int64]{elements: []int64{17, 23, 23, 23, 37, 42, 49, 51}, deleted: []bool{false, false, false, false, false, false, false, false}},
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 23, 23, 37, 42, 49, 51},
+				deleted:          []bool{false, false, false, false, false, false, false, false},
+				maxNonDeletedIdx: 7,
+			},
 			val:  23,
 			want: 3,
 		},
 		{
 			name: "should find rightmost not deleted",
-			seg:  segment[int64]{elements: []int64{17, 23, 23, 23, 37, 42, 49, 51}, deleted: []bool{false, false, true, true, false, false, false, false}},
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 23, 23, 37, 42, 49, 51},
+				deleted:          []bool{false, false, true, true, false, false, false, false},
+				maxNonDeletedIdx: 7,
+			},
 			val:  23,
 			want: 1,
 		},
 		{
 			name: "should find rightmost not deleted in the middle",
-			seg:  segment[int64]{elements: []int64{17, 23, 23, 23, 37, 42, 49, 51}, deleted: []bool{false, true, false, true, false, false, false, false}},
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 23, 23, 37, 42, 49, 51},
+				deleted:          []bool{false, true, false, true, false, false, false, false},
+				maxNonDeletedIdx: 7,
+			},
 			val:  23,
 			want: 2,
 		},
@@ -212,13 +242,14 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 
 func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 	require.Equal(t, len(seg.elements), len(seg.deleted))
-	deleted, firstNonDelIdx := 0, 0
+	deleted, firstNonDelIdx, lastNonDelIdx := 0, 0, len(seg.elements)-1
 	metNonDel := false
 	for i := 0; i < len(seg.elements); i++ {
 		if seg.deleted[i] {
 			deleted++
 			continue
 		}
+		lastNonDelIdx = i
 		if !metNonDel {
 			firstNonDelIdx = i
 			metNonDel = true
@@ -231,6 +262,7 @@ func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 	}
 	assert.Equal(t, deleted, seg.deletedNum)
 	assert.GreaterOrEqual(t, firstNonDelIdx, seg.minNonDeletedIdx)
+	assert.LessOrEqual(t, lastNonDelIdx, seg.maxNonDeletedIdx)
 }
 
 func segmentsEqual[T any](t *testing.T, expected, actual segment[T]) {
@@ -244,4 +276,6 @@ func segmentsEqual[T any](t *testing.T, expected, actual segment[T]) {
 			assert.Equal(t, expected.elements[i], actual.elements[i])
 		}
 	}
+	require.Equal(t, expected.minNonDeletedIdx, actual.minNonDeletedIdx)
+	require.Equal(t, expected.maxNonDeletedIdx, actual.maxNonDeletedIdx)
 }

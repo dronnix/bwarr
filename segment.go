@@ -7,16 +7,19 @@ type segment[T any] struct {
 	deleted          []bool // Stores whether i-th element is deleted.
 	deletedNum       int    // Number of deleted elements in the segment.
 	minNonDeletedIdx int    // Index of the first non-deleted element in the segment.
+	maxNonDeletedIdx int    // Index of the last non-deleted element in the segment.
 }
 
 func createSegments[T any](num int) []segment[T] {
 	segments := make([]segment[T], num)
 	for i := 0; i < num; i++ {
+		l := 1 << i
 		segments[i] = segment[T]{
-			elements:         make([]T, 1<<i),
-			deleted:          make([]bool, 1<<i),
+			elements:         make([]T, l),
+			deleted:          make([]bool, l),
 			deletedNum:       0,
 			minNonDeletedIdx: 0,
+			maxNonDeletedIdx: l - 1,
 		}
 	}
 	return segments
@@ -43,7 +46,7 @@ func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment
 	copy(result.deleted[k:], seg2.deleted[j:])
 
 	result.deletedNum = seg1.deletedNum + seg2.deletedNum
-	result.minNonDeletedIdx = 0
+	result.minNonDeletedIdx, result.maxNonDeletedIdx = 0, len(result.elements)-1
 }
 
 func demoteSegment[T any](from segment[T], to *segment[T]) {
@@ -56,11 +59,11 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 		w++
 	}
 	to.deletedNum = 0 // Since demoteSegment is called only when we have exact len(to.elements) undeleted elements in from.
-	to.minNonDeletedIdx = 0
+	to.minNonDeletedIdx, to.maxNonDeletedIdx = 0, len(to.elements)-1
 }
 
 func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
-	b, e := uint64(s.minNonDeletedIdx), uint64(len(s.elements))
+	b, e := uint64(s.minNonDeletedIdx), uint64(s.maxNonDeletedIdx+1)
 	elems := s.elements
 	del := s.deleted
 	for b < e {
@@ -98,6 +101,16 @@ func (s *segment[T]) minNonDeletedIndex() (index int) {
 	for i := s.minNonDeletedIdx; i < len(s.deleted); i++ {
 		if !s.deleted[i] {
 			s.minNonDeletedIdx = i
+			return i
+		}
+	}
+	return -1
+}
+
+func (s *segment[T]) maxNonDeletedIndex() (index int) {
+	for i := s.maxNonDeletedIdx; i >= 0; i-- {
+		if !s.deleted[i] {
+			s.maxNonDeletedIdx = i
 			return i
 		}
 	}
