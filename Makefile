@@ -1,10 +1,10 @@
 all: test lint bench
 
 test:
-	go test ./...
+	go test -count 1 ./...
 
 lint:
-	golangci-lint run
+	golangci-lint run -c qa/.golangci.yml
 
 coverage:
 	go test -v ./... -coverprofile qa/cover.tmp
