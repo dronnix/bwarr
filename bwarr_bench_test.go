@@ -87,6 +87,20 @@ func BenchmarkQA_Min(b *testing.B) {
 	}
 }
 
+func BenchmarkQA_Max(b *testing.B) {
+	bwa := New(int64Cmp, elemsOnStart)
+
+	for range elemsOnStart {
+		bwa.Insert(rand.Int63())
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.Max()
+	}
+}
+
 func BenchmarkQA_Delete(b *testing.B) {
 	bwa := New(int64Cmp, elemsOnStart+b.N)
 	for range elemsOnStart {

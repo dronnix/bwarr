@@ -221,6 +221,54 @@ func TestBWArr_Min(t *testing.T) {
 	}
 }
 
+func TestBWArr_Max(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		elemsToAdd []int64
+		want       int64
+		found      bool
+	}{
+		{
+			name:       "empty",
+			elemsToAdd: []int64{},
+			want:       0,
+			found:      false,
+		},
+		{
+			name:       "one",
+			elemsToAdd: []int64{23},
+			want:       23,
+			found:      true,
+		},
+		{
+			name:       "two",
+			elemsToAdd: []int64{42, 23},
+			want:       42,
+			found:      true,
+		},
+		{
+			name:       "61",
+			elemsToAdd: []int64{24, 42, 23, 27, 23, 7, 61},
+			want:       61,
+			found:      true,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(int64Cmp, 0)
+			for _, elem := range tt.elemsToAdd {
+				bwa.Insert(elem)
+			}
+			validateBWArr(t, bwa)
+			elem, found := bwa.Max()
+			validateBWArr(t, bwa)
+			assert.Equal(t, tt.found, found)
+			assert.Equal(t, tt.want, elem)
+		})
+	}
+}
+
 func TestBWArr_MinStability(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -233,7 +281,7 @@ func TestBWArr_MinStability(t *testing.T) {
 			name:       "two",
 			elemsToAdd: []int64{23, 42, 23, 27, 23, 29, 61},
 			segment:    2,
-			index:      2,
+			index:      0,
 		},
 	}
 	for _, tt := range tests { //nolint:paralleltest
@@ -244,8 +292,38 @@ func TestBWArr_MinStability(t *testing.T) {
 			}
 			validateBWArr(t, bwa)
 			seg, ind := bwa.min()
-			assert.Equal(t, 2, seg)
-			assert.Equal(t, 0, ind)
+			assert.Equal(t, tt.segment, seg)
+			assert.Equal(t, tt.index, ind)
+			validateBWArr(t, bwa)
+		})
+	}
+}
+
+func TestBWArr_MaxStability(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name       string
+		elemsToAdd []int64
+		segment    int
+		index      int
+	}{
+		{
+			name:       "two",
+			elemsToAdd: []int64{61, 42, 23, 27, 61, 29, 61},
+			segment:    2,
+			index:      3,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(int64Cmp, 0)
+			for _, elem := range tt.elemsToAdd {
+				bwa.Insert(elem)
+			}
+			validateBWArr(t, bwa)
+			seg, ind := bwa.max()
+			assert.Equal(t, tt.segment, seg)
+			assert.Equal(t, tt.index, ind)
 			validateBWArr(t, bwa)
 		})
 	}
@@ -457,8 +535,9 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 		total:         total,
 	}
 	for i, seg := range segs {
-		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, len(seg))}
-		bwa.blackSegments[i] = segment[int64]{elements: make([]int64, len(seg)), deleted: make([]bool, len(seg))}
+		l := len(seg)
+		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), maxNonDeletedIdx: l - 1}
+		bwa.blackSegments[i] = segment[int64]{elements: make([]int64, l), deleted: make([]bool, l)}
 	}
 	bwa.blackSegments = bwa.blackSegments[:len(bwa.blackSegments)-1]
 	return &bwa
