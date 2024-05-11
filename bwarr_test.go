@@ -221,7 +221,7 @@ func TestBWArr_Min(t *testing.T) {
 	}
 }
 
-func TestBWArr_minStability(t *testing.T) {
+func TestBWArr_MinStability(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name       string
@@ -269,7 +269,7 @@ func TestBWArr_DeleteMin(t *testing.T) {
 	}
 }
 
-func TestBlackWhiteArray_Delete(t *testing.T) {
+func TestBWArr_Delete(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
 		name            string
@@ -341,7 +341,7 @@ func TestBlackWhiteArray_Delete(t *testing.T) {
 	}
 }
 
-func Test_RandomDelete(t *testing.T) {
+func TestBWArr_RandomDelete(t *testing.T) {
 	t.Parallel()
 	rand.Seed(42) //nolint:staticcheck
 	const elements = 63
@@ -364,8 +364,6 @@ func Test_RandomDelete(t *testing.T) {
 		}
 	}
 }
-
-//nolint:exhaustruct
 
 func int64Cmp(a, b int64) int {
 	return int(a - b)
