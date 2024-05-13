@@ -1,7 +1,7 @@
 ### Fast release
-- [ ] Track benchmarks trends, compare with previous commits;
-- [ ] Add benchmarks to CI;
-- [ ] Refactor code: move out segment, it's methods and tests;
+- [X] Track benchmarks trends, compare with previous commits;
+- [X] Add benchmarks to CI;
+- [X] Refactor code: move out segment, it's methods and tests;
 - [ ] Plan further steps;
 
 ### Compare with competitors
@@ -16,17 +16,17 @@
 #### Nearest optimization
 - [X] Implement bitset for segment.
 - [X] Try to do only one comparison for main data, seq scan or chord method for bits. Benchmark it.
-- [ ] For each segment add indexes of leftmost and rightmost non-deleted elements.
+- [X] For each segment add indexes of leftmost and rightmost non-deleted elements.
 - [ ] use copy() in demote and merging methods.
 - [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
 - [ ] Implement special method Init: just split all data to segments and sort it.
 
 #### Lack of functionality
-- [ ] Implement max/min methods.
+- [X] Implement max/min methods.
 - [ ] Implement Range methods.
 
 #### Optimization ideas
-- [ ] Delete unused highest segment (or provide a method).
+- [X] Delete unused highest segment (or provide a method).
 - [ ] Reusable black segment 1/2 of the size of the biggest white segment.
 - [ ] Make compaction experiment: move all deleted elements to the end of the segment.
 - [ ] Combo of previous two: method Compact() that get rid of all deleted elements and keep only used segments.

@@ -461,6 +461,66 @@ func TestBWArr_RandomDelete(t *testing.T) {
 	}
 }
 
+func TestBWArr_Len(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		add  []int64
+		del  []int64
+		want int
+	}{
+		{
+			name: "add one to empty",
+			add:  []int64{23},
+			del:  nil,
+			want: 1,
+		},
+		{
+			name: "add one, del one",
+			add:  []int64{23},
+			del:  []int64{23},
+			want: 0,
+		},
+		{
+			name: "add four, del one",
+			add:  []int64{23, 42, 37, 17},
+			del:  []int64{42},
+			want: 3,
+		},
+		{
+			name: "add four, del two",
+			add:  []int64{23, 42, 37, 17},
+			del:  []int64{42, 23},
+			want: 2,
+		},
+		{
+			name: "add four, del three",
+			add:  []int64{23, 42, 37, 17},
+			del:  []int64{42, 23, 17},
+			want: 1,
+		},
+		{
+			name: "add four, del all",
+			add:  []int64{23, 42, 37, 17},
+			del:  []int64{42, 23, 17, 37},
+			want: 0,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(int64Cmp, 0)
+			for _, elem := range tt.add {
+				bwa.Insert(elem)
+			}
+			for _, elem := range tt.del {
+				bwa.Delete(elem)
+			}
+			assert.Equal(t, tt.want, bwa.Len())
+		})
+	}
+
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }

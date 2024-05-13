@@ -95,7 +95,13 @@ func (bwa *BWArr[T]) DeleteMin() (deleted T, found bool) {
 }
 
 func (bwa *BWArr[T]) Len() int {
-	panic("implement me")
+	deleted := 0
+	for i := range bwa.whiteSegments {
+		if bwa.total&(1<<i) != 0 {
+			deleted += bwa.whiteSegments[i].deletedNum
+		}
+	}
+	return bwa.total - deleted
 }
 
 func (bwa *BWArr[T]) Max() (maxElem T, found bool) {
