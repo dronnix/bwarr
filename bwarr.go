@@ -79,7 +79,11 @@ func (bwa *BWArr[T]) Delete(element T) (deleted T, found bool) {
 }
 
 func (bwa *BWArr[T]) DeleteMax() (deleted T, found bool) {
-	panic("implement me")
+	if bwa.total == 0 {
+		return deleted, false
+	}
+	seg, ind := bwa.max()
+	return bwa.del(seg, ind), true
 }
 
 func (bwa *BWArr[T]) DeleteMin() (deleted T, found bool) {

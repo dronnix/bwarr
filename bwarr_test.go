@@ -339,11 +339,29 @@ func TestBWArr_DeleteMin(t *testing.T) {
 	validateBWArr(t, bwa)
 	slices.Sort(elems)
 
-	for i := 0; i < len(elems); i++ {
+	for i := range elems {
 		elem, found := bwa.DeleteMin()
 		validateBWArr(t, bwa)
 		assert.True(t, found)
 		assert.Equal(t, elems[i], elem, "DeleteMin() on %d iteration", i)
+	}
+}
+
+func TestBWArr_DeleteMax(t *testing.T) {
+	t.Parallel()
+	elems := []int64{87, 42, 23, 27, 23, 29, 61, 17, 51, 50, 11, 90}
+	bwa := New(int64Cmp, len(elems))
+	for _, elem := range elems {
+		bwa.Insert(elem)
+	}
+	validateBWArr(t, bwa)
+	slices.SortFunc(elems, func(a, b int64) int { return int(b - a) })
+
+	for i := 0; i < len(elems); i++ {
+		elem, found := bwa.DeleteMax()
+		validateBWArr(t, bwa)
+		assert.True(t, found)
+		assert.Equal(t, elems[i], elem, "DeleteMax() on %d iteration", i)
 	}
 }
 
