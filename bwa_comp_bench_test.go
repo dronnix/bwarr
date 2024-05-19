@@ -168,7 +168,7 @@ func BenchmarkBTree_DeleteMin(b *testing.B) {
 }
 
 func createGenericBTree() *btree.BTreeG[int64] {
-	const degree = 4
+	const degree = 32
 	return btree.NewG(degree, func(a, b int64) bool {
 		return a < b
 	})

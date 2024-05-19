@@ -122,11 +122,28 @@ func (bwa *BWArr[T]) Min() (minElem T, found bool) {
 }
 
 func (bwa *BWArr[T]) Clear(dropSegments bool) {
-	panic("implement me")
+	bwa.total = 0
+	if dropSegments {
+		// TODO: drop all segments after introducing a smart getter.
+		bwa.whiteSegments = bwa.whiteSegments[:2]
+		bwa.blackSegments = bwa.blackSegments[:1]
+	}
 }
 
 func (bwa *BWArr[T]) Clone() *BWArr[T] {
-	panic("implement me")
+	// TODO: Call compaction after it will be implemented.
+	newBWA := &BWArr[T]{
+		blackSegments: make([]segment[T], len(bwa.blackSegments)),
+		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
+		total:         bwa.total,
+		cmp:           bwa.cmp,
+	}
+
+	newBWA.blackSegments = createSegments[T](len(bwa.blackSegments))
+	for i := range bwa.whiteSegments {
+		newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
+	}
+	return newBWA
 }
 
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {

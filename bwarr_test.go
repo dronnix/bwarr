@@ -521,6 +521,52 @@ func TestBWArr_Len(t *testing.T) {
 
 }
 
+func TestBWArr_Clear(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	for i := range 15 {
+		bwa.Insert(int64(i))
+	}
+	validateBWArr(t, bwa)
+
+	bwa.Clear(true)
+	validateBWArr(t, bwa)
+	assert.Equal(t, 0, bwa.Len())
+	assert.Equal(t, 0, bwa.total)
+	assert.Len(t, bwa.whiteSegments, 2)
+	assert.Len(t, bwa.blackSegments, 1)
+
+	for i := range 15 {
+		bwa.Insert(int64(i))
+	}
+	validateBWArr(t, bwa)
+}
+
+func TestBWArr_Clone(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	for i := range 15 {
+		bwa.Insert(int64(i))
+	}
+	bwa.Delete(3)
+	bwa.Delete(11)
+	validateBWArr(t, bwa)
+
+	newBwa := bwa.Clone()
+	validateBWArr(t, newBwa)
+	bwaEqual(t, bwa, newBwa)
+
+	newBwa.Delete(5)
+	newBwa.Delete(6)
+	newBwa.Delete(7)
+	validateBWArr(t, newBwa)
+
+	for i := range 7 {
+		newBwa.Insert(int64(i))
+	}
+	validateBWArr(t, newBwa)
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }

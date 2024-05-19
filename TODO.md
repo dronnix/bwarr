@@ -2,6 +2,7 @@
 - [X] Track benchmarks trends, compare with previous commits;
 - [X] Add benchmarks to CI;
 - [X] Refactor code: move out segment, it's methods and tests;
+- [ ] Add iterators;
 - [ ] Plan further steps;
 
 ### Compare with competitors

@@ -117,6 +117,19 @@ func (s *segment[T]) maxNonDeletedIndex() (index int) {
 	return -1
 }
 
+func (s *segment[T]) deepCopy() segment[T] {
+	newSeg := segment[T]{
+		elements:         make([]T, len(s.elements)),
+		deleted:          make([]bool, len(s.deleted)),
+		deletedNum:       s.deletedNum,
+		minNonDeletedIdx: s.minNonDeletedIdx,
+		maxNonDeletedIdx: s.maxNonDeletedIdx,
+	}
+	copy(newSeg.elements, s.elements)
+	copy(newSeg.deleted, s.deleted)
+	return newSeg
+}
+
 func calculateWhiteSegmentsQuantity(capacity int) int {
 	switch {
 	case capacity == 0:
