@@ -117,6 +117,16 @@ func (s *segment[T]) maxNonDeletedIndex() (index int) {
 	return -1
 }
 
+func (s *segment[T]) nextNonDeletedAfter(index int) int {
+	l := len(s.deleted)
+	for i := index + 1; i < l; i++ {
+		if !s.deleted[i] {
+			return i
+		}
+	}
+	return l
+}
+
 func (s *segment[T]) deepCopy() segment[T] {
 	newSeg := segment[T]{
 		elements:         make([]T, len(s.elements)),

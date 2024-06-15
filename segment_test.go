@@ -240,6 +240,61 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 	}
 }
 
+func Test_segment_nextNonDeletedAfter(t *testing.T) {
+	t.Parallel()
+	seg := segment[int64]{ // nolint:exhaustruct
+		elements:         []int64{17, 23, 23, 23, 37, 42, 49, 51},
+		deleted:          []bool{false, true, false, true, false, false, false, false},
+		maxNonDeletedIdx: 7,
+	}
+	tests := []struct {
+		name string
+		idx  int
+		want int
+	}{
+		{
+			name: "zero",
+			idx:  -1,
+			want: 0,
+		},
+		{
+			name: "zero to second",
+			idx:  0,
+			want: 2,
+		},
+		{
+			name: "first to second",
+			idx:  1,
+			want: 2,
+		},
+		{
+			name: "second to forth",
+			idx:  2,
+			want: 4,
+		},
+		{
+			name: "third to forth",
+			idx:  3,
+			want: 4,
+		},
+		{
+			name: "the very last",
+			idx:  7,
+			want: 8,
+		},
+		{
+			name: "after the very last",
+			idx:  8,
+			want: 8,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, seg.nextNonDeletedAfter(tt.idx))
+		})
+	}
+}
+
 func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 	require.Equal(t, len(seg.elements), len(seg.deleted))
 	deleted, firstNonDelIdx, lastNonDelIdx := 0, 0, len(seg.elements)-1
