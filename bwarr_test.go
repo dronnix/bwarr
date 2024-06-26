@@ -3,6 +3,7 @@ package bwarr
 import (
 	"math/rand"
 	"slices"
+	"sort"
 	"strings"
 	"testing"
 
@@ -565,6 +566,44 @@ func TestBWArr_Clone(t *testing.T) {
 		newBwa.Insert(int64(i))
 	}
 	validateBWArr(t, newBwa)
+}
+
+func TestBWArr_Ascend(t *testing.T) {
+	t.Parallel()
+	type testCase struct {
+		name    string
+		initSeq []int64
+	}
+	tests := []testCase{
+		{name: "empty", initSeq: []int64{}},
+		{name: "one", initSeq: []int64{1}},
+		{name: "two", initSeq: []int64{11, 7}},
+		{name: "three", initSeq: []int64{11, 7, 13}},
+		{name: "four", initSeq: []int64{11, 7, 17, 13}},
+		{name: "five", initSeq: []int64{11, 7, 17, 13, 19, 7}},
+		{name: "six", initSeq: []int64{11, 7, 17, 13, 19, 7, 4}},
+		{name: "seven", initSeq: []int64{23, 7, 17, 13, 19, 7, 4, 5}},
+		{name: "eight", initSeq: []int64{23, 7, 42, 13, 19, 7, 4, 5, 3}},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(int64Cmp, len(tt.initSeq))
+			for _, e := range tt.initSeq {
+				bwa.Insert(e)
+			}
+			expected := make([]int64, len(tt.initSeq))
+			copy(expected, tt.initSeq)
+			sort.Slice(expected, func(i, j int) bool { return expected[i] < expected[j] })
+
+			got := make([]int64, 0, len(tt.initSeq))
+			iter := func(e int64) bool {
+				got = append(got, e)
+				return true
+			}
+			bwa.Ascend(iter)
+			assert.Equal(t, expected, got)
+		})
+	}
 }
 
 func int64Cmp(a, b int64) int {

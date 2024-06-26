@@ -149,7 +149,12 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 }
 
 func (bwa *BWArr[T]) Ascend(iterator IteratorFunc[T]) {
-	panic("not implemented")
+	iter := createIterator(bwa)
+	for val, ok := iter.next(); ok; val, ok = iter.next() {
+		if !iterator(*val) {
+			break
+		}
+	}
 }
 
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
