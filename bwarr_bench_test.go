@@ -155,6 +155,26 @@ func BenchmarkQA_DeleteMax(b *testing.B) {
 	}
 }
 
+func Benchmark_Ascend(b *testing.B) {
+	const elems = 128*1024 - 1
+	bwa := New(int64Cmp, elems)
+	for range elems {
+		bwa.Insert(rand.Int63())
+	}
+
+	s := int64(0)
+	iter := func(x int64) bool {
+		s += x
+		return true
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.Ascend(iter)
+	}
+}
+
 func benchmarkAppend(b *testing.B, elemsOnStart, capacity int) {
 	bwa := New(int64Cmp, capacity)
 
