@@ -1,9 +1,12 @@
 package bwarr
 
+import (
+	"slices"
+)
+
 type iterator[T any] struct {
-	segIters   []segmentIterator[T]
-	curValPtrs []*T
-	cmp        CmpFunc[T]
+	segIters []*segmentIterator[T]
+	cmp      CmpFunc[T]
 }
 
 type segmentIterator[T any] struct {
@@ -11,11 +14,14 @@ type segmentIterator[T any] struct {
 	index int
 }
 
+func (t *segmentIterator[T]) curVal() (val *T, last bool) {
+	return &t.seg.elements[t.index], t.index == len(t.seg.elements)-1
+}
+
 func createIterator[T any](bwa *BWArr[T]) iterator[T] {
 	iter := iterator[T]{
-		segIters:   make([]segmentIterator[T], 0, len(bwa.whiteSegments)),
-		curValPtrs: make([]*T, 0, len(bwa.whiteSegments)),
-		cmp:        bwa.cmp,
+		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
+		cmp:      bwa.cmp,
 	}
 
 	for i := range bwa.whiteSegments {
@@ -23,17 +29,19 @@ func createIterator[T any](bwa *BWArr[T]) iterator[T] {
 			continue
 		}
 		idx := bwa.whiteSegments[i].minNonDeletedIndex()
-
-		iter.segIters = append(iter.segIters, segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i]})
-		iter.curValPtrs = append(iter.curValPtrs, &bwa.whiteSegments[i].elements[idx])
+		iter.segIters = append(iter.segIters, &segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i]})
 	}
 
-	// TODO: uncomment this after writing benchmarks to compare find min ws sorted.
-	//sort.Slice(iter.curValPtrs, func(i, j int) bool {
-	//	return bwa.cmp(*iter.curValPtrs[i], *iter.curValPtrs[j]) < 0
-	//})
+	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
+		return iter.cmp(s1.seg.elements[s1.index], s2.seg.elements[s2.index])
+	})
 
 	return iter
+}
+
+func (iter *iterator[T]) cmpSegIters(i, j int) int {
+	s1, s2 := iter.segIters[i], iter.segIters[j]
+	return iter.cmp(s1.seg.elements[s1.index], s2.seg.elements[s2.index])
 }
 
 func (iter *iterator[T]) next() (*T, bool) {
@@ -41,25 +49,32 @@ func (iter *iterator[T]) next() (*T, bool) {
 		return nil, false
 	}
 
-	minIdx := len(iter.segIters) - 1
-	for i := len(iter.segIters) - 2; i >= 0; i-- {
-		if iter.cmp(*iter.curValPtrs[minIdx], *iter.curValPtrs[i]) > 0 {
-			minIdx = i
-		}
+	res, last := iter.segIters[0].curVal()
+	if last {
+		iter.segIters = iter.segIters[1:]
+		return res, true
 	}
-	res := iter.curValPtrs[minIdx]
+	iter.segIters[0].index++
 
-	if iter.segIters[minIdx].index < len(iter.segIters[minIdx].seg.elements)-1 {
-		iter.segIters[minIdx].index++
-		idx := iter.segIters[minIdx].index
-		iter.curValPtrs[minIdx] = &iter.segIters[minIdx].seg.elements[idx]
+	if len(iter.segIters) == 1 {
 		return res, true
 	}
 
-	// Segment with the minimum value has been fully iterated:
-	copy(iter.segIters[minIdx:], iter.segIters[minIdx+1:])
-	iter.segIters = iter.segIters[:len(iter.segIters)-1]
-	copy(iter.curValPtrs[minIdx:], iter.curValPtrs[minIdx+1:])
-	iter.curValPtrs = iter.curValPtrs[:len(iter.curValPtrs)-1]
+	if iter.cmpSegIters(0, 1) <= 0 {
+		return res, true
+	}
+
+	insPos := 1
+	for i := 2; i < len(iter.segIters); i++ {
+		if iter.cmpSegIters(0, i) > 0 {
+			insPos = i
+			break
+		}
+	}
+
+	v := iter.segIters[0]
+	copy(iter.segIters, iter.segIters[1:insPos+1])
+	iter.segIters[insPos] = v
+
 	return res, true
 }

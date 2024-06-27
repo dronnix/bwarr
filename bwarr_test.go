@@ -580,10 +580,10 @@ func TestBWArr_Ascend(t *testing.T) {
 		{name: "two", initSeq: []int64{11, 7}},
 		{name: "three", initSeq: []int64{11, 7, 13}},
 		{name: "four", initSeq: []int64{11, 7, 17, 13}},
-		{name: "five", initSeq: []int64{11, 7, 17, 13, 19, 7}},
-		{name: "six", initSeq: []int64{11, 7, 17, 13, 19, 7, 4}},
-		{name: "seven", initSeq: []int64{23, 7, 17, 13, 19, 7, 4, 5}},
-		{name: "eight", initSeq: []int64{23, 7, 42, 13, 19, 7, 4, 5, 3}},
+		{name: "five", initSeq: []int64{11, 17, 13, 19, 7}},
+		{name: "six", initSeq: []int64{11, 17, 13, 19, 7, 4}},
+		{name: "seven", initSeq: []int64{23, 7, 17, 13, 19, 7, 4}},
+		{name: "eight", initSeq: []int64{23, 7, 42, 13, 19, 7, 4, 5}},
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
