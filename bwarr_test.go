@@ -606,6 +606,24 @@ func TestBWArr_Ascend(t *testing.T) {
 	}
 }
 
+func TestBWArr_AscendRandom(t *testing.T) {
+	t.Parallel()
+	rand.Seed(2342) //nolint:staticcheck
+	const elements = 1023
+	bwa := New(int64Cmp, elements)
+	for i := 0; i < elements; i++ {
+		bwa.Insert(int64(rand.Intn(100)))
+	}
+
+	prev := int64(0)
+	iter := func(e int64) bool {
+		assert.GreaterOrEqual(t, e, prev)
+		prev = e
+		return true
+	}
+	bwa.Ascend(iter)
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }

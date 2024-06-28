@@ -60,21 +60,20 @@ func (iter *iterator[T]) next() (*T, bool) {
 		return res, true
 	}
 
-	if iter.cmpSegIters(0, 1) <= 0 {
-		return res, true
-	}
-
-	insPos := 1
-	for i := 2; i < len(iter.segIters); i++ {
-		if iter.cmpSegIters(0, i) > 0 {
-			insPos = i
+	insPos := len(iter.segIters) - 1
+	for i := 1; i < len(iter.segIters); i++ {
+		if iter.cmpSegIters(0, i) <= 0 {
+			insPos = i - 1
 			break
 		}
 	}
 
+	toCopy := iter.segIters[1 : insPos+1]
+	if len(toCopy) == 0 {
+		return res, true
+	}
 	v := iter.segIters[0]
-	copy(iter.segIters, iter.segIters[1:insPos+1])
+	copy(iter.segIters, toCopy)
 	iter.segIters[insPos] = v
-
 	return res, true
 }
