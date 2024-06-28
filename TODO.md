@@ -1,3 +1,7 @@
+### Very next
+- [ ] Skip deleted elements during iteration;
+- [ ] Investigate 20 allocations in the benchmark;
+
 ### Fast release
 - [X] Track benchmarks trends, compare with previous commits;
 - [X] Add benchmarks to CI;
