@@ -624,6 +624,31 @@ func TestBWArr_AscendRandom(t *testing.T) {
 	bwa.Ascend(iter)
 }
 
+func TestBWArr_AscendWithDeleted(t *testing.T) {
+	t.Parallel()
+	const elemsNum, toDel = 1023, 241
+	elems := make([]int64, elemsNum)
+	for i := range elems {
+		elems[i] = int64(i)
+	}
+	rand.Shuffle(len(elems), func(i, j int) { elems[i], elems[j] = elems[j], elems[i] })
+
+	bwa := New(int64Cmp, elemsNum)
+	for _, v := range elems {
+		bwa.Insert(v)
+	}
+	rand.Shuffle(len(elems), func(i, j int) { elems[i], elems[j] = elems[j], elems[i] })
+	for i := 0; i < toDel; i++ {
+		bwa.Delete(elems[i])
+	}
+
+	iter := func(e int64) bool {
+		assert.GreaterOrEqual(t, slices.Index(elems[toDel:], e), 0)
+		return true
+	}
+	bwa.Ascend(iter)
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }

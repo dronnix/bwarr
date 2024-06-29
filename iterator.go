@@ -15,7 +15,7 @@ type segmentIterator[T any] struct {
 }
 
 func (t *segmentIterator[T]) curVal() (val *T, last bool) {
-	return &t.seg.elements[t.index], t.index == len(t.seg.elements)-1
+	return &t.seg.elements[t.index], t.index >= t.seg.maxNonDeletedIdx
 }
 
 func createIterator[T any](bwa *BWArr[T]) iterator[T] {
@@ -24,12 +24,14 @@ func createIterator[T any](bwa *BWArr[T]) iterator[T] {
 		cmp:      bwa.cmp,
 	}
 
+	si := make([]segmentIterator[T], len(bwa.whiteSegments))
 	for i := range bwa.whiteSegments {
 		if bwa.total&(1<<i) == 0 {
 			continue
 		}
 		idx := bwa.whiteSegments[i].minNonDeletedIndex()
-		iter.segIters = append(iter.segIters, &segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i]})
+		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i]}
+		iter.segIters = append(iter.segIters, &si[i])
 	}
 
 	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
@@ -54,7 +56,7 @@ func (iter *iterator[T]) next() (*T, bool) {
 		iter.segIters = iter.segIters[1:]
 		return res, true
 	}
-	iter.segIters[0].index++
+	iter.segIters[0].index = iter.segIters[0].seg.nextNonDeletedAfter(iter.segIters[0].index)
 
 	if len(iter.segIters) == 1 {
 		return res, true
@@ -67,13 +69,12 @@ func (iter *iterator[T]) next() (*T, bool) {
 			break
 		}
 	}
-
-	toCopy := iter.segIters[1 : insPos+1]
-	if len(toCopy) == 0 {
+	if insPos == 0 {
 		return res, true
 	}
+
 	v := iter.segIters[0]
-	copy(iter.segIters, toCopy)
+	copy(iter.segIters, iter.segIters[1:insPos+1])
 	iter.segIters[insPos] = v
 	return res, true
 }

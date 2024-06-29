@@ -167,7 +167,7 @@ func BenchmarkBTree_DeleteMin(b *testing.B) {
 	}
 }
 
-func BenchmarkQABTree_Ascend(b *testing.B) {
+func BenchmarkBTree_Ascend(b *testing.B) {
 	const elems = 128*1024 - 1
 	bt := createGenericBTree()
 	for range elems {

@@ -1,6 +1,8 @@
 ### Very next
-- [ ] Skip deleted elements during iteration;
-- [ ] Investigate 20 allocations in the benchmark;
+- [X] Investigate 20 allocations in the benchmark;
+- [X] Skip deleted elements during iteration;
+- [ ] Make iteration stable in terms of sorting;
+- [ ] Refactor benchmarks to be able to run iterator benchmarks;
 
 ### Fast release
 - [X] Track benchmarks trends, compare with previous commits;
