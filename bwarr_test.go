@@ -649,6 +649,24 @@ func TestBWArr_AscendWithDeleted(t *testing.T) {
 	bwa.Ascend(iter)
 }
 
+func TestBWArr_AscendStability(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+
+	bwa := New(stabValCmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(stabVal{val: rand.Intn(7), seq: i + 1})
+	}
+
+	seqs := make(map[int]int, elemsNum)
+	iter := func(e stabVal) bool {
+		ps := seqs[e.val]
+		assert.Greater(t, e.seq, ps)
+		return true
+	}
+	bwa.Ascend(iter)
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }
@@ -682,6 +700,15 @@ func testStructCmp(a, b testStruct) int {
 		}
 	}
 	return 0
+}
+
+type stabVal struct { // For checking stability
+	val int
+	seq int
+}
+
+func stabValCmp(a, b stabVal) int {
+	return a.val - b.val
 }
 
 func testNewBWArr[T any](t *testing.T, cmp CmpFunc[T]) {
