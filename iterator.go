@@ -14,11 +14,7 @@ type segmentIterator[T any] struct {
 	index int
 }
 
-func (t *segmentIterator[T]) curVal() (val *T, last bool) {
-	return &t.seg.elements[t.index], t.index >= t.seg.maxNonDeletedIndex()
-}
-
-func createIterator[T any](bwa *BWArr[T]) iterator[T] {
+func createAscIteratorBegin[T any](bwa *BWArr[T]) iterator[T] {
 	iter := iterator[T]{
 		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
 		cmp:      bwa.cmp,
@@ -41,9 +37,30 @@ func createIterator[T any](bwa *BWArr[T]) iterator[T] {
 	return iter
 }
 
-func (iter *iterator[T]) cmpSegIters(i, j int) int {
-	s1, s2 := iter.segIters[i], iter.segIters[j]
-	return iter.cmp(s1.seg.elements[s1.index], s2.seg.elements[s2.index])
+func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] {
+	iter := iterator[T]{
+		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
+		cmp:      bwa.cmp,
+	}
+
+	si := make([]segmentIterator[T], len(bwa.whiteSegments))
+	for i := range bwa.whiteSegments {
+		if bwa.total&(1<<i) == 0 {
+			continue
+		}
+		idx := bwa.whiteSegments[i].findRightmostNotDeleted(bwa.cmp, elem)
+		if idx == -1 {
+			idx++
+		}
+		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i]}
+		iter.segIters = append(iter.segIters, &si[i])
+	}
+
+	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
+		return iter.cmp(s1.seg.elements[s1.index], s2.seg.elements[s2.index])
+	})
+
+	return iter
 }
 
 func (iter *iterator[T]) next() (*T, bool) {
@@ -77,4 +94,13 @@ func (iter *iterator[T]) next() (*T, bool) {
 	copy(iter.segIters, iter.segIters[1:insPos+1])
 	iter.segIters[insPos] = v
 	return res, true
+}
+
+func (t *segmentIterator[T]) curVal() (val *T, last bool) {
+	return &t.seg.elements[t.index], t.index >= t.seg.maxNonDeletedIndex()
+}
+
+func (iter *iterator[T]) cmpSegIters(i, j int) int {
+	s1, s2 := iter.segIters[i], iter.segIters[j]
+	return iter.cmp(s1.seg.elements[s1.index], s2.seg.elements[s2.index])
 }

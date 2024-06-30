@@ -149,12 +149,29 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 }
 
 func (bwa *BWArr[T]) Ascend(iterator IteratorFunc[T]) {
-	iter := createIterator(bwa)
+	iter := createAscIteratorBegin(bwa)
 	for val, ok := iter.next(); ok; val, ok = iter.next() {
 		if !iterator(*val) {
 			break
 		}
 	}
+}
+
+func (bwa *BWArr[T]) AscendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
+	iter := createAscIteratorGTOE(bwa, elem)
+	for val, ok := iter.next(); ok; val, ok = iter.next() {
+		if !iterator(*val) {
+			break
+		}
+	}
+}
+
+func (bwa *BWArr[T]) AscendLessThan(elem T, iterator IteratorFunc[T]) {
+	panic("not implemented")
+}
+
+func (bwa *BWArr[T]) AscendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
+	panic("not implemented")
 }
 
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {

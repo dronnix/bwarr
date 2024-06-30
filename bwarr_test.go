@@ -667,6 +667,24 @@ func TestBWArr_AscendStability(t *testing.T) {
 	bwa.Ascend(iter)
 }
 
+func TestBWArr_AscendGreaterOrEqual(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+	bwa := New(int64Cmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(int64(i))
+	}
+	const pivot = 421
+	expected := int64(pivot)
+	iter := func(e int64) bool {
+		assert.Equal(t, expected, e)
+		expected++
+		return true
+	}
+	bwa.AscendGreaterOrEqual(pivot, iter)
+	assert.Equal(t, expected, int64(elemsNum))
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }
