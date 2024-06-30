@@ -15,7 +15,7 @@ type segmentIterator[T any] struct {
 }
 
 func (t *segmentIterator[T]) curVal() (val *T, last bool) {
-	return &t.seg.elements[t.index], t.index >= t.seg.maxNonDeletedIdx
+	return &t.seg.elements[t.index], t.index >= t.seg.maxNonDeletedIndex()
 }
 
 func createIterator[T any](bwa *BWArr[T]) iterator[T] {

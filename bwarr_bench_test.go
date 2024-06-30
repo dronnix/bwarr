@@ -155,7 +155,7 @@ func BenchmarkQA_DeleteMax(b *testing.B) {
 	}
 }
 
-func Benchmark_AscendRandom(b *testing.B) {
+func BenchmarkLongQA_AscendRandom(b *testing.B) {
 	const elems = 128*1024 - 1
 	bwa := New(int64Cmp, elems)
 	for range elems {
@@ -175,7 +175,7 @@ func Benchmark_AscendRandom(b *testing.B) {
 	}
 }
 
-func Benchmark_AscendInc(b *testing.B) {
+func BenchmarkLongQA_AscendInc(b *testing.B) {
 	const elems = 128*1024 - 1
 	bwa := New(int64Cmp, elems)
 	for i := range elems {
@@ -195,7 +195,7 @@ func Benchmark_AscendInc(b *testing.B) {
 	}
 }
 
-func Benchmark_AscendDec(b *testing.B) {
+func BenchmarkLongQA_AscendDec(b *testing.B) {
 	const elems = 128*1024 - 1
 	bwa := New(int64Cmp, elems)
 	for i := range elems {

@@ -1,8 +1,9 @@
 ### Very next
 - [X] Investigate 20 allocations in the benchmark;
 - [X] Skip deleted elements during iteration;
+- [X] Refactor benchmarks to be able to run iterator benchmarks;
+
 - [ ] Make iteration stable in terms of sorting;
-- [ ] Refactor benchmarks to be able to run iterator benchmarks;
 
 ### Fast release
 - [X] Track benchmarks trends, compare with previous commits;
@@ -21,16 +22,18 @@
 - [ ] Add test against skip list.
 
 #### Nearest optimization
+- [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
+- [ ] Implement special method Init: just split all data to segments and sort it.
 - [X] Implement bitset for segment.
 - [X] Try to do only one comparison for main data, seq scan or chord method for bits. Benchmark it.
 - [X] For each segment add indexes of leftmost and rightmost non-deleted elements.
 - [ ] use copy() in demote and merging methods.
-- [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
-- [ ] Implement special method Init: just split all data to segments and sort it.
+
 
 #### Lack of functionality
 - [X] Implement max/min methods.
 - [ ] Implement Range methods.
+- [ ] Implement unordered iterator.
 
 #### Optimization ideas
 - [X] Delete unused highest segment (or provide a method).
