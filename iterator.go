@@ -12,6 +12,7 @@ type iterator[T any] struct {
 type segmentIterator[T any] struct {
 	seg   segment[T]
 	index int
+	end   int
 }
 
 func createAscIteratorBegin[T any](bwa *BWArr[T]) iterator[T] {
@@ -26,7 +27,8 @@ func createAscIteratorBegin[T any](bwa *BWArr[T]) iterator[T] {
 			continue
 		}
 		idx := bwa.whiteSegments[i].minNonDeletedIndex()
-		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i]}
+		end := bwa.whiteSegments[i].maxNonDeletedIndex()
+		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
 		iter.segIters = append(iter.segIters, &si[i])
 	}
 
@@ -52,7 +54,8 @@ func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] {
 		if idx == -1 {
 			idx++
 		}
-		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i]}
+		end := bwa.whiteSegments[i].maxNonDeletedIndex()
+		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
 		iter.segIters = append(iter.segIters, &si[i])
 	}
 
@@ -97,7 +100,7 @@ func (iter *iterator[T]) next() (*T, bool) {
 }
 
 func (t *segmentIterator[T]) curVal() (val *T, last bool) {
-	return &t.seg.elements[t.index], t.index >= t.seg.maxNonDeletedIndex()
+	return &t.seg.elements[t.index], t.index >= t.end
 }
 
 func (iter *iterator[T]) cmpSegIters(i, j int) int {
