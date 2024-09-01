@@ -50,7 +50,7 @@ func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] {
 		if bwa.total&(1<<i) == 0 {
 			continue
 		}
-		idx := bwa.whiteSegments[i].findRightmostNotDeleted(bwa.cmp, elem)
+		idx := bwa.whiteSegments[i].findGTOE(bwa.cmp, elem)
 		if idx < 0 {
 			idx++
 		}
