@@ -717,6 +717,30 @@ func TestBWArr_AscendLessThan(t *testing.T) {
 	assert.Equal(t, expected, int64(pivot))
 }
 
+func TestBWArr_AscendRange(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+	bwa := New(int64Cmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(int64(i))
+	}
+	for i := range elemsNum {
+		if i%2 == 0 {
+			bwa.Delete(int64(i))
+		}
+	}
+
+	const from, to = int64(23), int64(977)
+	expected := from
+	iter := func(e int64) bool {
+		require.Equal(t, expected, e)
+		expected += 2
+		return true
+	}
+	bwa.AscendRange(from, to, iter)
+	assert.Equal(t, expected, to)
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }
