@@ -77,7 +77,7 @@ func createAscIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] {
 		if bwa.total&(1<<i) == 0 {
 			continue
 		}
-		end := bwa.whiteSegments[i].findRightmostNotDeleted(bwa.cmp, elem) - 1
+		end := bwa.whiteSegments[i].findLess(bwa.cmp, elem)
 		if end < 0 {
 			continue
 		}
