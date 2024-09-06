@@ -117,6 +117,24 @@ func (s *segment[T]) findGTOE(cmp CmpFunc[T], val T) int {
 	return s.nextNonDeletedAfter(b - 1)
 }
 
+func (s *segment[T]) findLess(cmp CmpFunc[T], val T) int {
+	elems := s.elements
+	b, e := s.minNonDeletedIdx-1, s.maxNonDeletedIdx
+	for b < e {
+		m := (b+e)>>1 + 1
+		cmpRes := cmp(val, elems[m])
+		if cmpRes > 0 {
+			b = m
+		} else {
+			e = m - 1
+		}
+	}
+	if e > s.maxNonDeletedIdx {
+		return -1
+	}
+	return s.prevNonDeletedBefore(e + 1)
+}
+
 func (s *segment[T]) minNonDeletedIndex() (index int) {
 	for i := s.minNonDeletedIdx; i < len(s.deleted); i++ {
 		if !s.deleted[i] {
@@ -145,6 +163,15 @@ func (s *segment[T]) nextNonDeletedAfter(index int) int {
 		}
 	}
 	return l
+}
+
+func (s *segment[T]) prevNonDeletedBefore(index int) int {
+	for i := index - 1; i >= 0; i-- {
+		if !s.deleted[i] {
+			return i
+		}
+	}
+	return -1
 }
 
 func (s *segment[T]) deepCopy() segment[T] {
