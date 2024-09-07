@@ -215,6 +215,58 @@ func BenchmarkLongQA_AscendDec(b *testing.B) {
 	}
 }
 
+func BenchmarkLongQA_AscendRange(b *testing.B) {
+	const elems = 128*1024 - 1
+	bwa := New(int64Cmp, elems)
+	const from, to = 1000, elems - 1000
+	for i := range elems {
+		bwa.Insert(int64(i + from))
+	}
+
+	s := int64(0)
+	iter := func(x int64) bool {
+		s += x
+		return true
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.AscendRange(int64(from), int64(to), iter)
+	}
+}
+
+func BenchmarkLongQA_AscendWithDelSeries(b *testing.B) {
+	const elems = 128*1024 - 1
+	bwa := New(int64Cmp, elems)
+	toDel := make([]int64, 0, elems/301)
+	seriesEnd := 0
+	for i := range elems {
+		bwa.Insert(int64(i))
+		if i%12345 == 0 {
+			seriesEnd = i + rand.Intn(301)
+		}
+		if i < seriesEnd {
+			toDel = append(toDel, int64(i))
+		}
+	}
+	for i := range toDel {
+		bwa.Delete(toDel[i])
+	}
+
+	s := int64(0)
+	iter := func(x int64) bool {
+		s += x
+		return true
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.Ascend(iter)
+	}
+}
+
 func benchmarkAppend(b *testing.B, elemsOnStart, capacity int) {
 	bwa := New(int64Cmp, capacity)
 
