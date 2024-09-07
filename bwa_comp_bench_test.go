@@ -167,6 +167,26 @@ func BenchmarkBTree_DeleteMin(b *testing.B) {
 	}
 }
 
+func BenchmarkBTree_Ascend(b *testing.B) {
+	const elems = 128*1024 - 1
+	bt := createGenericBTree()
+	for range elems {
+		bt.ReplaceOrInsert(rand.Int63())
+	}
+
+	s := int64(0)
+	iter := func(x int64) bool {
+		s += x
+		return true
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bt.Ascend(iter)
+	}
+}
+
 func createGenericBTree() *btree.BTreeG[int64] {
 	const degree = 32
 	return btree.NewG(degree, func(a, b int64) bool {

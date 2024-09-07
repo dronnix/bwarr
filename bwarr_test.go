@@ -3,6 +3,7 @@ package bwarr
 import (
 	"math/rand"
 	"slices"
+	"sort"
 	"strings"
 	"testing"
 
@@ -567,6 +568,179 @@ func TestBWArr_Clone(t *testing.T) {
 	validateBWArr(t, newBwa)
 }
 
+func TestBWArr_Ascend(t *testing.T) {
+	t.Parallel()
+	type testCase struct {
+		name    string
+		initSeq []int64
+	}
+	tests := []testCase{
+		{name: "empty", initSeq: []int64{}},
+		{name: "one", initSeq: []int64{1}},
+		{name: "two", initSeq: []int64{11, 7}},
+		{name: "three", initSeq: []int64{11, 7, 13}},
+		{name: "four", initSeq: []int64{11, 7, 17, 13}},
+		{name: "five", initSeq: []int64{11, 17, 13, 19, 7}},
+		{name: "six", initSeq: []int64{11, 17, 13, 19, 7, 4}},
+		{name: "seven", initSeq: []int64{23, 7, 17, 13, 19, 7, 4}},
+		{name: "eight", initSeq: []int64{23, 7, 42, 13, 19, 7, 4, 5}},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(int64Cmp, len(tt.initSeq))
+			for _, e := range tt.initSeq {
+				bwa.Insert(e)
+			}
+			expected := make([]int64, len(tt.initSeq))
+			copy(expected, tt.initSeq)
+			sort.Slice(expected, func(i, j int) bool { return expected[i] < expected[j] })
+
+			got := make([]int64, 0, len(tt.initSeq))
+			iter := func(e int64) bool {
+				got = append(got, e)
+				return true
+			}
+			bwa.Ascend(iter)
+			assert.Equal(t, expected, got)
+		})
+	}
+}
+
+func TestBWArr_AscendRandom(t *testing.T) {
+	t.Parallel()
+	rand.Seed(2342) //nolint:staticcheck
+	const elements = 1023
+	bwa := New(int64Cmp, elements)
+	for i := 0; i < elements; i++ {
+		bwa.Insert(int64(rand.Intn(100)))
+	}
+
+	prev := int64(0)
+	iter := func(e int64) bool {
+		assert.GreaterOrEqual(t, e, prev)
+		prev = e
+		return true
+	}
+	bwa.Ascend(iter)
+}
+
+func TestBWArr_AscendWithDeleted(t *testing.T) {
+	t.Parallel()
+	const elemsNum, toDel = 1023, 241
+	elems := make([]int64, elemsNum)
+	for i := range elems {
+		elems[i] = int64(i)
+	}
+	rand.Shuffle(len(elems), func(i, j int) { elems[i], elems[j] = elems[j], elems[i] })
+
+	bwa := New(int64Cmp, elemsNum)
+	for _, v := range elems {
+		bwa.Insert(v)
+	}
+	rand.Shuffle(len(elems), func(i, j int) { elems[i], elems[j] = elems[j], elems[i] })
+	for i := 0; i < toDel; i++ {
+		bwa.Delete(elems[i])
+	}
+
+	iter := func(e int64) bool {
+		assert.GreaterOrEqual(t, slices.Index(elems[toDel:], e), 0)
+		return true
+	}
+	bwa.Ascend(iter)
+}
+
+func TestBWArr_AscendStability(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+
+	bwa := New(stabValCmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(stabVal{val: rand.Intn(7), seq: i + 1})
+	}
+
+	seqs := make(map[int]int, elemsNum)
+	iter := func(e stabVal) bool {
+		ps := seqs[e.val]
+		assert.Greater(t, e.seq, ps)
+		return true
+	}
+	bwa.Ascend(iter)
+}
+
+func TestBWArr_AscendGreaterOrEqual(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+	bwa := New(int64Cmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(int64(i))
+	}
+
+	for i := range elemsNum {
+		if i%2 != 0 {
+			bwa.Delete(int64(i))
+		}
+	}
+
+	const pivot = 422
+	expected := int64(pivot)
+	iter := func(e int64) bool {
+		assert.Equal(t, expected, e)
+		expected += 2
+		return true
+	}
+	bwa.AscendGreaterOrEqual(pivot, iter)
+	assert.Equal(t, expected, int64(elemsNum+1))
+}
+
+func TestBWArr_AscendLessThan(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+	const pivot = 422
+	bwa := New(int64Cmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(int64(i))
+	}
+
+	for i := range elemsNum {
+		if i%2 != 0 {
+			bwa.Delete(int64(i))
+		}
+	}
+
+	expected := int64(0)
+	iter := func(e int64) bool {
+		assert.Equal(t, expected, e)
+		expected += 2
+		return true
+	}
+	bwa.AscendLessThan(pivot, iter)
+	assert.Equal(t, expected, int64(pivot))
+}
+
+func TestBWArr_AscendRange(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+	bwa := New(int64Cmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(int64(i))
+	}
+	for i := range elemsNum {
+		if i%2 == 0 {
+			bwa.Delete(int64(i))
+		}
+	}
+
+	const from, to = int64(23), int64(977)
+	expected := from
+	iter := func(e int64) bool {
+		require.Equal(t, expected, e)
+		expected += 2
+		return true
+	}
+	bwa.AscendRange(from, to, iter)
+	assert.Equal(t, expected, to)
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }
@@ -600,6 +774,15 @@ func testStructCmp(a, b testStruct) int {
 		}
 	}
 	return 0
+}
+
+type stabVal struct { // For checking stability
+	val int
+	seq int
+}
+
+func stabValCmp(a, b stabVal) int {
+	return a.val - b.val
 }
 
 func testNewBWArr[T any](t *testing.T, cmp CmpFunc[T]) {

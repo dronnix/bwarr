@@ -97,6 +97,44 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 	return idx
 }
 
+// returns index of the first element that is greater or equal to val and is not deleted.
+// If all elements are less than val, returns -1.
+func (s *segment[T]) findGTOE(cmp CmpFunc[T], val T) int {
+	elems := s.elements
+	b, e := s.minNonDeletedIdx, s.maxNonDeletedIdx+1
+	for b < e {
+		m := (b + e) >> 1
+		cmpRes := cmp(val, elems[m])
+		if cmpRes <= 0 {
+			e = m
+		} else {
+			b = m + 1
+		}
+	}
+	if b > s.maxNonDeletedIdx {
+		return -1
+	}
+	return s.nextNonDeletedAfter(b - 1)
+}
+
+func (s *segment[T]) findLess(cmp CmpFunc[T], val T) int {
+	elems := s.elements
+	b, e := s.minNonDeletedIdx-1, s.maxNonDeletedIdx
+	for b < e {
+		m := (b+e)>>1 + 1
+		cmpRes := cmp(val, elems[m])
+		if cmpRes > 0 {
+			b = m
+		} else {
+			e = m - 1
+		}
+	}
+	if e > s.maxNonDeletedIdx {
+		return -1
+	}
+	return s.prevNonDeletedBefore(e + 1)
+}
+
 func (s *segment[T]) minNonDeletedIndex() (index int) {
 	for i := s.minNonDeletedIdx; i < len(s.deleted); i++ {
 		if !s.deleted[i] {
@@ -111,6 +149,25 @@ func (s *segment[T]) maxNonDeletedIndex() (index int) {
 	for i := s.maxNonDeletedIdx; i >= 0; i-- {
 		if !s.deleted[i] {
 			s.maxNonDeletedIdx = i
+			return i
+		}
+	}
+	return -1
+}
+
+func (s *segment[T]) nextNonDeletedAfter(index int) int {
+	l := len(s.deleted)
+	for i := index + 1; i < l; i++ {
+		if !s.deleted[i] {
+			return i
+		}
+	}
+	return l
+}
+
+func (s *segment[T]) prevNonDeletedBefore(index int) int {
+	for i := index - 1; i >= 0; i-- {
+		if !s.deleted[i] {
 			return i
 		}
 	}

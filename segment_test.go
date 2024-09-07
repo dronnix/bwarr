@@ -240,6 +240,175 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 	}
 }
 
+//nolint:exhaustruct
+func Test_segment_findGTOE(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		seg  segment[int64]
+		val  int64
+		want int
+	}{
+		{
+			name: "one match",
+			seg:  segment[int64]{elements: []int64{23}, deleted: []bool{false}},
+			val:  23,
+			want: 0,
+		},
+		{
+			name: "one greater",
+			seg:  segment[int64]{elements: []int64{23}, deleted: []bool{false}},
+			val:  11,
+			want: 0,
+		},
+		{
+			name: "first",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}, maxNonDeletedIdx: 3},
+			val:  11,
+			want: 0,
+		},
+		{
+			name: "last",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}, maxNonDeletedIdx: 3},
+			val:  42,
+			want: 3,
+		},
+		{
+			name: "in the middle",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}, maxNonDeletedIdx: 3},
+			val:  30,
+			want: 2,
+		},
+		{
+			name: "in the middle with deleted",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, true, false}, maxNonDeletedIdx: 3},
+			val:  30,
+			want: 3,
+		},
+		{
+			name: "all less",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}},
+			val:  101,
+			want: -1,
+		},
+	}
+
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, tt.seg.findGTOE(int64Cmp, tt.val), "searchInSegment(%v, %v)", tt.seg, tt.val)
+		})
+	}
+}
+
+//nolint:exhaustruct
+func Test_segment_findLess(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		seg  segment[int64]
+		val  int64
+		want int
+	}{
+		{
+			name: "one equal",
+			seg:  segment[int64]{elements: []int64{23}, deleted: []bool{false}},
+			val:  23,
+			want: -1,
+		},
+		{
+			name: "one less",
+			seg:  segment[int64]{elements: []int64{23}, deleted: []bool{false}},
+			val:  42,
+			want: 0,
+		},
+		{
+			name: "first",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}, maxNonDeletedIdx: 3},
+			val:  11,
+			want: -1,
+		},
+		{
+			name: "last",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}, maxNonDeletedIdx: 3},
+			val:  77,
+			want: 3,
+		},
+		{
+			name: "in the middle",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}, maxNonDeletedIdx: 3},
+			val:  30,
+			want: 1,
+		},
+		{
+			name: "in the middle with deleted",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, true, false, false}, maxNonDeletedIdx: 3},
+			val:  30,
+			want: 0,
+		},
+	}
+
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equalf(t, tt.want, tt.seg.findLess(int64Cmp, tt.val), "searchInSegment(%v, %v)", tt.seg, tt.val)
+		})
+	}
+}
+
+func Test_segment_nextNonDeletedAfter(t *testing.T) {
+	t.Parallel()
+	seg := segment[int64]{ // nolint:exhaustruct
+		elements:         []int64{17, 23, 23, 23, 37, 42, 49, 51},
+		deleted:          []bool{false, true, false, true, false, false, false, false},
+		maxNonDeletedIdx: 7,
+	}
+	tests := []struct {
+		name string
+		idx  int
+		want int
+	}{
+		{
+			name: "zero",
+			idx:  -1,
+			want: 0,
+		},
+		{
+			name: "zero to second",
+			idx:  0,
+			want: 2,
+		},
+		{
+			name: "first to second",
+			idx:  1,
+			want: 2,
+		},
+		{
+			name: "second to forth",
+			idx:  2,
+			want: 4,
+		},
+		{
+			name: "third to forth",
+			idx:  3,
+			want: 4,
+		},
+		{
+			name: "the very last",
+			idx:  7,
+			want: 8,
+		},
+		{
+			name: "after the very last",
+			idx:  8,
+			want: 8,
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			assert.Equal(t, tt.want, seg.nextNonDeletedAfter(tt.idx))
+		})
+	}
+}
+
 func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 	require.Equal(t, len(seg.elements), len(seg.deleted))
 	deleted, firstNonDelIdx, lastNonDelIdx := 0, 0, len(seg.elements)-1
