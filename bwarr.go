@@ -9,6 +9,8 @@ type BWArr[T any] struct {
 
 type CmpFunc[T any] func(a, b T) int
 
+type IteratorFunc[T any] func(item T) bool
+
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 	wSegNum := calculateWhiteSegmentsQuantity(capacity)
 	bSegNum := wSegNum - 1
@@ -144,6 +146,42 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 		newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
 	}
 	return newBWA
+}
+
+func (bwa *BWArr[T]) Ascend(iterator IteratorFunc[T]) {
+	iter := createAscIteratorBegin(bwa)
+	for val, ok := iter.next(); ok; val, ok = iter.next() {
+		if !iterator(*val) {
+			break
+		}
+	}
+}
+
+func (bwa *BWArr[T]) AscendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
+	iter := createAscIteratorGTOE(bwa, elem)
+	for val, ok := iter.next(); ok; val, ok = iter.next() {
+		if !iterator(*val) {
+			break
+		}
+	}
+}
+
+func (bwa *BWArr[T]) AscendLessThan(elem T, iterator IteratorFunc[T]) {
+	iter := createAscIteratorLess(bwa, elem)
+	for val, ok := iter.next(); ok; val, ok = iter.next() {
+		if !iterator(*val) {
+			break
+		}
+	}
+}
+
+func (bwa *BWArr[T]) AscendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
+	iter := createAscIteratorFromTo(bwa, greaterOrEqual, lessThan)
+	for val, ok := iter.next(); ok; val, ok = iter.next() {
+		if !iterator(*val) {
+			break
+		}
+	}
 }
 
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {

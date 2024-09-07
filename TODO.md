@@ -1,8 +1,18 @@
+### Very next
+- [X] Investigate 20 allocations in the benchmark;
+- [X] Skip deleted elements during iteration;
+- [X] Refactor benchmarks to be able to run iterator benchmarks;
+- [X] Make iteration stable in terms of sorting;
+- [ ] Add other Ascend methods;
+- [ ] Add backwards iteration;
+- [ ] Implement unordered iterator.
+
 ### Fast release
 - [X] Track benchmarks trends, compare with previous commits;
 - [X] Add benchmarks to CI;
 - [X] Refactor code: move out segment, it's methods and tests;
 - [ ] Add iterators;
+- [ ] Benchmark huge structs;
 - [ ] Plan further steps;
 
 ### Compare with competitors
@@ -15,12 +25,15 @@
 - [ ] Add test against skip list.
 
 #### Nearest optimization
+- [ ] Add pointer-based comparison function;
+- [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
+- [ ] Implement special method Init: just split all data to segments and sort it.
+- [ ] use copy() in demote and merging methods.
 - [X] Implement bitset for segment.
 - [X] Try to do only one comparison for main data, seq scan or chord method for bits. Benchmark it.
 - [X] For each segment add indexes of leftmost and rightmost non-deleted elements.
-- [ ] use copy() in demote and merging methods.
-- [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
-- [ ] Implement special method Init: just split all data to segments and sort it.
+
+
 
 #### Lack of functionality
 - [X] Implement max/min methods.
