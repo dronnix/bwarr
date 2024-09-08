@@ -184,6 +184,27 @@ func (bwa *BWArr[T]) AscendRange(greaterOrEqual, lessThan T, iterator IteratorFu
 	}
 }
 
+func (bwa *BWArr[T]) Descend(iterator IteratorFunc[T]) {
+	iter := createDescIteratorEnd(bwa)
+	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
+		if !iterator(*val) {
+			break
+		}
+	}
+}
+
+func (bwa *BWArr[T]) DescendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
+	panic("not implemented")
+}
+
+func (bwa *BWArr[T]) DescendLessThan(elem T, iterator IteratorFunc[T]) {
+	panic("not implemented")
+}
+
+func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
+	panic("not implemented")
+}
+
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	seg := &bwa.whiteSegments[segNum]
 	deleted = seg.elements[index]
