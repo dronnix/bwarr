@@ -194,7 +194,12 @@ func (bwa *BWArr[T]) Descend(iterator IteratorFunc[T]) {
 }
 
 func (bwa *BWArr[T]) DescendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
-	panic("not implemented")
+	iter := createDescIteratorGTOE(bwa, elem)
+	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
+		if !iterator(*val) {
+			break
+		}
+	}
 }
 
 func (bwa *BWArr[T]) DescendLessThan(elem T, iterator IteratorFunc[T]) {
