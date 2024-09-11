@@ -880,6 +880,30 @@ func TestBWArr_DescendLessThan(t *testing.T) {
 	assert.Equal(t, expected, int64(-1))
 }
 
+func TestBWArr_DescendRange(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+	bwa := New(int64Cmp, elemsNum)
+	for i := 0; i < elemsNum; i++ {
+		bwa.Insert(int64(i))
+	}
+	for i := 0; i < elemsNum; i++ {
+		if i%2 == 0 {
+			bwa.Delete(int64(i))
+		}
+	}
+
+	const from, to = int64(23), int64(977)
+	expected := to - 2
+	iter := func(e int64) bool {
+		require.Equal(t, expected, e)
+		expected -= 2
+		return true
+	}
+	bwa.DescendRange(from, to, iter)
+	assert.Equal(t, expected, from-2)
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }

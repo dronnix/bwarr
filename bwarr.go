@@ -212,7 +212,12 @@ func (bwa *BWArr[T]) DescendLessThan(elem T, iterator IteratorFunc[T]) {
 }
 
 func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
-	panic("not implemented")
+	iter := createDescIteratorFromTo(bwa, greaterOrEqual, lessThan)
+	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
+		if !iterator(*val) {
+			break
+		}
+	}
 }
 
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
