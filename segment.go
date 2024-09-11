@@ -117,6 +117,8 @@ func (s *segment[T]) findGTOE(cmp CmpFunc[T], val T) int {
 	return s.nextNonDeletedAfter(b - 1)
 }
 
+// returns index of the first element that is less than val and is not deleted.
+// If all elements are greater or equal to val, returns -1.
 func (s *segment[T]) findLess(cmp CmpFunc[T], val T) int {
 	elems := s.elements
 	b, e := s.minNonDeletedIdx-1, s.maxNonDeletedIdx

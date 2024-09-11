@@ -175,6 +175,33 @@ func createDescIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint
 	return iter
 }
 
+func createDescIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] {
+	iter := iterator[T]{
+		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
+		cmp:      bwa.cmp,
+	}
+
+	si := make([]segmentIterator[T], len(bwa.whiteSegments))
+	for i := range bwa.whiteSegments {
+		if bwa.total&(1<<i) == 0 {
+			continue
+		}
+		idx := bwa.whiteSegments[i].findLess(bwa.cmp, elem)
+		if idx < 0 {
+			continue
+		}
+		end := bwa.whiteSegments[i].minNonDeletedIdx
+		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
+		iter.segIters = append(iter.segIters, &si[i])
+	}
+
+	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
+		return iter.cmp(s2.seg.elements[s2.index], s1.seg.elements[s1.index])
+	})
+
+	return iter
+}
+
 func (iter *iterator[T]) next() (*T, bool) { //nolint:dupl
 	if len(iter.segIters) == 0 {
 		return nil, false
