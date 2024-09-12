@@ -681,7 +681,7 @@ func TestBWArr_AscendGreaterOrEqual(t *testing.T) {
 		}
 	}
 
-	const pivot = 422
+	const pivot = 780
 	expected := int64(pivot)
 	iter := func(e int64) bool {
 		assert.Equal(t, expected, e)
@@ -695,7 +695,7 @@ func TestBWArr_AscendGreaterOrEqual(t *testing.T) {
 func TestBWArr_AscendLessThan(t *testing.T) {
 	t.Parallel()
 	const elemsNum = 1023
-	const pivot = 422
+	const pivot = 780
 	bwa := New(int64Cmp, elemsNum)
 	for i := range elemsNum {
 		bwa.Insert(int64(i))
@@ -730,7 +730,7 @@ func TestBWArr_AscendRange(t *testing.T) {
 		}
 	}
 
-	const from, to = int64(23), int64(977)
+	const from, to = int64(233), int64(781)
 	expected := from
 	iter := func(e int64) bool {
 		require.Equal(t, expected, e)
@@ -739,6 +739,22 @@ func TestBWArr_AscendRange(t *testing.T) {
 	}
 	bwa.AscendRange(from, to, iter)
 	assert.Equal(t, expected, to)
+}
+
+func TestBWArr_AscendRangeOutOfBounds(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 15
+	bwa := New(int64Cmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(int64(i))
+	}
+
+	const from, to = int64(17), int64(23)
+	iter := func(e int64) bool {
+		t.Fail()
+		return true
+	}
+	bwa.AscendRange(from, to, iter)
 }
 
 func TestBWArr_Descend(t *testing.T) {
@@ -846,11 +862,11 @@ func TestBWArr_DescendGreaterOrEqual(t *testing.T) {
 	t.Parallel()
 	const elemsNum = 1023
 	bwa := New(int64Cmp, elemsNum)
-	for i := 0; i < elemsNum; i++ {
+	for i := 8; i < elemsNum; i++ {
 		bwa.Insert(int64(i))
 	}
 
-	const pivot = 422
+	const pivot = 622
 	expected := int64(elemsNum - 1)
 	iter := func(e int64) bool {
 		assert.Equal(t, expected, e)
@@ -865,11 +881,11 @@ func TestBWArr_DescendLessThan(t *testing.T) {
 	t.Parallel()
 	const elemsNum = 1023
 	bwa := New(int64Cmp, elemsNum)
-	for i := 0; i < elemsNum; i++ {
+	for i := 0; i < elemsNum-8; i++ {
 		bwa.Insert(int64(i))
 	}
 
-	const pivot = 422
+	const pivot = 822
 	expected := int64(pivot - 1)
 	iter := func(e int64) bool {
 		assert.Equal(t, expected, e)
@@ -902,6 +918,22 @@ func TestBWArr_DescendRange(t *testing.T) {
 	}
 	bwa.DescendRange(from, to, iter)
 	assert.Equal(t, expected, from-2)
+}
+
+func TestBWArr_DescendRangeOutOfBounds(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 15
+	bwa := New(int64Cmp, elemsNum)
+	for i := 0; i < elemsNum; i++ {
+		bwa.Insert(int64(i))
+	}
+
+	const from, to = int64(17), int64(23)
+	iter := func(e int64) bool {
+		t.Fail()
+		return true
+	}
+	bwa.DescendRange(from, to, iter)
 }
 
 func int64Cmp(a, b int64) int {

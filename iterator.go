@@ -39,7 +39,7 @@ func createAscIteratorBegin[T any](bwa *BWArr[T]) iterator[T] { //nolint:dupl
 	return iter
 }
 
-func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] {
+func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint:dupl
 	iter := iterator[T]{
 		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
 		cmp:      bwa.cmp,
@@ -52,7 +52,7 @@ func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] {
 		}
 		idx := bwa.whiteSegments[i].findGTOE(bwa.cmp, elem)
 		if idx < 0 {
-			idx++
+			continue
 		}
 		end := bwa.whiteSegments[i].maxNonDeletedIndex()
 		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
@@ -93,7 +93,7 @@ func createAscIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint:
 	return iter
 }
 
-func createAscIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] {
+func createAscIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] { //nolint:dupl
 	iter := iterator[T]{
 		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
 		cmp:      bwa.cmp,
@@ -110,7 +110,7 @@ func createAscIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] {
 		}
 		begin := bwa.whiteSegments[i].findGTOE(bwa.cmp, from)
 		if begin < 0 {
-			begin = 0
+			continue
 		}
 
 		si[i] = segmentIterator[T]{index: begin, seg: bwa.whiteSegments[i], end: end}
@@ -202,7 +202,7 @@ func createDescIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] {
 	return iter
 }
 
-func createDescIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] {
+func createDescIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] { //nolint:dupl
 	iter := iterator[T]{
 		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
 		cmp:      bwa.cmp,
