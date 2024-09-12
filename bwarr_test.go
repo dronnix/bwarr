@@ -936,6 +936,40 @@ func TestBWArr_DescendRangeOutOfBounds(t *testing.T) {
 	bwa.DescendRange(from, to, iter)
 }
 
+func TestBWArr_AscIteratorsShouldStop(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 15
+	bwa := New(int64Cmp, elemsNum)
+	for i := 0; i < elemsNum; i++ {
+		bwa.Insert(int64(i))
+	}
+	iter := func(e int64) bool {
+		require.Equal(t, int64(0), e)
+		return false
+	}
+	bwa.Ascend(iter)
+	bwa.AscendGreaterOrEqual(0, iter)
+	bwa.AscendLessThan(7, iter)
+	bwa.AscendRange(0, 7, iter)
+}
+
+func TestBWArr_DescIteratorsShouldStop(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 15
+	bwa := New(int64Cmp, elemsNum)
+	for i := 0; i < elemsNum; i++ {
+		bwa.Insert(int64(i))
+	}
+	iter := func(e int64) bool {
+		require.Equal(t, int64(elemsNum-1), e)
+		return false
+	}
+	bwa.Descend(iter)
+	bwa.DescendGreaterOrEqual(5, iter)
+	bwa.DescendLessThan(elemsNum, iter)
+	bwa.DescendRange(7, elemsNum, iter)
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }
