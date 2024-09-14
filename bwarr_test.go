@@ -681,7 +681,7 @@ func TestBWArr_AscendGreaterOrEqual(t *testing.T) {
 		}
 	}
 
-	const pivot = 422
+	const pivot = 780
 	expected := int64(pivot)
 	iter := func(e int64) bool {
 		assert.Equal(t, expected, e)
@@ -695,7 +695,7 @@ func TestBWArr_AscendGreaterOrEqual(t *testing.T) {
 func TestBWArr_AscendLessThan(t *testing.T) {
 	t.Parallel()
 	const elemsNum = 1023
-	const pivot = 422
+	const pivot = 780
 	bwa := New(int64Cmp, elemsNum)
 	for i := range elemsNum {
 		bwa.Insert(int64(i))
@@ -730,7 +730,7 @@ func TestBWArr_AscendRange(t *testing.T) {
 		}
 	}
 
-	const from, to = int64(23), int64(977)
+	const from, to = int64(233), int64(781)
 	expected := from
 	iter := func(e int64) bool {
 		require.Equal(t, expected, e)
@@ -739,6 +739,235 @@ func TestBWArr_AscendRange(t *testing.T) {
 	}
 	bwa.AscendRange(from, to, iter)
 	assert.Equal(t, expected, to)
+}
+
+func TestBWArr_AscendRangeOutOfBounds(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 15
+	bwa := New(int64Cmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(int64(i))
+	}
+
+	const from, to = int64(17), int64(23)
+	iter := func(e int64) bool {
+		t.Fail()
+		return true
+	}
+	bwa.AscendRange(from, to, iter)
+}
+
+func TestBWArr_Descend(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name    string
+		initSeq []int64
+	}{
+		{name: "empty", initSeq: []int64{}},
+		{name: "one", initSeq: []int64{1}},
+		{name: "two", initSeq: []int64{11, 7}},
+		{name: "three", initSeq: []int64{11, 7, 13}},
+		{name: "four", initSeq: []int64{11, 7, 13, 5}},
+		{name: "five", initSeq: []int64{11, 7, 13, 5, 9}},
+		{name: "six", initSeq: []int64{11, 7, 13, 5, 9, 3}},
+		{name: "seven", initSeq: []int64{24, 42, 23, 27, 23, 7, 61}},
+		{name: "eight", initSeq: []int64{24, 42, 23, 27, 23, 7, 61, 15}},
+		{name: "nine", initSeq: []int64{24, 42, 23, 27, 23, 7, 61, 15, 19}},
+		{name: "ten", initSeq: []int64{24, 42, 23, 27, 23, 7, 61, 15, 19, 31}},
+		{name: "eleven", initSeq: []int64{24, 42, 23, 27, 23, 7, 61, 15, 19, 31, 29}},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := New(int64Cmp, len(tt.initSeq))
+			for _, e := range tt.initSeq {
+				bwa.Insert(e)
+			}
+			expected := make([]int64, len(tt.initSeq))
+			copy(expected, tt.initSeq)
+			sort.Slice(expected, func(i, j int) bool { return expected[i] > expected[j] })
+
+			got := make([]int64, 0, len(tt.initSeq))
+			iter := func(e int64) bool {
+				got = append(got, e)
+				return true
+			}
+			bwa.Descend(iter)
+			assert.Equal(t, expected, got)
+		})
+	}
+}
+
+func TestBWArr_DescendRandom(t *testing.T) {
+	t.Parallel()
+	rand.Seed(2342) //nolint:staticcheck
+	const elements = 1023
+	bwa := New(int64Cmp, elements)
+	for i := 0; i < elements; i++ {
+		bwa.Insert(int64(rand.Intn(100)))
+	}
+
+	prev := int64(100)
+	iter := func(e int64) bool {
+		assert.LessOrEqual(t, e, prev)
+		prev = e
+		return true
+	}
+	bwa.Descend(iter)
+}
+
+func TestBWArr_DescendWithDeleted(t *testing.T) {
+	t.Parallel()
+	const elemsNum, toDel = 1023, 241
+	elems := make([]int64, elemsNum)
+	for i := range elems {
+		elems[i] = int64(i)
+	}
+	rand.Shuffle(len(elems), func(i, j int) { elems[i], elems[j] = elems[j], elems[i] })
+
+	bwa := New(int64Cmp, elemsNum)
+	for _, v := range elems {
+		bwa.Insert(v)
+	}
+	rand.Shuffle(len(elems), func(i, j int) { elems[i], elems[j] = elems[j], elems[i] })
+	for i := 0; i < toDel; i++ {
+		bwa.Delete(elems[i])
+	}
+
+	iter := func(e int64) bool {
+		assert.GreaterOrEqual(t, slices.Index(elems[toDel:], e), 0)
+		return true
+	}
+	bwa.Descend(iter)
+}
+
+func TestBWArr_DescendStability(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+
+	bwa := New(stabValCmp, elemsNum)
+	for i := range elemsNum {
+		bwa.Insert(stabVal{val: rand.Intn(7), seq: i + 1})
+	}
+
+	seqs := make(map[int]int, elemsNum)
+	iter := func(e stabVal) bool {
+		ps := seqs[e.val]
+		assert.Greater(t, e.seq, ps)
+		return true
+	}
+	bwa.Descend(iter)
+}
+
+func TestBWArr_DescendGreaterOrEqual(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+	bwa := New(int64Cmp, elemsNum)
+	for i := 8; i < elemsNum; i++ {
+		bwa.Insert(int64(i))
+	}
+
+	const pivot = 622
+	expected := int64(elemsNum - 1)
+	iter := func(e int64) bool {
+		assert.Equal(t, expected, e)
+		expected--
+		return true
+	}
+	bwa.DescendGreaterOrEqual(pivot, iter)
+	assert.Equal(t, expected, int64(pivot-1))
+}
+
+func TestBWArr_DescendLessThan(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+	bwa := New(int64Cmp, elemsNum)
+	for i := 0; i < elemsNum-8; i++ {
+		bwa.Insert(int64(i))
+	}
+
+	const pivot = 822
+	expected := int64(pivot - 1)
+	iter := func(e int64) bool {
+		assert.Equal(t, expected, e)
+		expected--
+		return true
+	}
+	bwa.DescendLessThan(pivot, iter)
+	assert.Equal(t, expected, int64(-1))
+}
+
+func TestBWArr_DescendRange(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 1023
+	bwa := New(int64Cmp, elemsNum)
+	for i := 0; i < elemsNum; i++ {
+		bwa.Insert(int64(i))
+	}
+	for i := 0; i < elemsNum; i++ {
+		if i%2 == 0 {
+			bwa.Delete(int64(i))
+		}
+	}
+
+	const from, to = int64(23), int64(977)
+	expected := to - 2
+	iter := func(e int64) bool {
+		require.Equal(t, expected, e)
+		expected -= 2
+		return true
+	}
+	bwa.DescendRange(from, to, iter)
+	assert.Equal(t, expected, from-2)
+}
+
+func TestBWArr_DescendRangeOutOfBounds(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 15
+	bwa := New(int64Cmp, elemsNum)
+	for i := 0; i < elemsNum; i++ {
+		bwa.Insert(int64(i))
+	}
+
+	const from, to = int64(17), int64(23)
+	iter := func(e int64) bool {
+		t.Fail()
+		return true
+	}
+	bwa.DescendRange(from, to, iter)
+}
+
+func TestBWArr_AscIteratorsShouldStop(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 15
+	bwa := New(int64Cmp, elemsNum)
+	for i := 0; i < elemsNum; i++ {
+		bwa.Insert(int64(i))
+	}
+	iter := func(e int64) bool {
+		require.Equal(t, int64(0), e)
+		return false
+	}
+	bwa.Ascend(iter)
+	bwa.AscendGreaterOrEqual(0, iter)
+	bwa.AscendLessThan(7, iter)
+	bwa.AscendRange(0, 7, iter)
+}
+
+func TestBWArr_DescIteratorsShouldStop(t *testing.T) {
+	t.Parallel()
+	const elemsNum = 15
+	bwa := New(int64Cmp, elemsNum)
+	for i := 0; i < elemsNum; i++ {
+		bwa.Insert(int64(i))
+	}
+	iter := func(e int64) bool {
+		require.Equal(t, int64(elemsNum-1), e)
+		return false
+	}
+	bwa.Descend(iter)
+	bwa.DescendGreaterOrEqual(5, iter)
+	bwa.DescendLessThan(elemsNum, iter)
+	bwa.DescendRange(7, elemsNum, iter)
 }
 
 func int64Cmp(a, b int64) int {

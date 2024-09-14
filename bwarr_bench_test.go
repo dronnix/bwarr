@@ -239,12 +239,13 @@ func BenchmarkLongQA_AscendRange(b *testing.B) {
 func BenchmarkLongQA_AscendWithDelSeries(b *testing.B) {
 	const elems = 128*1024 - 1
 	bwa := New(int64Cmp, elems)
-	toDel := make([]int64, 0, elems/301)
+	const seriesLen = 301
+	toDel := make([]int64, 0, elems/seriesLen)
 	seriesEnd := 0
 	for i := range elems {
 		bwa.Insert(int64(i))
 		if i%12345 == 0 {
-			seriesEnd = i + rand.Intn(301)
+			seriesEnd = i + rand.Intn(seriesLen)
 		}
 		if i < seriesEnd {
 			toDel = append(toDel, int64(i))
@@ -264,6 +265,59 @@ func BenchmarkLongQA_AscendWithDelSeries(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		bwa.Ascend(iter)
+	}
+}
+
+func BenchmarkLongQA_DescendRandom(b *testing.B) {
+	const elems = 128*1024 - 1
+	bwa := New(int64Cmp, elems)
+	for range elems {
+		bwa.Insert(rand.Int63())
+	}
+
+	s := int64(0)
+	iter := func(x int64) bool {
+		s += x
+		return true
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.Descend(iter)
+	}
+}
+
+func BenchmarkLongQA_DescendRangeWithDelSeries(b *testing.B) {
+	const elems = 128*1024 - 1
+	bwa := New(int64Cmp, elems)
+	const seriesLen = 301
+	toDel := make([]int64, 0, elems/seriesLen)
+	seriesEnd := 0
+	for i := range elems {
+		bwa.Insert(int64(i))
+		if i%12345 == 0 {
+			seriesEnd = i + rand.Intn(seriesLen)
+		}
+		if i < seriesEnd {
+			toDel = append(toDel, int64(i))
+		}
+	}
+	for i := range toDel {
+		bwa.Delete(toDel[i])
+	}
+
+	s := int64(0)
+	iter := func(x int64) bool {
+		s += x
+		return true
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	const from, to = 42, elems - 42
+	for i := 0; i < b.N; i++ {
+		bwa.DescendRange(from, to, iter)
 	}
 }
 
