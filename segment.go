@@ -67,7 +67,7 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 }
 
 func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
-	b, e := uint64(s.minNonDeletedIdx), uint64(s.maxNonDeletedIdx+1)
+	b, e := s.minNonDeletedIdx, s.maxNonDeletedIdx+1
 	elems := s.elements
 	del := s.deleted
 	for b < e {
@@ -86,8 +86,8 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 			}
 		}
 	}
-	idx := int(b)
 
+	idx := b
 	if idx == 0 {
 		return -1
 	}

@@ -980,7 +980,7 @@ func TestBWArr_Compact(t *testing.T) {
 	const elemsNum = 16
 	toInsert := make([]int64, elemsNum)
 	for i := range elemsNum {
-		toInsert = append(toInsert, int64(i))
+		toInsert[i] = int64(i)
 	}
 	rand.Shuffle(len(toInsert), func(i, j int) { toInsert[i], toInsert[j] = toInsert[j], toInsert[i] })
 	for i := range elemsNum {

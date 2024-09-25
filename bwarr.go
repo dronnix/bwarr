@@ -226,7 +226,7 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 func (bwa *BWArr[T]) Compact() {
 	for i := range bwa.whiteSegments {
 		if bwa.total&(1<<i) == 0 {
-			bwa.whiteSegments[i] = segment[T]{}
+			bwa.whiteSegments[i] = segment[T]{} //nolint:exhaustruct
 		}
 	}
 }
