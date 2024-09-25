@@ -19,8 +19,8 @@ func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 	}
 
 	return &BWArr[T]{
-		blackSegments: createSegments[T](bSegNum),
-		whiteSegments: createSegments[T](wSegNum),
+		blackSegments: createSegments[T](0, bSegNum),
+		whiteSegments: createSegments[T](0, wSegNum),
 		total:         0,
 		cmp:           cmp,
 	}
@@ -28,6 +28,7 @@ func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 
 func (bwa *BWArr[T]) Insert(element T) {
 	if bwa.total&1 == 0 { // whiteSegments[0] is free
+		bwa.ensureSeg(0)
 		bwa.whiteSegments[0].elements[0] = element
 		bwa.total++
 		return
@@ -36,13 +37,15 @@ func (bwa *BWArr[T]) Insert(element T) {
 	bwa.blackSegments[0].elements[0] = element
 	for segNum := 1; segNum <= maxSegmentNumber; segNum++ {
 		if bwa.total&(1<<segNum) == 0 {
+			bwa.ensureSeg(segNum)
 			mergeSegments(bwa.whiteSegments[segNum-1], bwa.blackSegments[segNum-1], bwa.cmp, &bwa.whiteSegments[segNum])
 			bwa.total++
 			return
 		}
-		if len(bwa.blackSegments) == segNum {
+		if len(bwa.blackSegments) <= segNum {
 			bwa.extend()
 		}
+		bwa.ensureSeg(segNum)
 		mergeSegments(bwa.whiteSegments[segNum-1], bwa.blackSegments[segNum-1], bwa.cmp, &bwa.blackSegments[segNum])
 	}
 }
@@ -141,7 +144,7 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 		cmp:           bwa.cmp,
 	}
 
-	newBWA.blackSegments = createSegments[T](len(bwa.blackSegments))
+	newBWA.blackSegments = createSegments[T](0, len(bwa.blackSegments))
 	for i := range bwa.whiteSegments {
 		newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
 	}
@@ -216,6 +219,14 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
 		if !iterator(*val) {
 			break
+		}
+	}
+}
+
+func (bwa *BWArr[T]) Compact() {
+	for i := range bwa.whiteSegments {
+		if bwa.total&(1<<i) == 0 {
+			bwa.whiteSegments[i] = segment[T]{}
 		}
 	}
 }
@@ -318,21 +329,17 @@ func (bwa *BWArr[T]) search(element T) (segNum, index int) {
 const maxSegmentNumber = 62
 
 func (bwa *BWArr[T]) extend() {
-	l := len(bwa.whiteSegments[len(bwa.whiteSegments)-1].elements)
-	bwa.whiteSegments = append(bwa.whiteSegments,
-		segment[T]{
-			elements:         make([]T, l*2),
-			deleted:          make([]bool, l*2),
-			deletedNum:       0,
-			minNonDeletedIdx: 0,
-			maxNonDeletedIdx: l*2 - 1,
-		})
-	bwa.blackSegments = append(bwa.blackSegments,
-		segment[T]{
-			elements:         make([]T, l),
-			deleted:          make([]bool, l),
-			deletedNum:       0,
-			minNonDeletedIdx: 0,
-			maxNonDeletedIdx: l - 1,
-		})
+	rank := len(bwa.whiteSegments) - 1
+	bwa.blackSegments = append(bwa.blackSegments, makeSegment[T](rank))
+}
+
+func (bwa *BWArr[T]) ensureSeg(rank int) {
+	l := len(bwa.whiteSegments)
+	if rank >= l {
+		whites := make([]segment[T], rank-l+1)
+		bwa.whiteSegments = append(bwa.whiteSegments, whites...)
+	}
+	if len(bwa.whiteSegments[rank].elements) == 0 {
+		bwa.whiteSegments[rank] = makeSegment[T](rank)
+	}
 }
