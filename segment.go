@@ -10,19 +10,23 @@ type segment[T any] struct {
 	maxNonDeletedIdx int    // Index of the last non-deleted element in the segment.
 }
 
-func createSegments[T any](num int) []segment[T] {
-	segments := make([]segment[T], num)
-	for i := 0; i < num; i++ {
-		l := 1 << i
-		segments[i] = segment[T]{
-			elements:         make([]T, l),
-			deleted:          make([]bool, l),
-			deletedNum:       0,
-			minNonDeletedIdx: 0,
-			maxNonDeletedIdx: l - 1,
-		}
+func createSegments[T any](fromRank, toRank int) []segment[T] {
+	segments := make([]segment[T], toRank-fromRank)
+	for i := fromRank; i < toRank; i++ {
+		segments[i-fromRank] = makeSegment[T](i)
 	}
 	return segments
+}
+
+func makeSegment[T any](rank int) segment[T] {
+	l := 1 << rank
+	return segment[T]{
+		elements:         make([]T, l),
+		deleted:          make([]bool, l),
+		deletedNum:       0,
+		minNonDeletedIdx: 0,
+		maxNonDeletedIdx: l - 1,
+	}
 }
 
 func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment[T]) {
@@ -63,7 +67,7 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 }
 
 func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
-	b, e := uint64(s.minNonDeletedIdx), uint64(s.maxNonDeletedIdx+1)
+	b, e := s.minNonDeletedIdx, s.maxNonDeletedIdx+1
 	elems := s.elements
 	del := s.deleted
 	for b < e {
@@ -82,8 +86,8 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 			}
 		}
 	}
-	idx := int(b)
 
+	idx := b
 	if idx == 0 {
 		return -1
 	}

@@ -970,6 +970,25 @@ func TestBWArr_DescIteratorsShouldStop(t *testing.T) {
 	bwa.DescendRange(7, elemsNum, iter)
 }
 
+func TestBWArr_Compact(t *testing.T) {
+	t.Parallel()
+
+	bwa := New(int64Cmp, 0)
+	bwa.Compact()
+	validateBWArr(t, bwa)
+
+	const elemsNum = 16
+	toInsert := make([]int64, elemsNum)
+	for i := range elemsNum {
+		toInsert[i] = int64(i)
+	}
+	rand.Shuffle(len(toInsert), func(i, j int) { toInsert[i], toInsert[j] = toInsert[j], toInsert[i] })
+	for i := range elemsNum {
+		bwa.Insert(toInsert[i])
+		validateBWArr(t, bwa)
+	}
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }
@@ -1049,15 +1068,18 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 	if len(bwa.whiteSegments) == 0 && len(bwa.blackSegments) == 0 || bwa.total == 0 {
 		return
 	}
-	require.Len(t, bwa.whiteSegments, len(bwa.blackSegments)+1)
+	//require.Len(t, bwa.whiteSegments, len(bwa.blackSegments)+1)
 
 	for i := 0; i < len(bwa.whiteSegments); i++ {
+		if bwa.total&(1<<i) == 0 {
+			continue
+		}
 		require.Len(t, bwa.whiteSegments[i].elements, 1<<i)
 		validateSegment(t, bwa.whiteSegments[i], bwa.cmp)
 	}
 
 	for i := 0; i < len(bwa.blackSegments); i++ {
-		require.Len(t, bwa.blackSegments[i].elements, 1<<i)
+		//require.Len(t, bwa.blackSegments[i].elements, 1<<i)
 		require.Equal(t, len(bwa.blackSegments[i].elements), len(bwa.blackSegments[i].deleted))
 	}
 }

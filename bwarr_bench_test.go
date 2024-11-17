@@ -155,6 +155,25 @@ func BenchmarkQA_DeleteMax(b *testing.B) {
 	}
 }
 
+func BenchmarkLongQA_InsertRandom(b *testing.B) {
+	const elems = 128*1024 - 1
+	preparedData := make([]int64, elems)
+	for i := range elems {
+		preparedData[i] = rand.Int63()
+	}
+
+	bwa := New(int64Cmp, elems)
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for i := 0; i < b.N; i++ {
+		bwa.Clear(true)
+		for i := range elems {
+			bwa.Insert(preparedData[i])
+		}
+	}
+}
+
 func BenchmarkLongQA_AscendRandom(b *testing.B) {
 	const elems = 128*1024 - 1
 	bwa := New(int64Cmp, elems)
