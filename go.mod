@@ -1,10 +1,10 @@
 module github.com/dronnix/bwarr
 
-go 1.22
+go 1.23
 
 require (
-	github.com/google/btree v1.1.2
-	github.com/stretchr/testify v1.8.4
+	github.com/google/btree v1.1.3
+	github.com/stretchr/testify v1.9.0
 )
 
 require (
