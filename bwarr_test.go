@@ -438,6 +438,19 @@ func TestBWArr_Delete(t *testing.T) {
 	}
 }
 
+func TestBWArr_DeleteFromEmpty(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+
+	elem, found := bwa.DeleteMin()
+	assert.False(t, found)
+	assert.Equal(t, int64(0), elem)
+
+	elem, found = bwa.DeleteMax()
+	assert.False(t, found)
+	assert.Equal(t, int64(0), elem)
+}
+
 func TestBWArr_RandomDelete(t *testing.T) {
 	t.Parallel()
 	rand.Seed(42) //nolint:staticcheck

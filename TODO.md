@@ -1,10 +1,11 @@
 ### Very next
-- [ ] Implement simple compact method: delete all unused segments.
 - [ ] Reusable black segment 1/2 of the size of the biggest white segment.
+- [ ] Check all methods for allocation count.
 - [ ] Implement special method Init: just split all data to segments and sort it.
 - [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
 - [ ] Implement unordered iterator.
 
+- [X] Implement simple compact method: delete all unused segments.
 - [X] Investigate 20 allocations in the benchmark;
 - [X] Skip deleted elements during iteration;
 - [X] Refactor benchmarks to be able to run iterator benchmarks;
