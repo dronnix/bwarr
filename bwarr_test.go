@@ -438,6 +438,19 @@ func TestBWArr_Delete(t *testing.T) {
 	}
 }
 
+func TestBWArr_DeleteFromEmpty(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+
+	elem, found := bwa.DeleteMin()
+	assert.False(t, found)
+	assert.Equal(t, int64(0), elem)
+
+	elem, found = bwa.DeleteMax()
+	assert.False(t, found)
+	assert.Equal(t, int64(0), elem)
+}
+
 func TestBWArr_RandomDelete(t *testing.T) {
 	t.Parallel()
 	rand.Seed(42) //nolint:staticcheck
@@ -1068,7 +1081,6 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 	if len(bwa.whiteSegments) == 0 && len(bwa.blackSegments) == 0 || bwa.total == 0 {
 		return
 	}
-	//require.Len(t, bwa.whiteSegments, len(bwa.blackSegments)+1)
 
 	for i := 0; i < len(bwa.whiteSegments); i++ {
 		if bwa.total&(1<<i) == 0 {
@@ -1079,7 +1091,6 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 	}
 
 	for i := 0; i < len(bwa.blackSegments); i++ {
-		//require.Len(t, bwa.blackSegments[i].elements, 1<<i)
 		require.Equal(t, len(bwa.blackSegments[i].elements), len(bwa.blackSegments[i].deleted))
 	}
 }

@@ -14,9 +14,6 @@ type IteratorFunc[T any] func(item T) bool
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 	wSegNum := calculateWhiteSegmentsQuantity(capacity)
 	bSegNum := wSegNum - 1
-	if bSegNum < 0 {
-		bSegNum = 0
-	}
 
 	return &BWArr[T]{
 		blackSegments: createSegments[T](0, bSegNum),

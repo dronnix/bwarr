@@ -322,6 +322,18 @@ func Test_segment_findLess(t *testing.T) {
 			want: 0,
 		},
 		{
+			name: "one greater",
+			seg:  segment[int64]{elements: []int64{23}, deleted: []bool{false}},
+			val:  11,
+			want: -1,
+		},
+		{
+			name: "last",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}, maxNonDeletedIdx: 3},
+			val:  77,
+			want: 3,
+		},
+		{
 			name: "first",
 			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, false, false}, maxNonDeletedIdx: 3},
 			val:  11,
@@ -344,6 +356,12 @@ func Test_segment_findLess(t *testing.T) {
 			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, true, false, false}, maxNonDeletedIdx: 3},
 			val:  30,
 			want: 0,
+		},
+		{
+			name: "all deleted",
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{true, true, true, true}, maxNonDeletedIdx: -1},
+			val:  23,
+			want: -1,
 		},
 	}
 
@@ -407,6 +425,16 @@ func Test_segment_nextNonDeletedAfter(t *testing.T) {
 			assert.Equal(t, tt.want, seg.nextNonDeletedAfter(tt.idx))
 		})
 	}
+}
+
+func Test_segment_AllDeleted(t *testing.T) {
+	t.Parallel()
+	seg := segment[int64]{ // nolint:exhaustruct
+		elements: []int64{17, 23, 42, 51},
+		deleted:  []bool{true, true, true, true},
+	}
+	assert.Equal(t, -1, seg.minNonDeletedIndex())
+	assert.Equal(t, -1, seg.maxNonDeletedIndex())
 }
 
 func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {

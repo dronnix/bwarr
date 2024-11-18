@@ -135,9 +135,6 @@ func (s *segment[T]) findLess(cmp CmpFunc[T], val T) int {
 			e = m - 1
 		}
 	}
-	if e > s.maxNonDeletedIdx {
-		return -1
-	}
 	return s.prevNonDeletedBefore(e + 1)
 }
 
