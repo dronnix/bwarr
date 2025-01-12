@@ -31,19 +31,20 @@ func (bwa *BWArr[T]) Insert(element T) {
 		return
 	}
 
-	bwa.blackSegments[0].elements[0] = element
+	lowBlack := bwa.lowBlack(0)
+	lowBlack.elements[0] = element
 	for segNum := 1; segNum <= maxSegmentNumber; segNum++ {
 		if bwa.total&(1<<segNum) == 0 {
 			bwa.ensureSeg(segNum)
-			mergeSegments(bwa.whiteSegments[segNum-1], bwa.blackSegments[segNum-1], bwa.cmp, &bwa.whiteSegments[segNum])
+			mergeSegments(bwa.whiteSegments[segNum-1], *lowBlack, bwa.cmp, &bwa.whiteSegments[segNum])
 			bwa.total++
 			return
 		}
-		if len(bwa.blackSegments) <= segNum {
-			bwa.extend()
-		}
+		highBlack := bwa.highBlack(segNum)
+
 		bwa.ensureSeg(segNum)
-		mergeSegments(bwa.whiteSegments[segNum-1], bwa.blackSegments[segNum-1], bwa.cmp, &bwa.blackSegments[segNum])
+		mergeSegments(bwa.whiteSegments[segNum-1], *lowBlack, bwa.cmp, highBlack)
+		lowBlack = highBlack
 	}
 }
 
@@ -256,8 +257,9 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		bwa.total -= 1 << segNum
 		bwa.total += 1 << (segNum - 1)
 	} else {
-		demoteSegment(*seg, &bwa.blackSegments[segNum-1])
-		mergeSegments(bwa.blackSegments[segNum-1], bwa.whiteSegments[segNum-1], bwa.cmp, seg)
+		blackSeg := bwa.highBlack(segNum - 1)
+		demoteSegment(*seg, blackSeg)
+		mergeSegments(*blackSeg, bwa.whiteSegments[segNum-1], bwa.cmp, seg)
 		bwa.total -= 1 << (segNum - 1)
 	}
 	return deleted
@@ -325,11 +327,6 @@ func (bwa *BWArr[T]) search(element T) (segNum, index int) {
 
 const maxSegmentNumber = 62
 
-func (bwa *BWArr[T]) extend() {
-	rank := len(bwa.whiteSegments) - 1
-	bwa.blackSegments = append(bwa.blackSegments, makeSegment[T](rank))
-}
-
 func (bwa *BWArr[T]) ensureSeg(rank int) {
 	l := len(bwa.whiteSegments)
 	if rank >= l {
@@ -339,4 +336,18 @@ func (bwa *BWArr[T]) ensureSeg(rank int) {
 	if len(bwa.whiteSegments[rank].elements) == 0 {
 		bwa.whiteSegments[rank] = makeSegment[T](rank)
 	}
+}
+
+func (bwa *BWArr[T]) lowBlack(rank int) *segment[T] {
+	if rank >= len(bwa.blackSegments) {
+		bwa.blackSegments = append(bwa.blackSegments, makeSegment[T](rank))
+	}
+	return &bwa.blackSegments[rank]
+}
+
+func (bwa *BWArr[T]) highBlack(rank int) *segment[T] {
+	if rank >= len(bwa.blackSegments) {
+		bwa.blackSegments = append(bwa.blackSegments, makeSegment[T](rank))
+	}
+	return &bwa.blackSegments[rank]
 }

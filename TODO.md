@@ -5,6 +5,9 @@
 - [ ] Implement special method Init: just split all data to segments and sort it.
 - [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
 - [ ] Implement unordered iterator.
+- [ ] Write full README;
+- [ ] Add GitHub CI for tests and coverage;
+- [ ] Release!
 
 - [X] Implement simple compact method: delete all unused segments.
 - [X] Investigate 20 allocations in the benchmark;
@@ -19,11 +22,9 @@
 - [X] Add benchmarks to CI;
 - [X] Refactor code: move out segment, it's methods and tests;
 - [X] Add iterators;
-- [ ] Write full README;
-- [ ] Add GitHub CI for tests and coverage;
-- [ ] Plan further steps;
 
 ### Full release
+- [ ] Plan further steps;
 - [ ] Add public benchmarks in separate repository;
 - [ ] Benchmark huge structs;
 
