@@ -556,7 +556,6 @@ func TestBWArr_Clear(t *testing.T) {
 	assert.Equal(t, 0, bwa.Len())
 	assert.Equal(t, 0, bwa.total)
 	assert.Len(t, bwa.whiteSegments, 2)
-	assert.Len(t, bwa.blackSegments, 1)
 
 	for i := range 15 {
 		bwa.Insert(int64(i))
@@ -1110,16 +1109,13 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 	bwa := BWArr[int64]{
 		whiteSegments: make([]segment[int64], len(segs)),
-		blackSegments: make([]segment[int64], len(segs)),
 		cmp:           int64Cmp,
 		total:         total,
 	}
 	for i, seg := range segs {
 		l := len(seg)
 		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), maxNonDeletedIdx: l - 1}
-		bwa.blackSegments[i] = segment[int64]{elements: make([]int64, l), deleted: make([]bool, l)}
 	}
-	bwa.blackSegments = bwa.blackSegments[:len(bwa.blackSegments)-1]
 	return &bwa
 }
 

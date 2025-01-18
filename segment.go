@@ -202,3 +202,26 @@ func calculateWhiteSegmentsQuantity(capacity int) int {
 		return int(math.Log2(float64(capacity)) + 1) // TODO: rewrite without using math?
 	}
 }
+
+func swapSegments[T any](s1, s2 *segment[T]) {
+	s1.elements, s2.elements = s2.elements, s1.elements
+	s1.deleted, s2.deleted = s2.deleted, s1.deleted
+	s1.deletedNum, s2.deletedNum = s2.deletedNum, s1.deletedNum
+	s1.minNonDeletedIdx, s2.minNonDeletedIdx = s2.minNonDeletedIdx, s1.minNonDeletedIdx
+	s1.maxNonDeletedIdx, s2.maxNonDeletedIdx = s2.maxNonDeletedIdx, s1.maxNonDeletedIdx
+}
+
+func reallocateSegment[T any](seg *segment[T], rank int) *segment[T] {
+	c := cap(seg.elements)
+	l := 1 << rank
+	if l >= c {
+		s := makeSegment[T](rank)
+		return &s
+	}
+	seg.elements = seg.elements[:l]
+	seg.deleted = seg.deleted[:l]
+	seg.deletedNum = 0
+	seg.minNonDeletedIdx = 0
+	seg.maxNonDeletedIdx = l - 1
+	return seg
+}

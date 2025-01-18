@@ -1,8 +1,9 @@
 package bwarr
 
 type BWArr[T any] struct {
-	blackSegments []segment[T]
 	whiteSegments []segment[T]
+	highBlackSeg  segment[T]
+	lowBlackSeg   segment[T]
 	total         int // Total number of elements in the array, including deleted ones.
 	cmp           CmpFunc[T]
 }
@@ -13,11 +14,11 @@ type IteratorFunc[T any] func(item T) bool
 
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 	wSegNum := calculateWhiteSegmentsQuantity(capacity)
-	bSegNum := wSegNum - 1
 
 	return &BWArr[T]{
-		blackSegments: createSegments[T](0, bSegNum),
 		whiteSegments: createSegments[T](0, wSegNum),
+		highBlackSeg:  makeSegment[T](0),
+		lowBlackSeg:   makeSegment[T](0),
 		total:         0,
 		cmp:           cmp,
 	}
@@ -44,7 +45,7 @@ func (bwa *BWArr[T]) Insert(element T) {
 
 		bwa.ensureSeg(segNum)
 		mergeSegments(bwa.whiteSegments[segNum-1], *lowBlack, bwa.cmp, highBlack)
-		lowBlack = highBlack
+		swapSegments(lowBlack, highBlack)
 	}
 }
 
@@ -129,20 +130,19 @@ func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	if dropSegments {
 		// TODO: drop all segments after introducing a smart getter.
 		bwa.whiteSegments = bwa.whiteSegments[:2]
-		bwa.blackSegments = bwa.blackSegments[:1]
 	}
 }
 
 func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	// TODO: Call compaction after it will be implemented.
 	newBWA := &BWArr[T]{
-		blackSegments: make([]segment[T], len(bwa.blackSegments)),
 		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
+		highBlackSeg:  makeSegment[T](0),
+		lowBlackSeg:   makeSegment[T](0),
 		total:         bwa.total,
 		cmp:           bwa.cmp,
 	}
 
-	newBWA.blackSegments = createSegments[T](0, len(bwa.blackSegments))
 	for i := range bwa.whiteSegments {
 		newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
 	}
@@ -338,16 +338,12 @@ func (bwa *BWArr[T]) ensureSeg(rank int) {
 	}
 }
 
-func (bwa *BWArr[T]) lowBlack(rank int) *segment[T] {
-	if rank >= len(bwa.blackSegments) {
-		bwa.blackSegments = append(bwa.blackSegments, makeSegment[T](rank))
-	}
-	return &bwa.blackSegments[rank]
+func (bwa *BWArr[T]) highBlack(rank int) *segment[T] {
+	bwa.highBlackSeg = *reallocateSegment(&bwa.highBlackSeg, rank)
+	return &bwa.highBlackSeg
 }
 
-func (bwa *BWArr[T]) highBlack(rank int) *segment[T] {
-	if rank >= len(bwa.blackSegments) {
-		bwa.blackSegments = append(bwa.blackSegments, makeSegment[T](rank))
-	}
-	return &bwa.blackSegments[rank]
+func (bwa *BWArr[T]) lowBlack(rank int) *segment[T] {
+	bwa.lowBlackSeg = *reallocateSegment(&bwa.lowBlackSeg, rank)
+	return &bwa.lowBlackSeg
 }
