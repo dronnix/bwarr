@@ -25,6 +25,7 @@ func Test_demoteSegment(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			demoteSegment(tt.from, tt.to)
 		})
 	}
@@ -65,6 +66,7 @@ func Test_calculateWhiteSegmentsQuantity(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			if tt.wantPanic {
 				require.Panics(t, func() { calculateWhiteSegmentsQuantity(tt.capacity) })
 			} else {
@@ -115,6 +117,7 @@ func Test_mergeSegments(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			mergeSegments(tt.seg1, tt.seg2, int64Cmp, tt.result)
 			require.Equal(t, tt.expected, *tt.result)
 		})
@@ -235,6 +238,7 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equalf(t, tt.want, tt.seg.findRightmostNotDeleted(int64Cmp, tt.val), "searchInSegment(%v, %v)", tt.seg, tt.val)
 		})
 	}
@@ -295,6 +299,7 @@ func Test_segment_findGTOE(t *testing.T) {
 
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equalf(t, tt.want, tt.seg.findGTOE(int64Cmp, tt.val), "searchInSegment(%v, %v)", tt.seg, tt.val)
 		})
 	}
@@ -367,6 +372,7 @@ func Test_segment_findLess(t *testing.T) {
 
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equalf(t, tt.want, tt.seg.findLess(int64Cmp, tt.val), "searchInSegment(%v, %v)", tt.seg, tt.val)
 		})
 	}
@@ -422,6 +428,7 @@ func Test_segment_nextNonDeletedAfter(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			assert.Equal(t, tt.want, seg.nextNonDeletedAfter(tt.idx))
 		})
 	}
@@ -438,10 +445,10 @@ func Test_segment_AllDeleted(t *testing.T) {
 }
 
 func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
-	require.Equal(t, len(seg.elements), len(seg.deleted))
+	require.Len(t, seg.elements, len(seg.deleted))
 	deleted, firstNonDelIdx, lastNonDelIdx := 0, 0, len(seg.elements)-1
 	metNonDel := false
-	for i := 0; i < len(seg.elements); i++ {
+	for i := range seg.elements {
 		if seg.deleted[i] {
 			deleted++
 			continue
@@ -463,9 +470,9 @@ func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 }
 
 func segmentsEqual[T any](t *testing.T, expected, actual segment[T]) {
-	require.Equal(t, len(expected.elements), len(expected.deleted))
-	require.Equal(t, len(expected.elements), len(actual.elements))
-	require.Equal(t, len(expected.deleted), len(actual.deleted))
+	require.Len(t, expected.elements, len(expected.deleted))
+	require.Len(t, actual.elements, len(expected.elements))
+	require.Len(t, actual.deleted, len(expected.deleted))
 	require.Equal(t, expected.deletedNum, actual.deletedNum)
 	for i := range expected.elements {
 		assert.Equal(t, expected.deleted[i], actual.deleted[i])

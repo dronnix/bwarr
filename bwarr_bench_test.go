@@ -23,16 +23,14 @@ func BenchmarkQA_ReplaceOrInsertFound(b *testing.B) {
 	bwa := New(int64Cmp, elemsOnStart)
 	preparedData := make([]int64, elemsOnStart)
 
-	for i := 0; i < elemsOnStart; i++ {
+	for i := range elemsOnStart {
 		preparedData[i] = rand.Int63()
 		bwa.Insert(preparedData[i])
-	}
-	for i := 0; i < b.N; i++ {
 	}
 	b.SetBytes(8) //nolint:exhaustruct
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		bwa.ReplaceOrInsert(preparedData[i%elemsOnStart])
 	}
 }
@@ -41,16 +39,14 @@ func BenchmarkQA_HasFound(b *testing.B) {
 	bwa := New(int64Cmp, elemsOnStart)
 	preparedData := make([]int64, elemsOnStart)
 
-	for i := 0; i < elemsOnStart; i++ {
+	for i := range elemsOnStart {
 		preparedData[i] = rand.Int63()
 		bwa.Insert(preparedData[i])
-	}
-	for i := 0; i < b.N; i++ {
 	}
 	b.SetBytes(8) //nolint:exhaustruct
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		bwa.Has(preparedData[i%elemsOnStart])
 	}
 }
@@ -58,17 +54,17 @@ func BenchmarkQA_HasFound(b *testing.B) {
 func BenchmarkQA_HasNotFoundWorst(b *testing.B) {
 	bwa := New(int64Cmp, elemsOnStart)
 
-	for i := 0; i < elemsOnStart; i++ {
+	for range elemsOnStart {
 		bwa.Insert(rand.Int63())
 	}
 	preparedData := make([]int64, b.N)
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		preparedData[i] = rand.Int63()
 	}
 	b.SetBytes(8) //nolint:exhaustruct
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		bwa.Has(preparedData[i])
 	}
 }
@@ -82,7 +78,7 @@ func BenchmarkQA_Min(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.Min()
 	}
 }
@@ -96,7 +92,7 @@ func BenchmarkQA_Max(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.Max()
 	}
 }
@@ -116,7 +112,7 @@ func BenchmarkQA_Delete(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		if _, found := bwa.Delete(toDel[i]); !found {
 			b.Fail()
 		}
@@ -134,7 +130,7 @@ func BenchmarkQA_DeleteMin(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.DeleteMin()
 	}
 }
@@ -150,7 +146,7 @@ func BenchmarkQA_DeleteMax(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.DeleteMax()
 	}
 }
@@ -166,7 +162,7 @@ func BenchmarkLongQA_InsertRandom(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.Clear(true)
 		for i := range elems {
 			bwa.Insert(preparedData[i])
@@ -189,7 +185,7 @@ func BenchmarkLongQA_AscendRandom(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.Ascend(iter)
 	}
 }
@@ -209,7 +205,7 @@ func BenchmarkLongQA_AscendInc(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.Ascend(iter)
 	}
 }
@@ -229,7 +225,7 @@ func BenchmarkLongQA_AscendDec(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.Ascend(iter)
 	}
 }
@@ -250,7 +246,7 @@ func BenchmarkLongQA_AscendRange(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.AscendRange(int64(from), int64(to), iter)
 	}
 }
@@ -282,7 +278,7 @@ func BenchmarkLongQA_AscendWithDelSeries(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.Ascend(iter)
 	}
 }
@@ -302,7 +298,7 @@ func BenchmarkLongQA_DescendRandom(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.Descend(iter)
 	}
 }
@@ -335,7 +331,7 @@ func BenchmarkLongQA_DescendRangeWithDelSeries(b *testing.B) {
 	b.ResetTimer()
 	b.ReportAllocs()
 	const from, to = 42, elems - 42
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bwa.DescendRange(from, to, iter)
 	}
 }
@@ -343,17 +339,17 @@ func BenchmarkLongQA_DescendRangeWithDelSeries(b *testing.B) {
 func benchmarkAppend(b *testing.B, elemsOnStart, capacity int) {
 	bwa := New(int64Cmp, capacity)
 
-	for i := 0; i < elemsOnStart; i++ {
+	for range elemsOnStart {
 		bwa.Insert(rand.Int63())
 	}
 	preparedData := make([]int64, b.N)
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		preparedData[i] = rand.Int63()
 	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		bwa.Insert(preparedData[i])
 	}
 }
@@ -361,17 +357,17 @@ func benchmarkAppend(b *testing.B, elemsOnStart, capacity int) {
 func benchmarkReplace(b *testing.B, elemsOnStart, capacity int) {
 	bwa := New(int64Cmp, capacity)
 
-	for i := 0; i < elemsOnStart; i++ {
+	for range elemsOnStart {
 		bwa.Insert(rand.Int63())
 	}
 	preparedData := make([]int64, b.N)
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		preparedData[i] = rand.Int63()
 	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		bwa.ReplaceOrInsert(preparedData[i])
 	}
 }

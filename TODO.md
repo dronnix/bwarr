@@ -1,4 +1,5 @@
 ### Very next
+- [ ]  Profile reusable black
 - [ ] Reusable black segment 1/2 of the size of the biggest white segment.
 - [ ] Check all methods for allocation count.
 - [ ] Implement special method Init: just split all data to segments and sort it.

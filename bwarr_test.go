@@ -50,6 +50,7 @@ func TestBWArr_Insert(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			tt.bwaBefore.Insert(tt.addedElement)
 			validateBWArr(t, tt.bwaBefore)
 			bwaEqual(t, tt.bwaAfter, tt.bwaBefore)
@@ -96,6 +97,7 @@ func TestBWArr_ReplaceOrInsert(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(testStructCmp, 0)
 			for _, elem := range tt.toInsertBefore {
 				bwa.Insert(elem)
@@ -160,6 +162,7 @@ func TestBWArr_HasAndGet(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(int64Cmp, 0)
 			for _, elem := range tt.elemsToAdd {
 				bwa.Insert(elem)
@@ -209,6 +212,7 @@ func TestBWArr_Min(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(int64Cmp, 0)
 			for _, elem := range tt.elemsToAdd {
 				bwa.Insert(elem)
@@ -257,6 +261,7 @@ func TestBWArr_Max(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(int64Cmp, 0)
 			for _, elem := range tt.elemsToAdd {
 				bwa.Insert(elem)
@@ -287,6 +292,7 @@ func TestBWArr_MinStability(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(int64Cmp, 0)
 			for _, elem := range tt.elemsToAdd {
 				bwa.Insert(elem)
@@ -317,6 +323,7 @@ func TestBWArr_MaxStability(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(int64Cmp, 0)
 			for _, elem := range tt.elemsToAdd {
 				bwa.Insert(elem)
@@ -358,7 +365,7 @@ func TestBWArr_DeleteMax(t *testing.T) {
 	validateBWArr(t, bwa)
 	slices.SortFunc(elems, func(a, b int64) int { return int(b - a) })
 
-	for i := 0; i < len(elems); i++ {
+	for i := range elems {
 		elem, found := bwa.DeleteMax()
 		validateBWArr(t, bwa)
 		assert.True(t, found)
@@ -427,6 +434,7 @@ func TestBWArr_Delete(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			got, found := tt.before.Delete(tt.elementToDelete)
 			assert.Equal(t, tt.expected, found)
 			if found {
@@ -457,7 +465,7 @@ func TestBWArr_RandomDelete(t *testing.T) {
 	const elements = 63
 	bwa := New(int64Cmp, 0)
 	toDel := make([]int64, elements)
-	for i := 0; i < elements; i++ {
+	for i := range elements {
 		toDel[i] = int64(i)
 	}
 	rand.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
@@ -467,7 +475,7 @@ func TestBWArr_RandomDelete(t *testing.T) {
 	}
 	rand.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
 
-	for i := 0; i < len(toDel); i++ {
+	for i := range toDel {
 		if elem, found := bwa.Delete(toDel[i]); !found || elem != toDel[i] {
 			t.Logf("failed to delete %d on %d iteration", toDel[i], i)
 			t.Fail()
@@ -522,6 +530,7 @@ func TestBWArr_Len(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(int64Cmp, 0)
 			for _, elem := range tt.add {
 				bwa.Insert(elem)
@@ -532,7 +541,6 @@ func TestBWArr_Len(t *testing.T) {
 			assert.Equal(t, tt.want, bwa.Len())
 		})
 	}
-
 }
 
 func TestBWArr_Clear(t *testing.T) {
@@ -600,6 +608,7 @@ func TestBWArr_Ascend(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(int64Cmp, len(tt.initSeq))
 			for _, e := range tt.initSeq {
 				bwa.Insert(e)
@@ -624,7 +633,7 @@ func TestBWArr_AscendRandom(t *testing.T) {
 	rand.Seed(2342) //nolint:staticcheck
 	const elements = 1023
 	bwa := New(int64Cmp, elements)
-	for i := 0; i < elements; i++ {
+	for range elements {
 		bwa.Insert(int64(rand.Intn(100)))
 	}
 
@@ -651,7 +660,7 @@ func TestBWArr_AscendWithDeleted(t *testing.T) {
 		bwa.Insert(v)
 	}
 	rand.Shuffle(len(elems), func(i, j int) { elems[i], elems[j] = elems[j], elems[i] })
-	for i := 0; i < toDel; i++ {
+	for i := range toDel {
 		bwa.Delete(elems[i])
 	}
 
@@ -763,7 +772,7 @@ func TestBWArr_AscendRangeOutOfBounds(t *testing.T) {
 	}
 
 	const from, to = int64(17), int64(23)
-	iter := func(e int64) bool {
+	iter := func(_ int64) bool {
 		t.Fail()
 		return true
 	}
@@ -791,6 +800,7 @@ func TestBWArr_Descend(t *testing.T) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(int64Cmp, len(tt.initSeq))
 			for _, e := range tt.initSeq {
 				bwa.Insert(e)
@@ -815,7 +825,7 @@ func TestBWArr_DescendRandom(t *testing.T) {
 	rand.Seed(2342) //nolint:staticcheck
 	const elements = 1023
 	bwa := New(int64Cmp, elements)
-	for i := 0; i < elements; i++ {
+	for range elements {
 		bwa.Insert(int64(rand.Intn(100)))
 	}
 
@@ -842,7 +852,7 @@ func TestBWArr_DescendWithDeleted(t *testing.T) {
 		bwa.Insert(v)
 	}
 	rand.Shuffle(len(elems), func(i, j int) { elems[i], elems[j] = elems[j], elems[i] })
-	for i := 0; i < toDel; i++ {
+	for i := range toDel {
 		bwa.Delete(elems[i])
 	}
 
@@ -894,7 +904,7 @@ func TestBWArr_DescendLessThan(t *testing.T) {
 	t.Parallel()
 	const elemsNum = 1023
 	bwa := New(int64Cmp, elemsNum)
-	for i := 0; i < elemsNum-8; i++ {
+	for i := range elemsNum - 8 {
 		bwa.Insert(int64(i))
 	}
 
@@ -913,10 +923,10 @@ func TestBWArr_DescendRange(t *testing.T) {
 	t.Parallel()
 	const elemsNum = 1023
 	bwa := New(int64Cmp, elemsNum)
-	for i := 0; i < elemsNum; i++ {
+	for i := range elemsNum {
 		bwa.Insert(int64(i))
 	}
-	for i := 0; i < elemsNum; i++ {
+	for i := range elemsNum {
 		if i%2 == 0 {
 			bwa.Delete(int64(i))
 		}
@@ -937,12 +947,12 @@ func TestBWArr_DescendRangeOutOfBounds(t *testing.T) {
 	t.Parallel()
 	const elemsNum = 15
 	bwa := New(int64Cmp, elemsNum)
-	for i := 0; i < elemsNum; i++ {
+	for i := range elemsNum {
 		bwa.Insert(int64(i))
 	}
 
 	const from, to = int64(17), int64(23)
-	iter := func(e int64) bool {
+	iter := func(_ int64) bool {
 		t.Fail()
 		return true
 	}
@@ -953,7 +963,7 @@ func TestBWArr_AscIteratorsShouldStop(t *testing.T) {
 	t.Parallel()
 	const elemsNum = 15
 	bwa := New(int64Cmp, elemsNum)
-	for i := 0; i < elemsNum; i++ {
+	for i := range elemsNum {
 		bwa.Insert(int64(i))
 	}
 	iter := func(e int64) bool {
@@ -970,7 +980,7 @@ func TestBWArr_DescIteratorsShouldStop(t *testing.T) {
 	t.Parallel()
 	const elemsNum = 15
 	bwa := New(int64Cmp, elemsNum)
-	for i := 0; i < elemsNum; i++ {
+	for i := range elemsNum {
 		bwa.Insert(int64(i))
 	}
 	iter := func(e int64) bool {
@@ -1028,7 +1038,7 @@ func testStructCmp(a, b testStruct) int {
 	if lArrCmp != 0 {
 		return lArrCmp
 	}
-	for i := 0; i < len(a.Arr); i++ {
+	for i := range a.Arr {
 		arrCmp := a.Arr[i] - b.Arr[i]
 		if arrCmp != 0 {
 			return arrCmp
@@ -1070,6 +1080,7 @@ func testNewBWArr[T any](t *testing.T, cmp CmpFunc[T]) {
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
 			bwa := New(cmp, tt.capacity)
 			require.Len(t, bwa.whiteSegments, tt.wantWhiteSegments)
 			validateBWArr[T](t, bwa)
@@ -1082,7 +1093,7 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 		return
 	}
 
-	for i := 0; i < len(bwa.whiteSegments); i++ {
+	for i := range bwa.whiteSegments {
 		if bwa.total&(1<<i) == 0 {
 			continue
 		}
@@ -1090,8 +1101,8 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 		validateSegment(t, bwa.whiteSegments[i], bwa.cmp)
 	}
 
-	for i := 0; i < len(bwa.blackSegments); i++ {
-		require.Equal(t, len(bwa.blackSegments[i].elements), len(bwa.blackSegments[i].deleted))
+	for i := range bwa.blackSegments {
+		require.Len(t, bwa.blackSegments[i].elements, len(bwa.blackSegments[i].deleted))
 	}
 }
 
@@ -1115,7 +1126,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 func bwaEqual[T any](t *testing.T, expected, actual *BWArr[T]) {
 	require.GreaterOrEqual(t, len(expected.whiteSegments), len(actual.whiteSegments))
 	require.Equal(t, expected.total, actual.total)
-	for seg := 0; seg < len(expected.whiteSegments); seg++ {
+	for seg := range expected.whiteSegments {
 		if expected.total&(1<<seg) == 0 {
 			continue
 		}
