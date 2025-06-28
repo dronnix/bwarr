@@ -1088,7 +1088,7 @@ func testNewBWArr[T any](t *testing.T, cmp CmpFunc[T]) {
 }
 
 func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
-	if len(bwa.whiteSegments) == 0 && len(bwa.blackSegments) == 0 || bwa.total == 0 {
+	if len(bwa.whiteSegments) == 0 || bwa.total == 0 {
 		return
 	}
 
@@ -1098,10 +1098,6 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 		}
 		require.Len(t, bwa.whiteSegments[i].elements, 1<<i)
 		validateSegment(t, bwa.whiteSegments[i], bwa.cmp)
-	}
-
-	for i := range bwa.blackSegments {
-		require.Len(t, bwa.blackSegments[i].elements, len(bwa.blackSegments[i].deleted))
 	}
 }
 
