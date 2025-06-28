@@ -11,18 +11,18 @@ import (
 func BenchmarkBTreeAdd4M(b *testing.B) {
 	bt := createGenericBTree()
 	const elemsOnStart = 4 * 1024 * 1024
-	for i := 0; i < elemsOnStart; i++ {
+	for range elemsOnStart {
 		bt.ReplaceOrInsert(rand.Int63()) //nolint:gosec
 	}
 	preparedData := make([]int64, b.N)
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		preparedData[i] = rand.Int63() //nolint:gosec
 	}
 
 	b.SetBytes(8)
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		bt.ReplaceOrInsert(preparedData[i])
 	}
 }
@@ -30,18 +30,18 @@ func BenchmarkBTreeAdd4M(b *testing.B) {
 func BenchmarkBTreeAdd4MHugeStruct(b *testing.B) {
 	bt := createGenericBTreeHugeStruct()
 	const elemsOnStart = 64 * 1024
-	for i := 0; i < elemsOnStart; i++ {
+	for range elemsOnStart {
 		bt.ReplaceOrInsert(makeHugeStruct()) //nolint:gosec
 	}
 	preparedData := make([]hugeStruct, b.N)
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		preparedData[i] = makeHugeStruct()
 	}
 
 	b.SetBytes(int64(unsafe.Sizeof(hugeStruct{}))) //nolint:exhaustruct
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		bt.ReplaceOrInsert(preparedData[i])
 	}
 }
@@ -50,18 +50,18 @@ func BenchmarkReplace4MZeroCapacityHugeStruct(b *testing.B) {
 	const elemsOnStart = 64 * 1024
 	bwa := New(hugeStructCmp, 0)
 
-	for i := 0; i < elemsOnStart; i++ {
+	for range elemsOnStart {
 		bwa.Insert(makeHugeStruct())
 	}
 	preparedData := make([]hugeStruct, b.N)
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		preparedData[i] = makeHugeStruct()
 	}
 
 	b.SetBytes(int64(unsafe.Sizeof(hugeStruct{}))) //nolint:exhaustruct
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		bwa.ReplaceOrInsert(preparedData[i])
 	}
 }
@@ -70,18 +70,18 @@ func BenchmarkAppend4MZeroCapacityHugeStruct(b *testing.B) {
 	const elemsOnStart = 64 * 1024
 	bwa := New(hugeStructCmp, 0)
 
-	for i := 0; i < elemsOnStart; i++ {
+	for range elemsOnStart {
 		bwa.Insert(makeHugeStruct())
 	}
 	preparedData := make([]hugeStruct, b.N)
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		preparedData[i] = makeHugeStruct()
 	}
 
 	b.SetBytes(int64(unsafe.Sizeof(hugeStruct{}))) //nolint:exhaustruct
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for i := range b.N {
 		bwa.Insert(preparedData[i])
 	}
 }
@@ -91,7 +91,7 @@ func BenchmarkBWArr_Min4M_Fragmented(b *testing.B) {
 	bwa := New(int64Cmp, elemsOnStart)
 
 	elems := make([]int64, elemsOnStart)
-	for i := 0; i < elemsOnStart; i++ {
+	for i := range elemsOnStart {
 		x := rand.Int63()
 		bwa.Insert(x)
 		elems[i] = x
@@ -103,7 +103,7 @@ func BenchmarkBWArr_Min4M_Fragmented(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		elem, found := bwa.Min()
 		if !found {
 			b.Fatalf("Element %d not found", elem)
@@ -114,13 +114,13 @@ func BenchmarkBWArr_Min4M_Fragmented(b *testing.B) {
 func BenchmarkBTree_Min(b *testing.B) {
 	bt := createGenericBTree()
 	const elems = 4 * 1024 * 1024
-	for i := 0; i < elems; i++ {
+	for range elems {
 		bt.ReplaceOrInsert(rand.Int63()) //nolint:gosec
 	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		elem, found := bt.Min()
 		if !found {
 			b.Fatalf("Element %d not found", elem)
@@ -132,7 +132,7 @@ func BenchmarkBTree_Min_Fragmented(b *testing.B) {
 	bt := createGenericBTree()
 	const elemsOnStart = 4 * 1024 * 1024
 	elems := make([]int64, elemsOnStart)
-	for i := 0; i < elemsOnStart; i++ {
+	for i := range elemsOnStart {
 		x := rand.Int63()     //nolint:gosec
 		bt.ReplaceOrInsert(x) //nolint:gosec
 		elems[i] = x
@@ -144,7 +144,7 @@ func BenchmarkBTree_Min_Fragmented(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		elem, found := bt.Min()
 		if !found {
 			b.Fatalf("Element %d not found", elem)
@@ -156,13 +156,13 @@ func BenchmarkBTree_DeleteMin(b *testing.B) {
 	bt := createGenericBTree()
 	const elemsOnStart = 4 * 1024 * 1024
 	elems := elemsOnStart + b.N
-	for i := 0; i < elems; i++ {
+	for range elems {
 		bt.ReplaceOrInsert(rand.Int63()) //nolint:gosec
 	}
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bt.DeleteMin()
 	}
 }
@@ -182,7 +182,7 @@ func BenchmarkBTree_Ascend(b *testing.B) {
 
 	b.ResetTimer()
 	b.ReportAllocs()
-	for i := 0; i < b.N; i++ {
+	for range b.N {
 		bt.Ascend(iter)
 	}
 }
@@ -225,14 +225,14 @@ func hugeStructCmp(a, b hugeStruct) int { // nolint:gocritic
 		return sCmp
 	}
 
-	for i := 0; i < len(a.A1); i++ {
+	for i := range len(a.A1) {
 		arrCmp := a.A1[i] - b.A1[i]
 		if arrCmp != 0 {
 			return int(arrCmp)
 		}
 	}
 
-	for i := 0; i < len(a.A2); i++ {
+	for i := range len(a.A2) {
 		arrCmp := a.A2[i] - b.A2[i]
 		if arrCmp != 0 {
 			return int(arrCmp)

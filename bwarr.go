@@ -266,7 +266,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 // min assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
 	// First set result to the first segment with elements.
-	for i := 0; i < len(bwa.whiteSegments); i++ {
+	for i := range len(bwa.whiteSegments) {
 		if bwa.total&(1<<i) != 0 {
 			segNum = i
 			break
@@ -290,7 +290,7 @@ func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
 // max assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
 	// First set result to the first segment with elements.
-	for i := 0; i < len(bwa.whiteSegments); i++ {
+	for i := range len(bwa.whiteSegments) {
 		if bwa.total&(1<<i) != 0 {
 			segNum = i
 			break
