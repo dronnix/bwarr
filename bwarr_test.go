@@ -21,6 +21,47 @@ func TestNewBWArrTestStruct(t *testing.T) {
 	testNewBWArr(t, testStructCmp)
 }
 
+func TestNewFromSlice(t *testing.T) {
+
+	type testCase struct {
+		name  string
+		slice []int64
+	}
+	tests := []testCase{
+		{
+			"empty",
+			[]int64{},
+		},
+		{
+			"one",
+			[]int64{1},
+		},
+		{
+			"seven",
+			[]int64{7, 1, 8, 3, 2, 4, 5},
+		},
+		{
+			"ten",
+			[]int64{10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			bwa := NewFromSlice(int64Cmp, tt.slice)
+			validateBWArr(t, bwa)
+			slices.Sort(tt.slice)
+			require.Equal(t, len(tt.slice), bwa.Len())
+			got := make([]int64, 0, len(tt.slice))
+			bwa.Ascend(func(item int64) bool {
+				got = append(got, item)
+				return true
+			})
+
+			require.Equal(t, tt.slice, got)
+		})
+	}
+}
+
 func TestBWArr_Insert(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
