@@ -214,7 +214,7 @@ func swapSegments[T any](s1, s2 *segment[T]) {
 func reallocateSegment[T any](seg *segment[T], rank int) *segment[T] {
 	c := cap(seg.elements)
 	l := 1 << rank
-	if l >= c {
+	if l > c {
 		s := makeSegment[T](rank)
 		return &s
 	}
