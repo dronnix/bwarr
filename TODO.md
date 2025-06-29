@@ -1,14 +1,16 @@
 ### Very next
-- [ ]  Profile reusable black
-- [ ] Reusable black segment 1/2 of the size of the biggest white segment.
-- [ ] Check all methods for allocation count.
-- [ ] Implement special method Init: just split all data to segments and sort it.
-- [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
+
+- [ ] Check all methods for allocation count and consumed mem (special tests!).
 - [ ] Implement unordered iterator.
+- [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
+- [ ] Modernize iterators?
 - [ ] Write full README;
 - [ ] Add GitHub CI for tests and coverage;
 - [ ] Release!
 
+- [X] Implement special method Init: just split all data to segments and sort it.
+- [X]  Profile reusable black: BenchmarkQA_ReplaceOrInsertNotFound-10 case
+- [X] Reusable black segment 1/2 of the size of the biggest white segment.
 - [X] Implement simple compact method: delete all unused segments.
 - [X] Investigate 20 allocations in the benchmark;
 - [X] Skip deleted elements during iteration;

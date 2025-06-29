@@ -1,5 +1,7 @@
 package bwarr
 
+import "slices"
+
 type BWArr[T any] struct {
 	whiteSegments []segment[T]
 	highBlackSeg  segment[T]
@@ -20,6 +22,40 @@ func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 		highBlackSeg:  makeSegment[T](0),
 		lowBlackSeg:   makeSegment[T](0),
 		total:         0,
+		cmp:           cmp,
+	}
+}
+
+func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
+	l := len(slice)
+	copyFrom := 0
+
+	wSegNum := calculateWhiteSegmentsQuantity(l)
+	segs := make([]segment[T], wSegNum)
+	total := 0
+	rank := 0
+	for l > 0 {
+		mask := 1 << rank
+		if mask&l == 0 {
+			rank++
+			continue
+		}
+		seg := makeSegment[T](rank)
+		copyTo := copyFrom + mask
+		copy(seg.elements, slice[copyFrom:copyTo])
+		slices.SortFunc(seg.elements, cmp)
+		copyFrom += mask
+
+		segs[rank] = seg
+		total |= mask
+		l -= mask
+		rank++
+	}
+	return &BWArr[T]{
+		whiteSegments: segs,
+		highBlackSeg:  makeSegment[T](0),
+		lowBlackSeg:   makeSegment[T](0),
+		total:         total,
 		cmp:           cmp,
 	}
 }

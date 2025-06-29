@@ -151,6 +151,20 @@ func BenchmarkQA_DeleteMax(b *testing.B) {
 	}
 }
 
+func BenchmarkLongQA_NewFromSlice(b *testing.B) {
+	const elems = 128*1024 - 1
+	preparedData := make([]int64, elems)
+	for i := range elems {
+		preparedData[i] = rand.Int63()
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		NewFromSlice(int64Cmp, preparedData)
+	}
+}
+
 func BenchmarkLongQA_InsertRandom(b *testing.B) {
 	const elems = 128*1024 - 1
 	preparedData := make([]int64, elems)
