@@ -1,8 +1,9 @@
 package bwarr
 
 type BWArr[T any] struct {
-	blackSegments []segment[T]
 	whiteSegments []segment[T]
+	highBlackSeg  segment[T]
+	lowBlackSeg   segment[T]
 	total         int // Total number of elements in the array, including deleted ones.
 	cmp           CmpFunc[T]
 }
@@ -13,11 +14,11 @@ type IteratorFunc[T any] func(item T) bool
 
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 	wSegNum := calculateWhiteSegmentsQuantity(capacity)
-	bSegNum := wSegNum - 1
 
 	return &BWArr[T]{
-		blackSegments: createSegments[T](0, bSegNum),
 		whiteSegments: createSegments[T](0, wSegNum),
+		highBlackSeg:  makeSegment[T](0),
+		lowBlackSeg:   makeSegment[T](0),
 		total:         0,
 		cmp:           cmp,
 	}
@@ -31,19 +32,20 @@ func (bwa *BWArr[T]) Insert(element T) {
 		return
 	}
 
-	bwa.blackSegments[0].elements[0] = element
+	lowBlack := bwa.lowBlack(0)
+	lowBlack.elements[0] = element
 	for segNum := 1; segNum <= maxSegmentNumber; segNum++ {
 		if bwa.total&(1<<segNum) == 0 {
 			bwa.ensureSeg(segNum)
-			mergeSegments(bwa.whiteSegments[segNum-1], bwa.blackSegments[segNum-1], bwa.cmp, &bwa.whiteSegments[segNum])
+			mergeSegments(bwa.whiteSegments[segNum-1], *lowBlack, bwa.cmp, &bwa.whiteSegments[segNum])
 			bwa.total++
 			return
 		}
-		if len(bwa.blackSegments) <= segNum {
-			bwa.extend()
-		}
+		highBlack := bwa.highBlack(segNum)
+
 		bwa.ensureSeg(segNum)
-		mergeSegments(bwa.whiteSegments[segNum-1], bwa.blackSegments[segNum-1], bwa.cmp, &bwa.blackSegments[segNum])
+		mergeSegments(bwa.whiteSegments[segNum-1], *lowBlack, bwa.cmp, highBlack)
+		swapSegments(lowBlack, highBlack)
 	}
 }
 
@@ -128,20 +130,19 @@ func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	if dropSegments {
 		// TODO: drop all segments after introducing a smart getter.
 		bwa.whiteSegments = bwa.whiteSegments[:2]
-		bwa.blackSegments = bwa.blackSegments[:1]
 	}
 }
 
 func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	// TODO: Call compaction after it will be implemented.
 	newBWA := &BWArr[T]{
-		blackSegments: make([]segment[T], len(bwa.blackSegments)),
 		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
+		highBlackSeg:  makeSegment[T](0),
+		lowBlackSeg:   makeSegment[T](0),
 		total:         bwa.total,
 		cmp:           bwa.cmp,
 	}
 
-	newBWA.blackSegments = createSegments[T](0, len(bwa.blackSegments))
 	for i := range bwa.whiteSegments {
 		newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
 	}
@@ -256,8 +257,9 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		bwa.total -= 1 << segNum
 		bwa.total += 1 << (segNum - 1)
 	} else {
-		demoteSegment(*seg, &bwa.blackSegments[segNum-1])
-		mergeSegments(bwa.blackSegments[segNum-1], bwa.whiteSegments[segNum-1], bwa.cmp, seg)
+		blackSeg := bwa.highBlack(segNum - 1)
+		demoteSegment(*seg, blackSeg)
+		mergeSegments(*blackSeg, bwa.whiteSegments[segNum-1], bwa.cmp, seg)
 		bwa.total -= 1 << (segNum - 1)
 	}
 	return deleted
@@ -325,11 +327,6 @@ func (bwa *BWArr[T]) search(element T) (segNum, index int) {
 
 const maxSegmentNumber = 62
 
-func (bwa *BWArr[T]) extend() {
-	rank := len(bwa.whiteSegments) - 1
-	bwa.blackSegments = append(bwa.blackSegments, makeSegment[T](rank))
-}
-
 func (bwa *BWArr[T]) ensureSeg(rank int) {
 	l := len(bwa.whiteSegments)
 	if rank >= l {
@@ -339,4 +336,14 @@ func (bwa *BWArr[T]) ensureSeg(rank int) {
 	if len(bwa.whiteSegments[rank].elements) == 0 {
 		bwa.whiteSegments[rank] = makeSegment[T](rank)
 	}
+}
+
+func (bwa *BWArr[T]) highBlack(rank int) *segment[T] {
+	bwa.highBlackSeg = *reallocateSegment(&bwa.highBlackSeg, rank)
+	return &bwa.highBlackSeg
+}
+
+func (bwa *BWArr[T]) lowBlack(rank int) *segment[T] {
+	bwa.lowBlackSeg = *reallocateSegment(&bwa.lowBlackSeg, rank)
+	return &bwa.lowBlackSeg
 }
