@@ -22,7 +22,6 @@ func TestNewBWArrTestStruct(t *testing.T) {
 }
 
 func TestNewFromSlice(t *testing.T) {
-
 	type testCase struct {
 		name  string
 		slice []int64
