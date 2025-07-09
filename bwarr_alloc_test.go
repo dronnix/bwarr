@@ -27,12 +27,12 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 		{
 			name:         "New(0)",
 			bwarr:        New[int64](int64Cmp, 0),
-			expectedSize: 373,
+			expectedSize: 184,
 		},
 		{
 			name:         "New(testAllocsSize)",
 			bwarr:        New[int64](int64Cmp, testAllocsSize),
-			expectedSize: 625,
+			expectedSize: 661,
 		},
 	}
 
@@ -78,7 +78,6 @@ func TestBWArr_Allocs_NewFromSlice(t *testing.T) {
 	require.Equal(t, expectedAllocs, int(allocs), "Expected allocation count does not match actual count")
 }
 
-// TODO Investigate why this test allocates more than expected
 func TestBWArr_Allocs_Insert(t *testing.T) {
 	const N = 100
 	bwarrs := make([]*BWArr[int64], N+1)

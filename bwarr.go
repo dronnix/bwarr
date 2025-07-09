@@ -15,21 +15,29 @@ type CmpFunc[T any] func(a, b T) int
 type IteratorFunc[T any] func(item T) bool
 
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
-	wSegNum := calculateWhiteSegmentsQuantity(capacity)
+	bwa := &BWArr[T]{cmp: cmp, total: 0}
 
-	return &BWArr[T]{
-		whiteSegments: createSegments[T](0, wSegNum),
-		highBlackSeg:  makeSegment[T](0),
-		lowBlackSeg:   makeSegment[T](0),
-		total:         0,
-		cmp:           cmp,
+	wSegNum := calculateWhiteSegmentsQuantity(capacity)
+	if wSegNum > 0 {
+		bwa.whiteSegments = createSegments[T](0, wSegNum)
 	}
+	if wSegNum > 1 {
+		bwa.highBlackSeg = makeSegment[T](wSegNum - 2) //nolint:mnd
+	}
+	if wSegNum > 2 { //nolint:mnd
+		bwa.lowBlackSeg = makeSegment[T](wSegNum - 3) //nolint:mnd
+	}
+
+	return bwa
 }
 
 func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
 	l := len(slice)
-	copyFrom := 0
+	if l == 0 {
+		return New[T](cmp, 0)
+	}
 
+	copyFrom := 0
 	wSegNum := calculateWhiteSegmentsQuantity(l)
 	segs := make([]segment[T], wSegNum)
 	total := 0

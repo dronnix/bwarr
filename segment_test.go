@@ -42,7 +42,7 @@ func Test_calculateWhiteSegmentsQuantity(t *testing.T) {
 		{
 			name:      "zero capacity",
 			capacity:  0,
-			want:      2,
+			want:      0,
 			wantPanic: false,
 		},
 		{

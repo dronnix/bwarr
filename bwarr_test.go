@@ -1104,7 +1104,7 @@ func testNewBWArr[T any](t *testing.T, cmp CmpFunc[T]) {
 		{
 			name:              "zero capacity",
 			capacity:          0,
-			wantWhiteSegments: 2,
+			wantWhiteSegments: 0,
 		},
 		{
 			name:              "capacity = 7",
