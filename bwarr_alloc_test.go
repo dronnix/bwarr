@@ -174,20 +174,14 @@ func TestBWArr_Allocs_Delete(t *testing.T) {
 
 func TestBWArr_Allocs_DeleteMin(t *testing.T) {
 	const N = 100
-	bwarrs := make([]*BWArr[int64], N+1)
-	for i := range bwarrs {
-		bwarrs[i] = New[int64](int64Cmp, testAllocsSize)
-		// Pre-populate with test data
-		for j := range testAllocsSize {
-			bwarrs[i].Insert(int64(j))
-		}
+	bwarr := New(int64Cmp, N)
+	for j := range N {
+		bwarr.Insert(int64(j))
 	}
 
 	idx := 0
 	allocs := testing.AllocsPerRun(N, func() {
-		for range testAllocsSize {
-			bwarrs[idx].DeleteMin()
-		}
+		bwarr.DeleteMin()
 		idx++
 	})
 
@@ -196,20 +190,14 @@ func TestBWArr_Allocs_DeleteMin(t *testing.T) {
 
 func TestBWArr_Allocs_DeleteMax(t *testing.T) {
 	const N = 100
-	bwarrs := make([]*BWArr[int64], N+1)
-	for i := range bwarrs {
-		bwarrs[i] = New[int64](int64Cmp, testAllocsSize)
-		// Pre-populate with test data
-		for j := range testAllocsSize {
-			bwarrs[i].Insert(int64(j))
-		}
+	bwarr := New(int64Cmp, N)
+	for j := range N {
+		bwarr.Insert(int64(j))
 	}
 
 	idx := 0
 	allocs := testing.AllocsPerRun(N, func() {
-		for range testAllocsSize {
-			bwarrs[idx].DeleteMax()
-		}
+		bwarr.DeleteMax()
 		idx++
 	})
 
@@ -217,11 +205,11 @@ func TestBWArr_Allocs_DeleteMax(t *testing.T) {
 }
 
 func TestBWArr_Allocs_Min(t *testing.T) {
-	const N = 10
-	bwarr := New[int64](int64Cmp, testAllocsSize)
+	const N = 100
+	bwarr := New[int64](int64Cmp, N)
 
 	// Pre-populate with test data
-	for i := range testAllocsSize {
+	for i := range N {
 		bwarr.Insert(int64(i))
 	}
 
@@ -233,11 +221,11 @@ func TestBWArr_Allocs_Min(t *testing.T) {
 }
 
 func TestBWArr_Allocs_Max(t *testing.T) {
-	const N = 10
-	bwarr := New[int64](int64Cmp, testAllocsSize)
+	const N = 100
+	bwarr := New[int64](int64Cmp, N)
 
 	// Pre-populate with test data
-	for i := range testAllocsSize {
+	for i := range N {
 		bwarr.Insert(int64(i))
 	}
 
