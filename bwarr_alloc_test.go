@@ -216,6 +216,38 @@ func TestBWArr_Allocs_DeleteMax(t *testing.T) {
 	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during DeleteMax operations") // nolint:testifylint
 }
 
+func TestBWArr_Allocs_Min(t *testing.T) {
+	const N = 10
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	// Pre-populate with test data
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	allocs := testing.AllocsPerRun(N, func() {
+		bwarr.Min()
+	})
+
+	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during Min operations") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_Max(t *testing.T) {
+	const N = 10
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	// Pre-populate with test data
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	allocs := testing.AllocsPerRun(N, func() {
+		bwarr.Max()
+	})
+
+	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during Max operations") // nolint:testifylint
+}
+
 // calculateBWArrSize calculates the total size of a BWArr struct including all nested fields
 func calculateBWArrSize[T any](bwarr *BWArr[T]) int {
 	size := int(unsafe.Sizeof(*bwarr))
