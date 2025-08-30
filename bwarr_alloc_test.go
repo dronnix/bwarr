@@ -150,6 +150,72 @@ func TestBWArr_Allocs_Get(t *testing.T) {
 	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during Get operations") // nolint:testifylint
 }
 
+func TestBWArr_Allocs_Delete(t *testing.T) {
+	const N = 100
+	bwarrs := make([]*BWArr[int64], N+1)
+	for i := range bwarrs {
+		bwarrs[i] = New[int64](int64Cmp, testAllocsSize)
+		// Pre-populate with test data
+		for j := range testAllocsSize {
+			bwarrs[i].Insert(int64(j))
+		}
+	}
+
+	idx := 0
+	allocs := testing.AllocsPerRun(N, func() {
+		for i := range testAllocsSize * 2 { // Multiply by 2 to include some misses
+			bwarrs[idx].Delete(int64(i))
+		}
+		idx++
+	})
+
+	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during Delete operations") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_DeleteMin(t *testing.T) {
+	const N = 100
+	bwarrs := make([]*BWArr[int64], N+1)
+	for i := range bwarrs {
+		bwarrs[i] = New[int64](int64Cmp, testAllocsSize)
+		// Pre-populate with test data
+		for j := range testAllocsSize {
+			bwarrs[i].Insert(int64(j))
+		}
+	}
+
+	idx := 0
+	allocs := testing.AllocsPerRun(N, func() {
+		for range testAllocsSize {
+			bwarrs[idx].DeleteMin()
+		}
+		idx++
+	})
+
+	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during DeleteMin operations") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_DeleteMax(t *testing.T) {
+	const N = 100
+	bwarrs := make([]*BWArr[int64], N+1)
+	for i := range bwarrs {
+		bwarrs[i] = New[int64](int64Cmp, testAllocsSize)
+		// Pre-populate with test data
+		for j := range testAllocsSize {
+			bwarrs[i].Insert(int64(j))
+		}
+	}
+
+	idx := 0
+	allocs := testing.AllocsPerRun(N, func() {
+		for range testAllocsSize {
+			bwarrs[idx].DeleteMax()
+		}
+		idx++
+	})
+
+	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during DeleteMax operations") // nolint:testifylint
+}
+
 // calculateBWArrSize calculates the total size of a BWArr struct including all nested fields
 func calculateBWArrSize[T any](bwarr *BWArr[T]) int {
 	size := int(unsafe.Sizeof(*bwarr))
