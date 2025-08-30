@@ -172,8 +172,7 @@ func (bwa *BWArr[T]) Min() (minElem T, found bool) {
 func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	bwa.total = 0
 	if dropSegments {
-		// TODO: drop all segments after introducing a smart getter.
-		bwa.whiteSegments = bwa.whiteSegments[:2]
+		bwa.whiteSegments = bwa.whiteSegments[:0]
 	}
 }
 
