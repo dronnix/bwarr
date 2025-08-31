@@ -173,6 +173,8 @@ func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	bwa.total = 0
 	if dropSegments {
 		bwa.whiteSegments = bwa.whiteSegments[:0]
+		bwa.highBlackSeg = segment[T]{} //nolint:exhaustruct
+		bwa.lowBlackSeg = segment[T]{}  //nolint:exhaustruct
 	}
 }
 

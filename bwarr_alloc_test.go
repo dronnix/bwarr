@@ -252,6 +252,21 @@ func TestBWArr_Allocs_Clear(t *testing.T) {
 	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during Clear operations") // nolint:testifylint
 }
 
+func TestBWArr_Allocs_ShouldBeEmptyAfterClear(t *testing.T) {
+	bwarr := New[int64](int64Cmp, 0)
+	szBefore := calculateBWArrSize(bwarr)
+
+	const N = 100
+	for i := range N {
+		bwarr.Insert(int64(i))
+	}
+
+	bwarr.Clear(true)
+
+	szAfter := calculateBWArrSize(bwarr)
+	assert.Equal(t, szBefore, szAfter, "BWArr size should match initial size after Clear with dropSegments")
+}
+
 // calculateBWArrSize calculates the total size of a BWArr struct including all nested fields
 func calculateBWArrSize[T any](bwarr *BWArr[T]) int {
 	size := int(unsafe.Sizeof(*bwarr))
