@@ -267,7 +267,7 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 
 func (bwa *BWArr[T]) Compact() {
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if bwa.total&(1<<i) == 0 { // Segment is not used
 			bwa.whiteSegments[i] = segment[T]{} //nolint:exhaustruct
 		}
 	}

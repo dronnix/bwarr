@@ -16,7 +16,7 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 		bwarr        *BWArr[int64]
 		expectedSize int
 	}{
-		// Count worlds (8 bytes):
+		// Count words (8 bytes):
 		// whiteSegments 3, // highBlackSeg 9, lowBlackSeg 9, // total 1, cmp 1 --> // 3 + 9 + 9 + 1 + 1 = 23;
 		// 23 * 8 = 184 bytes;
 		{
