@@ -2,8 +2,6 @@ package bwarr
 
 import "math"
 
-const defaultWhiteSegmentsForZeroCapacity = 2
-
 type segment[T any] struct {
 	elements         []T    // Stores user's data.
 	deleted          []bool // Stores whether i-th element is deleted.
@@ -193,14 +191,13 @@ func (s *segment[T]) deepCopy() segment[T] {
 }
 
 func calculateWhiteSegmentsQuantity(capacity int) int {
-	switch {
-	case capacity == 0:
-		return defaultWhiteSegmentsForZeroCapacity // to avoid every time checking if capacity is 0
-	case capacity < 0:
+	if capacity < 0 {
 		panic("negative capacity")
-	default:
-		return int(math.Log2(float64(capacity)) + 1) // TODO: rewrite without using math?
 	}
+	if capacity == 0 {
+		return 0
+	}
+	return int(math.Log2(float64(capacity)) + 1) // TODO: rewrite without using math?
 }
 
 func swapSegments[T any](s1, s2 *segment[T]) {

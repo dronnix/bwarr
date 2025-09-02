@@ -1,9 +1,7 @@
-### Very next
+### Fast release
 
-- [ ] Check all methods for allocation count and consumed mem (special tests!).
+- [X] Check all methods for allocation count and consumed mem (special tests!).
 - [ ] Implement unordered iterator.
-- [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
-- [ ] Modernize iterators?
 - [ ] Write full README;
 - [ ] Add GitHub CI for tests and coverage;
 - [ ] Release!
@@ -19,15 +17,11 @@
 - [X] Add other Ascend methods;
 - [X] Add backwards iteration;
 
-### Fast release
-- [X] Track benchmarks trends, compare with previous commits;
-- [X] Add benchmarks to CI;
-- [X] Refactor code: move out segment, it's methods and tests;
-- [X] Add iterators;
-
 ### Full release
 - [ ] Plan further steps;
 - [ ] Add public benchmarks in separate repository;
+- [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
+- [ ] Modernize iterators?
 - [ ] Benchmark huge structs;
 
 ### Compare with competitors

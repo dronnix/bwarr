@@ -70,6 +70,7 @@ The implementation is heavily optimized with:
 - QA directory contains benchmark data and tooling
 - Coverage reporting with HTML output
 - Parallel test execution supported
+- Use testify in tests
 
 ## Dependencies
 

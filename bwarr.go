@@ -15,21 +15,29 @@ type CmpFunc[T any] func(a, b T) int
 type IteratorFunc[T any] func(item T) bool
 
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
-	wSegNum := calculateWhiteSegmentsQuantity(capacity)
+	bwa := &BWArr[T]{cmp: cmp, total: 0}
 
-	return &BWArr[T]{
-		whiteSegments: createSegments[T](0, wSegNum),
-		highBlackSeg:  makeSegment[T](0),
-		lowBlackSeg:   makeSegment[T](0),
-		total:         0,
-		cmp:           cmp,
+	wSegNum := calculateWhiteSegmentsQuantity(capacity)
+	if wSegNum > 0 {
+		bwa.whiteSegments = createSegments[T](0, wSegNum)
 	}
+	if wSegNum > 1 {
+		bwa.highBlackSeg = makeSegment[T](wSegNum - 2) //nolint:mnd
+	}
+	if wSegNum > 2 { //nolint:mnd
+		bwa.lowBlackSeg = makeSegment[T](wSegNum - 3) //nolint:mnd
+	}
+
+	return bwa
 }
 
 func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
 	l := len(slice)
-	copyFrom := 0
+	if l == 0 {
+		return New[T](cmp, 0)
+	}
 
+	copyFrom := 0
 	wSegNum := calculateWhiteSegmentsQuantity(l)
 	segs := make([]segment[T], wSegNum)
 	total := 0
@@ -164,23 +172,23 @@ func (bwa *BWArr[T]) Min() (minElem T, found bool) {
 func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	bwa.total = 0
 	if dropSegments {
-		// TODO: drop all segments after introducing a smart getter.
-		bwa.whiteSegments = bwa.whiteSegments[:2]
+		bwa.whiteSegments = bwa.whiteSegments[:0]
+		bwa.highBlackSeg = segment[T]{} //nolint:exhaustruct
+		bwa.lowBlackSeg = segment[T]{}  //nolint:exhaustruct
 	}
 }
 
 func (bwa *BWArr[T]) Clone() *BWArr[T] {
-	// TODO: Call compaction after it will be implemented.
 	newBWA := &BWArr[T]{
 		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
-		highBlackSeg:  makeSegment[T](0),
-		lowBlackSeg:   makeSegment[T](0),
 		total:         bwa.total,
 		cmp:           bwa.cmp,
 	}
 
 	for i := range bwa.whiteSegments {
-		newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
+		if bwa.total&(1<<i) != 0 {
+			newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
+		}
 	}
 	return newBWA
 }
@@ -259,10 +267,12 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 
 func (bwa *BWArr[T]) Compact() {
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if bwa.total&(1<<i) == 0 { // Segment is not used
 			bwa.whiteSegments[i] = segment[T]{} //nolint:exhaustruct
 		}
 	}
+	bwa.highBlackSeg = segment[T]{} //nolint:exhaustruct
+	bwa.lowBlackSeg = segment[T]{}  //nolint:exhaustruct
 }
 
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {

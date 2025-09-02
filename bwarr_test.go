@@ -595,7 +595,7 @@ func TestBWArr_Clear(t *testing.T) {
 	validateBWArr(t, bwa)
 	assert.Equal(t, 0, bwa.Len())
 	assert.Equal(t, 0, bwa.total)
-	assert.Len(t, bwa.whiteSegments, 2)
+	assert.Empty(t, bwa.whiteSegments)
 
 	for i := range 15 {
 		bwa.Insert(int64(i))
@@ -1104,7 +1104,7 @@ func testNewBWArr[T any](t *testing.T, cmp CmpFunc[T]) {
 		{
 			name:              "zero capacity",
 			capacity:          0,
-			wantWhiteSegments: 2,
+			wantWhiteSegments: 0,
 		},
 		{
 			name:              "capacity = 7",
