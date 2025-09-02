@@ -267,6 +267,22 @@ func TestBWArr_Allocs_ShouldBeEmptyAfterClear(t *testing.T) {
 	assert.Equal(t, szBefore, szAfter, "BWArr size should match initial size after Clear with dropSegments")
 }
 
+func TestBWArr_Allocs_Clone(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		c := bwarr.Clone()
+		c.Len() // Use the clone to prevent compiler optimizations
+	})
+
+	assert.Equal(t, 8.0, allocs, "Expected 8 memory allocations during Clone") // nolint:testifylint
+}
+
 func TestBWArr_Allocs_Len(t *testing.T) {
 	const N = 100
 	bwarr := New[int64](int64Cmp, N)

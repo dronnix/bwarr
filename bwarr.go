@@ -182,14 +182,14 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	// TODO: Call compaction after it will be implemented.
 	newBWA := &BWArr[T]{
 		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
-		highBlackSeg:  makeSegment[T](0),
-		lowBlackSeg:   makeSegment[T](0),
 		total:         bwa.total,
 		cmp:           bwa.cmp,
 	}
 
 	for i := range bwa.whiteSegments {
-		newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
+		if bwa.total&(1<<i) != 0 {
+			newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
+		}
 	}
 	return newBWA
 }
