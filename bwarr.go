@@ -179,7 +179,6 @@ func (bwa *BWArr[T]) Clear(dropSegments bool) {
 }
 
 func (bwa *BWArr[T]) Clone() *BWArr[T] {
-	// TODO: Call compaction after it will be implemented.
 	newBWA := &BWArr[T]{
 		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
 		total:         bwa.total,
@@ -272,6 +271,8 @@ func (bwa *BWArr[T]) Compact() {
 			bwa.whiteSegments[i] = segment[T]{} //nolint:exhaustruct
 		}
 	}
+	bwa.highBlackSeg = segment[T]{} //nolint:exhaustruct
+	bwa.lowBlackSeg = segment[T]{}  //nolint:exhaustruct
 }
 
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {

@@ -450,6 +450,37 @@ func TestBWArr_Allocs_DescendRange(t *testing.T) {
 	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during DescendRange") // nolint:testifylint
 }
 
+func TestBWArr_Allocs_Compact(t *testing.T) {
+	const testAllocsSize = 16
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	// Pre-populate with test data
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	allocs := testing.AllocsPerRun(1, func() {
+		bwarr.Compact()
+	})
+
+	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during Compact operations") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_ShouldBeLessAfterCompact(t *testing.T) {
+	const testAllocsSize = 1024
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	szBefore := calculateBWArrSize(bwarr)
+	bwarr.Compact()
+	szAfter := calculateBWArrSize(bwarr)
+
+	assert.Greater(t, float64(szBefore)/float64(szAfter), 2.0, "BWArr size should be at least twice less after Compact")
+}
+
 // calculateBWArrSize calculates the total size of a BWArr struct including all nested fields
 func calculateBWArrSize[T any](bwarr *BWArr[T]) int {
 	size := int(unsafe.Sizeof(*bwarr))

@@ -1,6 +1,6 @@
 ### Fast release
 
-- [ ] Check all methods for allocation count and consumed mem (special tests!).
+- [X] Check all methods for allocation count and consumed mem (special tests!).
 - [ ] Implement unordered iterator.
 - [ ] Write full README;
 - [ ] Add GitHub CI for tests and coverage;
@@ -19,9 +19,9 @@
 
 ### Full release
 - [ ] Plan further steps;
+- [ ] Add public benchmarks in separate repository;
 - [ ] Implement special method for batch insert: (we know what segments we need to store whole batch, so can use merge segments to infill it).
 - [ ] Modernize iterators?
-- [ ] Add public benchmarks in separate repository;
 - [ ] Benchmark huge structs;
 
 ### Compare with competitors
