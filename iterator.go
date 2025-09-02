@@ -5,7 +5,7 @@ import (
 )
 
 type iterator[T any] struct {
-	segIters []*segmentIterator[T]
+	segIters []*segmentIterator[T] // Pointers used to be able to pass pointers to segmentIterators to SortFunc.
 	cmp      CmpFunc[T]
 }
 

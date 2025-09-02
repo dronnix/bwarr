@@ -282,6 +282,158 @@ func TestBWArr_Allocs_Len(t *testing.T) {
 	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during Len operations") // nolint:testifylint
 }
 
+func TestBWArr_Allocs_Ascend(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		s := int64(0)
+		bwarr.Ascend(func(item int64) bool {
+			s += item
+			return true
+		})
+	})
+
+	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during Ascend") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_AscendGreaterOrEqual(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		s := int64(0)
+		bwarr.AscendGreaterOrEqual(int64(5), func(item int64) bool {
+			s += item
+			return true
+		})
+	})
+
+	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during AscendGreaterOrEqual") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_AscendLessThan(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		s := int64(0)
+		bwarr.AscendLessThan(int64(5), func(item int64) bool {
+			s += item
+			return true
+		})
+	})
+
+	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during AscendLessThan") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_AscendRange(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		s := int64(0)
+		bwarr.AscendRange(int64(2), int64(8), func(item int64) bool {
+			s += item
+			return true
+		})
+	})
+
+	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during AscendRange") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_Descend(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		s := int64(0)
+		bwarr.Descend(func(item int64) bool {
+			s += item
+			return true
+		})
+	})
+
+	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during Descend") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_DescendGreaterOrEqual(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		s := int64(0)
+		bwarr.DescendGreaterOrEqual(int64(5), func(item int64) bool {
+			s += item
+			return true
+		})
+	})
+
+	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during DescendGreaterOrEqual") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_DescendLessThan(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		s := int64(0)
+		bwarr.DescendLessThan(int64(5), func(item int64) bool {
+			s += item
+			return true
+		})
+	})
+
+	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during DescendLessThan") // nolint:testifylint
+}
+
+func TestBWArr_Allocs_DescendRange(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		s := int64(0)
+		bwarr.DescendRange(int64(2), int64(8), func(item int64) bool {
+			s += item
+			return true
+		})
+	})
+
+	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during DescendRange") // nolint:testifylint
+}
+
 // calculateBWArrSize calculates the total size of a BWArr struct including all nested fields
 func calculateBWArrSize[T any](bwarr *BWArr[T]) int {
 	size := int(unsafe.Sizeof(*bwarr))
