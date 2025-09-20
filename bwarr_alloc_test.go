@@ -450,6 +450,25 @@ func TestBWArr_Allocs_DescendRange(t *testing.T) {
 	assert.Equal(t, 2.0, allocs, "Expected 2 memory allocations during DescendRange") // nolint:testifylint
 }
 
+func TestBWArr_Allocs_UnorderedWalk(t *testing.T) {
+	bwarr := New[int64](int64Cmp, testAllocsSize)
+
+	for i := range testAllocsSize {
+		bwarr.Insert(int64(i))
+	}
+
+	const N = 100
+	allocs := testing.AllocsPerRun(N, func() {
+		s := int64(0)
+		bwarr.UnorderedWalk(func(item int64) bool {
+			s += item
+			return true
+		})
+	})
+
+	assert.Equal(t, 0.0, allocs, "Expected zero memory allocations during UnorderedWalk") // nolint:testifylint
+}
+
 func TestBWArr_Allocs_Compact(t *testing.T) {
 	const testAllocsSize = 16
 	bwarr := New[int64](int64Cmp, testAllocsSize)
