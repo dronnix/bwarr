@@ -1051,6 +1051,137 @@ func TestBWArr_Compact(t *testing.T) {
 	}
 }
 
+func TestBWArr_UnorderedWalk(t *testing.T) {
+	t.Parallel()
+
+	t.Run("empty array", func(t *testing.T) {
+		t.Parallel()
+		bwa := New(int64Cmp, 0)
+		called := false
+		bwa.UnorderedWalk(func(_ int64) bool {
+			called = true
+			return true
+		})
+		assert.False(t, called, "iterator should not be called on empty array")
+	})
+
+	t.Run("single element", func(t *testing.T) {
+		t.Parallel()
+		bwa := New(int64Cmp, 1)
+		bwa.Insert(42)
+
+		elements := []int64{}
+		bwa.UnorderedWalk(func(item int64) bool {
+			elements = append(elements, item)
+			return true
+		})
+		assert.Equal(t, []int64{42}, elements)
+	})
+
+	t.Run("multiple elements across segments", func(t *testing.T) {
+		t.Parallel()
+		// Insert enough elements to span multiple segments
+		bwa := New(int64Cmp, 15)
+		expected := []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15}
+		for _, v := range expected {
+			bwa.Insert(v)
+		}
+
+		collected := make([]int64, 0, 15)
+		bwa.UnorderedWalk(func(item int64) bool {
+			collected = append(collected, item)
+			return true
+		})
+
+		// UnorderedWalk doesn't guarantee order, so sort before comparing
+		sort.Slice(collected, func(i, j int) bool { return collected[i] < collected[j] })
+		assert.Equal(t, expected, collected)
+	})
+
+	t.Run("early termination", func(t *testing.T) {
+		t.Parallel()
+		bwa := New(int64Cmp, 10)
+		for i := int64(1); i <= 10; i++ {
+			bwa.Insert(i)
+		}
+
+		count := 0
+		maxCount := 3
+		bwa.UnorderedWalk(func(_ int64) bool {
+			count++
+			return count < maxCount
+		})
+		assert.Equal(t, maxCount, count, "iterator should stop after returning false")
+	})
+
+	t.Run("with deleted elements", func(t *testing.T) {
+		t.Parallel()
+		bwa := New(int64Cmp, 10)
+		for i := int64(1); i <= 10; i++ {
+			bwa.Insert(i)
+		}
+
+		// Delete some elements
+		bwa.Delete(3)
+		bwa.Delete(7)
+		bwa.Delete(10)
+
+		collected := make([]int64, 0, 7)
+		bwa.UnorderedWalk(func(item int64) bool {
+			collected = append(collected, item)
+			return true
+		})
+
+		// Should not include deleted elements
+		sort.Slice(collected, func(i, j int) bool { return collected[i] < collected[j] })
+		assert.Equal(t, []int64{1, 2, 4, 5, 6, 8, 9}, collected)
+	})
+
+	t.Run("large dataset", func(t *testing.T) {
+		t.Parallel()
+		const elemsNum = 1023
+		bwa := New(int64Cmp, elemsNum)
+
+		// Insert random elements
+		rand.Seed(42) //nolint:staticcheck
+		inserted := make([]int64, 0, elemsNum)
+		for range elemsNum {
+			val := int64(rand.Intn(10000))
+			bwa.Insert(val)
+			inserted = append(inserted, val)
+		}
+
+		// Collect all elements via UnorderedWalk
+		collected := make([]int64, 0, elemsNum)
+		bwa.UnorderedWalk(func(item int64) bool {
+			collected = append(collected, item)
+			return true
+		})
+
+		assert.Len(t, collected, elemsNum, "should visit all inserted elements")
+
+		// Sort both slices for comparison
+		sort.Slice(inserted, func(i, j int) bool { return inserted[i] < inserted[j] })
+		sort.Slice(collected, func(i, j int) bool { return collected[i] < collected[j] })
+		assert.Equal(t, inserted, collected, "should collect same elements as inserted")
+	})
+
+	t.Run("iterator returning false immediately", func(t *testing.T) {
+		t.Parallel()
+		bwa := New(int64Cmp, 5)
+		for i := int64(1); i <= 5; i++ {
+			bwa.Insert(i)
+		}
+
+		count := 0
+		bwa.UnorderedWalk(func(_ int64) bool {
+			count++
+			return false // Always return false
+		})
+		assert.Equal(t, 1, count, "should call iterator exactly once")
+	})
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }

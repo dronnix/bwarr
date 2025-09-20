@@ -265,6 +265,23 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 	}
 }
 
+func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
+	for i := range bwa.whiteSegments {
+		if bwa.total&(1<<i) == 0 {
+			continue
+		}
+		seg := &bwa.whiteSegments[i]
+		for j := range seg.elements {
+			if seg.deleted[j] {
+				continue
+			}
+			if !iterator(seg.elements[j]) {
+				return
+			}
+		}
+	}
+}
+
 func (bwa *BWArr[T]) Compact() {
 	for i := range bwa.whiteSegments {
 		if bwa.total&(1<<i) == 0 { // Segment is not used
