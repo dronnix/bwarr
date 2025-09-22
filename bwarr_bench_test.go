@@ -350,6 +350,58 @@ func BenchmarkLongQA_DescendRangeWithDelSeries(b *testing.B) {
 	}
 }
 
+func BenchmarkLongQA_UnorderedWalkRandom(b *testing.B) {
+	const elems = 128*1024 - 1
+	bwa := New(int64Cmp, elems)
+	for range elems {
+		bwa.Insert(rand.Int63())
+	}
+
+	s := int64(0)
+	iter := func(x int64) bool {
+		s += x
+		return true
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		bwa.UnorderedWalk(iter)
+	}
+}
+
+func BenchmarkLongQA_UnorderedWalkWithDelSeries(b *testing.B) {
+	const elems = 128*1024 - 1
+	bwa := New(int64Cmp, elems)
+	const seriesLen = 301
+	toDel := make([]int64, 0, elems/seriesLen)
+	seriesEnd := 0
+	for i := range elems {
+		bwa.Insert(int64(i))
+		if i%12345 == 0 {
+			seriesEnd = i + rand.Intn(seriesLen)
+		}
+		if i < seriesEnd {
+			toDel = append(toDel, int64(i))
+		}
+	}
+	for i := range toDel {
+		bwa.Delete(toDel[i])
+	}
+
+	s := int64(0)
+	iter := func(x int64) bool {
+		s += x
+		return true
+	}
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		bwa.UnorderedWalk(iter)
+	}
+}
+
 func benchmarkAppend(b *testing.B, elemsOnStart, capacity int) {
 	bwa := New(int64Cmp, capacity)
 
