@@ -1,7 +1,7 @@
 ### Fast release
 
 - [X] Check all methods for allocation count and consumed mem (special tests!).
-- [ ] Implement unordered iterator.
+- [X] Implement unordered iterator.
 - [ ] Write full README;
 - [ ] Add GitHub CI for tests and coverage;
 - [ ] Release!
