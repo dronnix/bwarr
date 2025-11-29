@@ -1,7 +1,15 @@
+// Package bwarr implements a Black-White Array, a fast, ordered
+// data structure with O(log N) memory allocations and O(log N) amortized complexity for
+// insert, delete, and search operations. Can store equal elements and maintains stable ordering.
+// See data structure details at: https://arxiv.org/abs/2004.09051
 package bwarr
 
 import "slices"
 
+// BWArr is a Black-White Array, a fast, ordered data structure with O(log N) memory allocations
+// and O(log N) amortized complexity for insert, delete, and search operations. Can store equal
+// elements and maintains stable ordering.
+// See data structure details at: https://arxiv.org/abs/2004.09051
 type BWArr[T any] struct {
 	whiteSegments []segment[T]
 	highBlackSeg  segment[T]
@@ -10,10 +18,22 @@ type BWArr[T any] struct {
 	cmp           CmpFunc[T]
 }
 
+// CmpFunc is a comparison function that defines the ordering of elements.
+// It should return:
+//   - a negative value if a < b
+//   - zero if a == b
+//   - a positive value if a > b
 type CmpFunc[T any] func(a, b T) int
 
+// IteratorFunc is a callback function used for iterating over elements.
+// It receives each element during iteration and should return true to
+// continue iteration or false to stop early.
 type IteratorFunc[T any] func(item T) bool
 
+// New creates a new empty BWArr with the given comparison function CmpFunc and
+// capacity hint. The capacity parameter provides an estimate of the expected
+// number of elements to optimize initial memory allocation. Use 0 if the
+// capacity is unknown.
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 	bwa := &BWArr[T]{cmp: cmp, total: 0}
 
@@ -31,6 +51,10 @@ func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 	return bwa
 }
 
+// NewFromSlice creates a new BWArr from an existing slice of elements and a comparison
+// function CmpFunc.
+// This constructor is more efficient than creating an empty BWArr and inserting elements one by one.
+// The original slice is not modified.
 func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
 	l := len(slice)
 	if l == 0 {
@@ -68,6 +92,12 @@ func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
 	}
 }
 
+// Insert adds an element to the BWArr maintaining sorted order.
+// The operation has O(log N) amortized time complexity. Note that one in
+// every N insert operations may take O(N) time for segment consolidation.
+//
+// Duplicate elements are allowed. If multiple equal elements exist, they
+// maintain stable ordering based on insertion order.
 func (bwa *BWArr[T]) Insert(element T) {
 	if bwa.total&1 == 0 { // whiteSegments[0] is free
 		bwa.ensureSeg(0)
@@ -93,6 +123,12 @@ func (bwa *BWArr[T]) Insert(element T) {
 	}
 }
 
+// ReplaceOrInsert inserts an element into the BWArr, or replaces an existing
+// equal element if found. Returns the old element and true if an element was
+// replaced, or the zero value of T and false if the element was inserted.
+//
+// When multiple equal elements exist, the first inserted element
+// is replaced, maintaining stable ordering for the remaining duplicates.
 func (bwa *BWArr[T]) ReplaceOrInsert(element T) (old T, found bool) {
 	seg, ind := bwa.search(element)
 	if ind < 0 {
@@ -104,6 +140,8 @@ func (bwa *BWArr[T]) ReplaceOrInsert(element T) (old T, found bool) {
 	return old, true
 }
 
+// Has returns true if the element exists in the BWArr, false otherwise.
+// The search operation has O(log N) time complexity.
 func (bwa *BWArr[T]) Has(element T) bool {
 	if _, index := bwa.search(element); index >= 0 {
 		return true
@@ -111,6 +149,12 @@ func (bwa *BWArr[T]) Has(element T) bool {
 	return false
 }
 
+// Get returns the element equal to the given element and true if found,
+// or the zero value of T and false if not found. The search operation has
+// O(log N) time complexity.
+//
+// When multiple equal elements exist, the first inserted element
+// is returned.
 func (bwa *BWArr[T]) Get(element T) (res T, found bool) {
 	if segNum, index := bwa.search(element); index >= 0 {
 		return bwa.whiteSegments[segNum].elements[index], true
@@ -118,6 +162,13 @@ func (bwa *BWArr[T]) Get(element T) (res T, found bool) {
 	return
 }
 
+// Delete removes an element from the BWArr and returns it along with true
+// if found, or the zero value of T and false if not found. The operation has
+// O(log N) amortized time complexity.
+//
+// When multiple equal elements exist, the first inserted element (FIFO order)
+// is deleted. Elements are marked as deleted using lazy deletion, and segments
+// are consolidated when their occupancy falls below 50%.
 func (bwa *BWArr[T]) Delete(element T) (deleted T, found bool) {
 	segNum, index := bwa.search(element)
 	if segNum < 0 {
@@ -126,6 +177,12 @@ func (bwa *BWArr[T]) Delete(element T) (deleted T, found bool) {
 	return bwa.del(segNum, index), true
 }
 
+// DeleteMax removes and returns the maximum element in the BWArr and true,
+// or the zero value of T and false if the BWArr is empty. The operation has
+// O(log N) amortized time complexity.
+//
+// This method is useful for implementing priority queues. When multiple equal
+// maximum elements exist, the first inserted element (FIFO order) is removed.
 func (bwa *BWArr[T]) DeleteMax() (deleted T, found bool) {
 	if bwa.total == 0 {
 		return deleted, false
@@ -134,6 +191,12 @@ func (bwa *BWArr[T]) DeleteMax() (deleted T, found bool) {
 	return bwa.del(seg, ind), true
 }
 
+// DeleteMin removes and returns the minimum element in the BWArr and true,
+// or the zero value of T and false if the BWArr is empty. The operation has
+// O(log N) amortized time complexity.
+//
+// This method is useful for implementing priority queues. When multiple equal
+// minimum elements exist, the first inserted element (FIFO order) is removed.
 func (bwa *BWArr[T]) DeleteMin() (deleted T, found bool) {
 	if bwa.total == 0 {
 		return deleted, false
@@ -142,6 +205,9 @@ func (bwa *BWArr[T]) DeleteMin() (deleted T, found bool) {
 	return bwa.del(seg, ind), true
 }
 
+// Len returns the number of elements currently stored in the BWArr,
+// excluding deleted elements. The operation has O(log N) time complexity
+// as it counts non-deleted elements across all segments.
 func (bwa *BWArr[T]) Len() int {
 	deleted := 0
 	for i := range bwa.whiteSegments {
@@ -152,6 +218,11 @@ func (bwa *BWArr[T]) Len() int {
 	return bwa.total - deleted
 }
 
+// Max returns the maximum element in the BWArr and true, or the zero value
+// of T and false if the BWArr is empty. The operation has O(log N) time
+// complexity in the worst case.
+//
+// When multiple equal maximum elements exist, the first inserted element is returned.
 func (bwa *BWArr[T]) Max() (maxElem T, found bool) {
 	if bwa.total == 0 {
 		return maxElem, false
@@ -161,6 +232,11 @@ func (bwa *BWArr[T]) Max() (maxElem T, found bool) {
 	return bwa.whiteSegments[seg].elements[ind], true
 }
 
+// Min returns the minimum element in the BWArr and true, or the zero value
+// of T and false if the BWArr is empty. The operation has O(log N) time
+// complexity in the worst case.
+//
+// When multiple equal minimum elements exist, the first inserted element is returned.
 func (bwa *BWArr[T]) Min() (minElem T, found bool) {
 	if bwa.total == 0 {
 		return minElem, false
@@ -169,6 +245,9 @@ func (bwa *BWArr[T]) Min() (minElem T, found bool) {
 	return bwa.whiteSegments[seg].elements[ind], true
 }
 
+// Clear removes all elements from the BWArr. If dropSegments is true,
+// all internal memory is released; if false, internal segments are retained
+// for reuse, which is more efficient if the BWArr will be repopulated.
 func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	bwa.total = 0
 	if dropSegments {
@@ -178,6 +257,9 @@ func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	}
 }
 
+// Clone creates a deep copy of the BWArr. The new BWArr is completely
+// independent and modifications to it will not affect the original.
+// The operation has O(N) time and space complexity.
 func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	newBWA := &BWArr[T]{
 		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
@@ -193,6 +275,9 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	return newBWA
 }
 
+// Ascend calls the iterator function for each element in the BWArr in
+// ascending order. Iteration stops early if the iterator returns false.
+// The operation visits all elements in O(N*Log(N)) time.
 func (bwa *BWArr[T]) Ascend(iterator IteratorFunc[T]) {
 	iter := createAscIteratorBegin(bwa)
 	for val, ok := iter.next(); ok; val, ok = iter.next() {
@@ -202,6 +287,10 @@ func (bwa *BWArr[T]) Ascend(iterator IteratorFunc[T]) {
 	}
 }
 
+// AscendGreaterOrEqual calls the iterator function for each element in the
+// BWArr that is greater than or equal to the given element, in ascending order.
+// Iteration stops early if the iterator returns false. The operation has O(N*Log(N)
+// time complexity in the worst case.
 func (bwa *BWArr[T]) AscendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
 	iter := createAscIteratorGTOE(bwa, elem)
 	for val, ok := iter.next(); ok; val, ok = iter.next() {
@@ -211,6 +300,10 @@ func (bwa *BWArr[T]) AscendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
 	}
 }
 
+// AscendLessThan calls the iterator function for each element in the BWArr
+// that is less than the given element, in ascending order. Iteration stops
+// early if the iterator returns false. The operation has O(N*Log(N)) time complexity
+// in the worst case.
 func (bwa *BWArr[T]) AscendLessThan(elem T, iterator IteratorFunc[T]) {
 	iter := createAscIteratorLess(bwa, elem)
 	for val, ok := iter.next(); ok; val, ok = iter.next() {
@@ -220,6 +313,10 @@ func (bwa *BWArr[T]) AscendLessThan(elem T, iterator IteratorFunc[T]) {
 	}
 }
 
+// AscendRange calls the iterator function for each element in the BWArr
+// that is greater than or equal to greaterOrEqual and less than lessThan,
+// in ascending order. Iteration stops early if the iterator returns false.
+// The operation has O(N*Log(N)) time complexity in the worst case.
 func (bwa *BWArr[T]) AscendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
 	iter := createAscIteratorFromTo(bwa, greaterOrEqual, lessThan)
 	for val, ok := iter.next(); ok; val, ok = iter.next() {
@@ -229,6 +326,9 @@ func (bwa *BWArr[T]) AscendRange(greaterOrEqual, lessThan T, iterator IteratorFu
 	}
 }
 
+// Descend calls the iterator function for each element in the BWArr in
+// descending order. Iteration stops early if the iterator returns false.
+// The operation visits all elements in O(N*Log(N)) time.
 func (bwa *BWArr[T]) Descend(iterator IteratorFunc[T]) {
 	iter := createDescIteratorEnd(bwa)
 	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
@@ -238,6 +338,10 @@ func (bwa *BWArr[T]) Descend(iterator IteratorFunc[T]) {
 	}
 }
 
+// DescendGreaterOrEqual calls the iterator function for each element in the
+// BWArr that is greater than or equal to the given element, in descending order.
+// Iteration stops early if the iterator returns false. The operation has O(N*Log(N))
+// time complexity in the worst case.
 func (bwa *BWArr[T]) DescendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
 	iter := createDescIteratorGTOE(bwa, elem)
 	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
@@ -247,6 +351,10 @@ func (bwa *BWArr[T]) DescendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
 	}
 }
 
+// DescendLessThan calls the iterator function for each element in the BWArr
+// that is less than the given element, in descending order. Iteration stops
+// early if the iterator returns false. The operation has O(N*Log(N)) time complexity
+// in the worst case.
 func (bwa *BWArr[T]) DescendLessThan(elem T, iterator IteratorFunc[T]) {
 	iter := createDescIteratorLess(bwa, elem)
 	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
@@ -256,6 +364,10 @@ func (bwa *BWArr[T]) DescendLessThan(elem T, iterator IteratorFunc[T]) {
 	}
 }
 
+// DescendRange calls the iterator function for each element in the BWArr
+// that is greater than or equal to greaterOrEqual and less than lessThan,
+// in descending order. Iteration stops early if the iterator returns false.
+// The operation has O(N*Log(N)) time complexity in the worst case.
 func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
 	iter := createDescIteratorFromTo(bwa, greaterOrEqual, lessThan)
 	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
@@ -265,6 +377,11 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 	}
 }
 
+// UnorderedWalk calls the iterator function for each element in the BWArr
+// in an arbitrary order (not necessarily sorted). This method is faster than
+// ordered iteration and should be used when element ordering is not required.
+// Iteration stops early if the iterator returns false. The operation visits
+// all elements in O(N) time.
 func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
 	for i := range bwa.whiteSegments {
 		if bwa.total&(1<<i) == 0 {
@@ -282,6 +399,10 @@ func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
 	}
 }
 
+// Compact releases memory used by inactive segments and lazy-deleted elements.
+// This can improve memory usage and iteration performance when many deletions
+// have occurred. The operation is typically not needed as the BWArr manages
+// memory automatically, but can be useful after large numbers of deletions.
 func (bwa *BWArr[T]) Compact() {
 	for i := range bwa.whiteSegments {
 		if bwa.total&(1<<i) == 0 { // Segment is not used

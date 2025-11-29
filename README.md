@@ -1,11 +1,12 @@
 ## What is it?
-The Black-White Array (aka **BWArr**) is a fast data structure based on arrays with *O(log N)* memory allocations.
+The Black-White Array (aka **BWArr**) is a fast, ordered data structure based on arrays with *O(log N)* memory allocations.
 This repository contains Go implementation.
 
 ### Key features:
-- Fast insert, delete, and search operations *O(log N)* time amortized complexity;
 - *O(log N)* memory allocations for Inserts - no pressure on GC;
+- Fast insert, delete, and search operations *O(log N)* time amortized complexity;
 - Array-based and pointerless makes it CPU-friendly: cache locality / sequential iteration / etc;
+- Can store equal elements multiple times - no need for wrapping values into structs to make them unique;
 - Drop-in replacement for `github.com/google/btree` and `github.com/petar/GoLLRB`;
 - Low memory overhead - no pointers per element, compact memory representation;
 - Batch-friendly: arrays under the hood allow efficient bulk operations (work in progress);
