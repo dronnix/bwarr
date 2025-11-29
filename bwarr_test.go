@@ -217,6 +217,50 @@ func TestBWArr_HasAndGet(t *testing.T) {
 	}
 }
 
+func TestBWArr_GetStability(t *testing.T) {
+	t.Parallel()
+
+	bwa := New(stabValCmp, 10)
+
+	// Insert elements with duplicate values but different sequence numbers
+	elements := []stabVal{
+		{val: 5, seq: 1},
+		{val: 3, seq: 2},
+		{val: 5, seq: 3}, // duplicate of val=5
+		{val: 7, seq: 4},
+		{val: 5, seq: 5}, // another duplicate of val=5
+		{val: 3, seq: 6}, // duplicate of val=3
+	}
+
+	for _, elem := range elements {
+		bwa.Insert(elem)
+	}
+	validateBWArr(t, bwa)
+
+	// Test Get stability: should return the leftmost (first inserted) element
+	// For val=5, we inserted seq=1, seq=3, seq=5, so Get should return seq=1
+	got, found := bwa.Get(stabVal{val: 5})
+	assert.True(t, found, "should find element with val=5")
+	assert.Equal(t, 5, got.val, "returned element should have val=5")
+	assert.Equal(t, 1, got.seq, "should return the leftmost (first inserted) element with seq=1")
+
+	// For val=3, we inserted seq=2, seq=6, so Get should return seq=2
+	got, found = bwa.Get(stabVal{val: 3})
+	assert.True(t, found, "should find element with val=3")
+	assert.Equal(t, 3, got.val, "returned element should have val=3")
+	assert.Equal(t, 2, got.seq, "should return the leftmost (first inserted) element with seq=2")
+
+	// For val=7, only one element with seq=4
+	got, found = bwa.Get(stabVal{val: 7})
+	assert.True(t, found, "should find element with val=7")
+	assert.Equal(t, 7, got.val, "returned element should have val=7")
+	assert.Equal(t, 4, got.seq, "should return element with seq=4")
+
+	// For val=99, element doesn't exist
+	_, found = bwa.Get(stabVal{val: 99})
+	assert.False(t, found, "should not find element with val=99")
+}
+
 func TestBWArr_Min(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
