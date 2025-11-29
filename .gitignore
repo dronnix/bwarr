@@ -17,3 +17,6 @@ qa/cur_bench.json
 
 # Misc
 coverage.html
+
+# Temporary (remove it)
+BlackWhiteArray.tex
