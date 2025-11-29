@@ -53,7 +53,7 @@ func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 
 // NewFromSlice creates a new BWArr from an existing slice of elements and a comparison
 // function CmpFunc.
-// This constructor is more efficient than creating an empty BWArr and inserting
+// This constructor is more efficient than creating an empty BWArr and inserting elements one by one.
 // The original slice is not modified.
 func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
 	l := len(slice)
