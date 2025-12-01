@@ -20,5 +20,8 @@ jobs:
       - name: Run tests
         run: make test
 
-      - name: Run linter
-        run: make lint
+      - name: Run golangci-lint
+        uses: golangci/golangci-lint-action@v6
+        with:
+          version: v2.4.0
+          args: -c qa/.golangci.yml
