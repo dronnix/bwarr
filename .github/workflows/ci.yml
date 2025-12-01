@@ -17,6 +17,15 @@ jobs:
       - name: Run tests
         run: make test
 
+      - name: Run tests with coverage
+        run: go test -v -race -coverprofile=coverage.out -covermode=atomic ./...
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        with:
+          file: ./coverage.out
+          fail_ci_if_error: false
+
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v9
         with:
