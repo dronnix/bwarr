@@ -1,4 +1,7 @@
 ## What is it?
+
+[![codecov](https://codecov.io/gh/dronnix/bwarr/branch/main/graph/badge.svg)](https://codecov.io/gh/dronnix/bwarr)
+
 The Black-White Array (aka **BWArr**) is a fast, ordered data structure based on arrays with *O(log N)* memory allocations.
 This repository contains Go implementation.
 
