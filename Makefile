@@ -10,6 +10,8 @@ coverage:
 	go test -v ./... -coverprofile qa/cover.tmp
 	go tool cover -html qa/cover.tmp -o qa/coverage.html
 	rm qa/cover.tmp
+
+coverage_show: coverage
 	open qa/coverage.html
 
 bench:
