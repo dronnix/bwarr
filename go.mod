@@ -1,6 +1,8 @@
 module github.com/dronnix/bwarr
 
-go 1.25
+go 1.22
+
+toolchain go1.25.4
 
 require (
 	github.com/google/btree v1.1.3

@@ -1,5 +1,6 @@
 ## What is it?
 
+[![CI](https://github.com/dronnix/bwarr/actions/workflows/ci.yml/badge.svg)](https://github.com/dronnix/bwarr/actions)
 [![codecov](https://codecov.io/gh/dronnix/bwarr/branch/main/graph/badge.svg)](https://codecov.io/gh/dronnix/bwarr)
 
 The Black-White Array (aka **BWArr**) is a fast, ordered data structure based on arrays with *O(log N)* memory allocations.
@@ -21,6 +22,20 @@ This repository contains Go implementation.
 
 ###  Benchmarks
 TBD
+
+## Installation
+
+Requires Go 1.22 or higher.
+
+```bash
+go get github.com/dronnix/bwarr
+```
+
+Then import in your code:
+
+```go
+import "github.com/dronnix/bwarr"
+```
 
 ## Usage
 

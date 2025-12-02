@@ -197,7 +197,7 @@ func calculateWhiteSegmentsQuantity(capacity int) int {
 	if capacity == 0 {
 		return 0
 	}
-	return int(math.Log2(float64(capacity)) + 1) // TODO: rewrite without using math?
+	return int(math.Log2(float64(capacity)) + 1) // Maybe: rewrite without using math (bit operations)?
 }
 
 func swapSegments[T any](s1, s2 *segment[T]) {

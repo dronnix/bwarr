@@ -15,9 +15,11 @@ qa/web_tmp/
 qa/cur_bench.json
 
 
-# Misc
+# Coverage
 coverage.html
 coverage.out
 
-# Temporary (remove it)
+# Misc
 BlackWhiteArray.tex
+CLAUDE.md
+.claude/
