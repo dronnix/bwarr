@@ -12,7 +12,7 @@ coverage:
 	rm qa/cover.tmp
 
 coverage_show: coverage
-		open qa/coverage.html
+	open qa/coverage.html
 
 bench:
 	go test -bench=BenchmarkQA -benchtime 1000000x ./... | tee qa/bench.tmp
