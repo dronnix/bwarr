@@ -23,6 +23,20 @@ This repository contains Go implementation.
 ###  Benchmarks
 TBD
 
+## Installation
+
+Requires Go 1.22 or higher.
+
+```bash
+go get github.com/dronnix/bwarr
+```
+
+Then import in your code:
+
+```go
+import "github.com/dronnix/bwarr"
+```
+
 ## Usage
 
 ### Basic Example
