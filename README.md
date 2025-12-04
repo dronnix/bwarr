@@ -3,8 +3,13 @@
 [![CI](https://github.com/dronnix/bwarr/actions/workflows/ci.yml/badge.svg)](https://github.com/dronnix/bwarr/actions)
 [![codecov](https://codecov.io/gh/dronnix/bwarr/branch/main/graph/badge.svg)](https://codecov.io/gh/dronnix/bwarr)
 
-The Black-White Array (aka **BWArr**) is a fast, ordered data structure based on arrays with *O(log N)* memory allocations.
-This repository contains Go implementation.
+The Black-White Array (aka BWArr) is a fast, ordered data structure based on arrays with ***O(log N)*** **memory allocations**.
+
+## Data Structure
+The idea of Black-White Array was invented and published by professor [Z. George Mou](https://www.cs.brandeis.edu/~mou/) in [Black-White Array: A New Data Structure for
+Dynamic Data Sets](https://arxiv.org/abs/2004.09051). This repository contains the first public implementation.
+
+![Professor Z. George Mou](https://www.cs.brandeis.edu/~mou/mou.gif)
 
 ### Key features:
 - *O(log N)* memory allocations for Inserts - no pressure on GC;
@@ -91,8 +96,5 @@ func main() {
     //   99
 }
 ```
-## Data Structure
-The idea of Black-White Array was invented and published by [Z. George Mou](https://www.cs.brandeis.edu/~mou/) in [Black-White Array: A New Data Structure for
-Dynamic Data Sets](https://arxiv.org/abs/2004.09051).
 
 
