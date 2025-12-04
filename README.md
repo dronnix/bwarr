@@ -9,7 +9,7 @@ The Black-White Array (aka BWArr) is a fast, ordered data structure based on arr
 The idea of Black-White Array was invented and published by professor [Z. George Mou](https://www.cs.brandeis.edu/~mou/) in [Black-White Array: A New Data Structure for
 Dynamic Data Sets](https://arxiv.org/abs/2004.09051). This repository contains the first public implementation.
 
-![Name](https://www.cs.brandeis.edu/~mou/mou.gif)
+![Professor Z. George Mou](https://www.cs.brandeis.edu/~mou/mou.gif)
 
 ### Key features:
 - *O(log N)* memory allocations for Inserts - no pressure on GC;
