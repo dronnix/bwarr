@@ -71,6 +71,7 @@ func TestDelAfterFromSlice(t *testing.T) {
 		got, found := bwa.Delete(e)
 		assert.True(t, found)
 		assert.Equal(t, e, got)
+		validateBWArr(t, bwa)
 	}
 	require.Equal(t, 0, bwa.Len())
 }
