@@ -21,7 +21,8 @@ func TestNewBWArrTestStruct(t *testing.T) {
 	testNewBWArr(t, testStructCmp)
 }
 
-func TestNewFromSlice(t *testing.T) {
+func TestNewFromSlice(t *testing.T) { //nolint:tparallel
+	t.Parallel()
 	type testCase struct {
 		name  string
 		slice []int64
@@ -59,6 +60,19 @@ func TestNewFromSlice(t *testing.T) {
 			require.Equal(t, tt.slice, got)
 		})
 	}
+}
+
+func TestDelAfterFromSlice(t *testing.T) {
+	t.Parallel()
+	elems := []int64{23, 42, 17, 27, 11}
+	bwa := NewFromSlice(int64Cmp, elems)
+	validateBWArr(t, bwa)
+	for _, e := range elems {
+		got, found := bwa.Delete(e)
+		assert.True(t, found)
+		assert.Equal(t, e, got)
+	}
+	require.Equal(t, 0, bwa.Len())
 }
 
 func TestBWArr_Insert(t *testing.T) {

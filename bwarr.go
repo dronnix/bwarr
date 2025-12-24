@@ -437,6 +437,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		return deleted
 	}
 	if (1<<(segNum-1))&bwa.total == 0 {
+		bwa.ensureSeg(segNum - 1)
 		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
 		bwa.total -= 1 << segNum
 		bwa.total += 1 << (segNum - 1)
