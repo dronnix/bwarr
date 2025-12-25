@@ -28,7 +28,34 @@ Dynamic Data Sets](https://arxiv.org/abs/2004.09051). This repository contains t
 - For some rare cases when deleting special series of elements, `Search()` operations may degrade to *O(N)/4*. Can be prevented by calling Compact();
 
 ###  Benchmarks
-TBD
+
+Benchmarks in comparison with [Google BTree](https://github.com/google/btree).
+
+#### Insert 
+Measures the time, allocs and allocated KBs to insert N unique random int64 values into an empty data structure. Both BWArr and BTree start empty and insert all values one by one.
+
+![Insert performance](https://github.com/dronnix/bwarr-bench/blob/main/images/insert_unique_values.png?raw=true)
+![Insert Allocs](https://github.com/dronnix/bwarr-bench/blob/main/images/insert_unique_values_allocs.png?raw=true)
+![Insert Alloc_Bytes](https://github.com/dronnix/bwarr-bench/blob/main/images/insert_unique_values_bytes.png?raw=true)
+
+Allocations on smaller values: 
+
+![Insert Allocs small](https://github.com/dronnix/bwarr-bench/blob/main/images/insert_performance_allocs_detailed.png?raw=true)
+
+
+#### Get 
+Measures the time to look up N values by their keys in a pre-populated data structure. The data structure is populated with all values before timing starts, then each value is retrieved by key.
+
+![Get performance](https://github.com/dronnix/bwarr-bench/blob/main/images/get_all_values_by_key.png?raw=true)
+
+#### Iterate
+Measures the time to iterate through all N values in sorted and non-sorted orders.
+![Ordered Iterate performance](https://github.com/dronnix/bwarr-bench/blob/main/images/ordered_iteration_over_all_values.png?raw=true)
+![Unordered Iterate performance](https://github.com/dronnix/bwarr-bench/blob/main/images/unordered_iteration_over_all_values.png?raw=true)
+
+#### More benchmarks
+Additional benchmarks and details are available in the [bwarr-bench](https://github.com/dronnix/bwarr-bench) repository.
+More methods will be added, also expect separate benchmarks for AMD64 and ARM64 architectures.
 
 ## Installation
 
