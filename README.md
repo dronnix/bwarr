@@ -34,7 +34,7 @@ Benchmarks in comparison with [Google BTree](https://github.com/google/btree).
 #### Insert 
 Measures the time, allocs and allocated KBs to insert N unique random int64 values into an empty data structure. Both BWArr and BTree start empty and insert all values one by one.
 
-![Insert performace](https://github.com/dronnix/bwarr-bench/blob/main/images/insert_unique_values.png?raw=true)
+![Insert performance](https://github.com/dronnix/bwarr-bench/blob/main/images/insert_unique_values.png?raw=true)
 ![Insert Allocs](https://github.com/dronnix/bwarr-bench/blob/main/images/insert_unique_values_allocs.png?raw=true)
 ![Insert Alloc_Bytes](https://github.com/dronnix/bwarr-bench/blob/main/images/insert_unique_values_bytes.png?raw=true)
 
