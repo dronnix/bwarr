@@ -402,6 +402,36 @@ func BenchmarkLongQA_UnorderedWalkWithDelSeries(b *testing.B) {
 	}
 }
 
+const mb = 1024 * 1024
+
+func BenchmarkAppendWorstCase1M(b *testing.B) {
+	benchmarkAppendWorstCase(b, mb)
+}
+
+func BenchmarkAppendWorstCase4M(b *testing.B) {
+	benchmarkAppendWorstCase(b, 4*mb)
+}
+
+func BenchmarkAppendWorstCase16M(b *testing.B) {
+	benchmarkAppendWorstCase(b, 16*mb)
+}
+
+func benchmarkAppendWorstCase(b *testing.B, size int) {
+	// Prepare BWArr with size-1 elements to provoke segment allocation on insert.
+	bwaDraft := New(int64Cmp, 0)
+	for range size - 1 {
+		bwaDraft.Insert(rand.Int63())
+	}
+
+	b.ResetTimer()
+	for range b.N {
+		b.StopTimer()
+		bwa := bwaDraft.Clone() // Deep copy to start from the same state.
+		b.StartTimer()
+		bwa.Insert(rand.Int63())
+	}
+}
+
 func benchmarkAppend(b *testing.B, elemsOnStart, capacity int) {
 	bwa := New(int64Cmp, capacity)
 
