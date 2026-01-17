@@ -1,6 +1,9 @@
 package bwarr
 
-import "math"
+import (
+	"math"
+	"math/bits"
+)
 
 type segment[T any] struct {
 	elements         []T    // Stores user's data.
@@ -56,6 +59,53 @@ func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment
 	result.minNonDeletedIdx, result.maxNonDeletedIdx = 0, len(result.elements)-1
 }
 
+func mergeSegments1[T any](oldSegment, newSegment *segment[T], cmp CmpFunc[T], readPointer int) {
+	j := 0
+	currentSegmentLength := len(oldSegment.elements)
+	writePointer := readPointer - currentSegmentLength
+	newSegmentEnd := readPointer + currentSegmentLength
+	for readPointer < newSegmentEnd && j < currentSegmentLength {
+		cmpResult := cmp(newSegment.elements[readPointer], oldSegment.elements[j])
+		if (cmpResult < 0) || (cmpResult == 0 && !newSegment.deleted[readPointer]) {
+			newSegment.elements[writePointer] = newSegment.elements[readPointer]
+			newSegment.deleted[writePointer] = newSegment.deleted[readPointer]
+			readPointer++
+		} else {
+			newSegment.elements[writePointer] = oldSegment.elements[j]
+			newSegment.deleted[writePointer] = oldSegment.deleted[j]
+			j++
+		}
+		if !newSegment.deleted[writePointer] {
+			newSegment.maxNonDeletedIdx = max(newSegment.maxNonDeletedIdx, writePointer)
+			newSegment.minNonDeletedIdx = min(newSegment.minNonDeletedIdx, writePointer)
+		}
+		writePointer++
+	}
+
+	for readPointer < newSegmentEnd {
+		newSegment.elements[writePointer] = newSegment.elements[readPointer]
+		newSegment.deleted[writePointer] = newSegment.deleted[readPointer]
+		if !newSegment.deleted[writePointer] {
+			newSegment.maxNonDeletedIdx = max(newSegment.maxNonDeletedIdx, writePointer)
+			newSegment.minNonDeletedIdx = min(newSegment.minNonDeletedIdx, writePointer)
+		}
+		writePointer++
+		readPointer++
+	}
+	for j < currentSegmentLength {
+		newSegment.elements[writePointer] = oldSegment.elements[j]
+		newSegment.deleted[writePointer] = oldSegment.deleted[j]
+		if !newSegment.deleted[writePointer] {
+			newSegment.maxNonDeletedIdx = max(newSegment.maxNonDeletedIdx, writePointer)
+			newSegment.minNonDeletedIdx = min(newSegment.minNonDeletedIdx, writePointer)
+		}
+		writePointer++
+		j++
+	}
+
+	newSegment.deletedNum += oldSegment.deletedNum
+}
+
 func demoteSegment[T any](from segment[T], to *segment[T]) {
 	for r, w := 0, 0; r < len(from.elements); r++ {
 		if from.deleted[r] {
@@ -67,6 +117,22 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 	}
 	to.deletedNum = 0 // Since demoteSegment is called only when we have exact len(to.elements) undeleted elements in from.
 	to.minNonDeletedIdx, to.maxNonDeletedIdx = 0, len(to.elements)-1
+}
+
+func demoteSegment1[T any](from segment[T]) {
+	length := len(from.elements)
+	writePointer := length - 1
+	readPointer := length - 1
+	for writePointer >= (length >> 1) {
+		if !from.deleted[readPointer] {
+			from.elements[writePointer] = from.elements[readPointer]
+			from.deleted[writePointer] = false
+			writePointer--
+		}
+		readPointer--
+	}
+	from.deletedNum = length >> 1
+	from.minNonDeletedIdx, from.maxNonDeletedIdx = length>>1, length-1
 }
 
 // returns index of the rightmost element equal to val that is not deleted.
@@ -220,25 +286,6 @@ func calculateWhiteSegmentsQuantity(capacity int) int {
 	return int(math.Log2(float64(capacity)) + 1) // Maybe: rewrite without using math (bit operations)?
 }
 
-func swapSegments[T any](s1, s2 *segment[T]) {
-	s1.elements, s2.elements = s2.elements, s1.elements
-	s1.deleted, s2.deleted = s2.deleted, s1.deleted
-	s1.deletedNum, s2.deletedNum = s2.deletedNum, s1.deletedNum
-	s1.minNonDeletedIdx, s2.minNonDeletedIdx = s2.minNonDeletedIdx, s1.minNonDeletedIdx
-	s1.maxNonDeletedIdx, s2.maxNonDeletedIdx = s2.maxNonDeletedIdx, s1.maxNonDeletedIdx
-}
-
-func reallocateSegment[T any](seg *segment[T], rank int) *segment[T] {
-	c := cap(seg.elements)
-	l := 1 << rank
-	if l > c {
-		s := makeSegment[T](rank)
-		return &s
-	}
-	seg.elements = seg.elements[:l]
-	seg.deleted = seg.deleted[:l]
-	seg.deletedNum = 0
-	seg.minNonDeletedIdx = 0
-	seg.maxNonDeletedIdx = l - 1
-	return seg
+func log2(x uint64) int {
+	return bits.TrailingZeros64(x)
 }

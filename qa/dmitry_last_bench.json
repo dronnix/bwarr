@@ -1,0 +1,231 @@
+[
+  {
+    "Date": 1768656766,
+    "Suites": [
+      {
+        "Goos": "darwin",
+        "Goarch": "arm64",
+        "Pkg": "github.com/dronnix/bwarr",
+        "Benchmarks": [
+          {
+            "Name": "BenchmarkQA_Insert-12",
+            "Runs": 1000000,
+            "NsPerOp": 163.8,
+            "Mem": {
+              "BytesPerOp": 66,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_ReplaceOrInsertNotFound-12",
+            "Runs": 1000000,
+            "NsPerOp": 1352,
+            "Mem": {
+              "BytesPerOp": 66,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_ReplaceOrInsertFound-12",
+            "Runs": 1000000,
+            "NsPerOp": 229.7,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 34.82
+            }
+          },
+          {
+            "Name": "BenchmarkQA_HasFound-12",
+            "Runs": 1000000,
+            "NsPerOp": 280,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 28.57
+            }
+          },
+          {
+            "Name": "BenchmarkQA_HasNotFoundWorst-12",
+            "Runs": 1000000,
+            "NsPerOp": 2378,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 3.36
+            }
+          },
+          {
+            "Name": "BenchmarkQA_Min-12",
+            "Runs": 1000000,
+            "NsPerOp": 107.6,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_Max-12",
+            "Runs": 1000000,
+            "NsPerOp": 73.18,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_Delete-12",
+            "Runs": 1000000,
+            "NsPerOp": 705.8,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_DeleteMin-12",
+            "Runs": 1000000,
+            "NsPerOp": 41.63,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_DeleteMax-12",
+            "Runs": 1000000,
+            "NsPerOp": 37.66,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          }
+        ]
+      },
+      {
+        "Goos": "darwin",
+        "Goarch": "arm64",
+        "Pkg": "github.com/dronnix/bwarr",
+        "Benchmarks": [
+          {
+            "Name": "BenchmarkLongQA_NewFromSlice-12",
+            "Runs": 295,
+            "NsPerOp": 8281519,
+            "Mem": {
+              "BytesPerOp": 1181147,
+              "AllocsPerOp": 40,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_InsertRandom-12",
+            "Runs": 171,
+            "NsPerOp": 12593963,
+            "Mem": {
+              "BytesPerOp": 2068136,
+              "AllocsPerOp": 141,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendRandom-12",
+            "Runs": 1011,
+            "NsPerOp": 2389174,
+            "Mem": {
+              "BytesPerOp": 1680,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendInc-12",
+            "Runs": 4104,
+            "NsPerOp": 586372,
+            "Mem": {
+              "BytesPerOp": 1680,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendDec-12",
+            "Runs": 5029,
+            "NsPerOp": 476858,
+            "Mem": {
+              "BytesPerOp": 1680,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendRange-12",
+            "Runs": 4160,
+            "NsPerOp": 593634,
+            "Mem": {
+              "BytesPerOp": 1680,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendWithDelSeries-12",
+            "Runs": 4112,
+            "NsPerOp": 590572,
+            "Mem": {
+              "BytesPerOp": 1680,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_DescendRandom-12",
+            "Runs": 1003,
+            "NsPerOp": 2402916,
+            "Mem": {
+              "BytesPerOp": 1680,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_DescendRangeWithDelSeries-12",
+            "Runs": 5030,
+            "NsPerOp": 479903,
+            "Mem": {
+              "BytesPerOp": 1680,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_UnorderedWalkRandom-12",
+            "Runs": 30328,
+            "NsPerOp": 81391,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_UnorderedWalkWithDelSeries-12",
+            "Runs": 28742,
+            "NsPerOp": 79539,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          }
+        ]
+      }
+    ]
+  }
+]

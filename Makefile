@@ -21,6 +21,10 @@ bench:
 	gobenchdata checks eval --checks.config qa/gobenchdata-checks.yml qa/last_bench.json qa/cur_bench.json --json qa/rep.json
 	gobenchdata checks --checks.config qa/gobenchdata-checks.yml report qa/rep.json
 
+eb:
+	gobenchdata checks eval --checks.config qa/gobenchdata-checks.yml qa/dmitry_last_bench.json qa/cur_bench.json --json qa/rep.json
+	gobenchdata checks --checks.config qa/gobenchdata-checks.yml report qa/rep.json
+
 bench_save:
 	cat qa/bench.tmp |  gobenchdata --append --json qa/all_bench.json
 	cp qa/cur_bench.json qa/last_bench.json

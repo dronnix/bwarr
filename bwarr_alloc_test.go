@@ -503,9 +503,6 @@ func TestBWArr_Allocs_ShouldBeLessAfterCompact(t *testing.T) {
 // calculateBWArrSize calculates the total size of a BWArr struct including all nested fields
 func calculateBWArrSize[T any](bwarr *BWArr[T]) int {
 	size := int(unsafe.Sizeof(*bwarr))
-	// Add size of black segs:
-	size += calculateSegmentSize(&bwarr.highBlackSeg)
-	size += calculateSegmentSize(&bwarr.lowBlackSeg)
 	// Add size of each segment in whiteSegments
 	for _, seg := range bwarr.whiteSegments {
 		size += int(unsafe.Sizeof(seg))
