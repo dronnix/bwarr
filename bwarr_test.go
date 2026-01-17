@@ -653,7 +653,7 @@ func TestBWArr_Clear(t *testing.T) {
 	bwa.Clear(true)
 	validateBWArr(t, bwa)
 	assert.Equal(t, 0, bwa.Len())
-	assert.Equal(t, 0, bwa.total)
+	assert.Equal(t, uint64(0), bwa.total)
 	assert.Empty(t, bwa.whiteSegments)
 
 	for i := range 15 {
@@ -1336,7 +1336,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 	bwa := BWArr[int64]{
 		whiteSegments: make([]segment[int64], len(segs)),
 		cmp:           int64Cmp,
-		total:         total,
+		total:         uint64(total),
 	}
 	for i, seg := range segs {
 		l := len(seg)

@@ -16,6 +16,7 @@ linters:
     - godox
     - ireturn
     - lll
+    - modernize
     - nlreturn
     - nolintlint
     - nonamedreturns
@@ -31,6 +32,9 @@ linters:
     funlen:
       lines: 120
       statements: 60
+    gosec:
+      excludes:
+      - 'G115'
     gocritic:
       disabled-checks:
         - emptyStringTest
