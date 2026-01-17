@@ -16,6 +16,7 @@ linters:
     - godox
     - ireturn
     - lll
+    - modernize
     - nlreturn
     - nolintlint
     - nonamedreturns

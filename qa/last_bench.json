@@ -8,7 +8,7 @@
         "Pkg": "github.com/dronnix/bwarr",
         "Benchmarks": [
           {
-            "Name": "BenchmarkQA_Insert-10",
+            "Name": "BenchmarkQA_Insert-12",
             "Runs": 1000000,
             "NsPerOp": 179.9,
             "Mem": {
@@ -18,7 +18,7 @@
             }
           },
           {
-            "Name": "BenchmarkQA_ReplaceOrInsertNotFound-10",
+            "Name": "BenchmarkQA_ReplaceOrInsertNotFound-12",
             "Runs": 1000000,
             "NsPerOp": 1375,
             "Mem": {
@@ -28,7 +28,7 @@
             }
           },
           {
-            "Name": "BenchmarkQA_ReplaceOrInsertFound-10",
+            "Name": "BenchmarkQA_ReplaceOrInsertFound-12",
             "Runs": 1000000,
             "NsPerOp": 258.5,
             "Mem": {
@@ -38,7 +38,7 @@
             }
           },
           {
-            "Name": "BenchmarkQA_HasFound-10",
+            "Name": "BenchmarkQA_HasFound-12",
             "Runs": 1000000,
             "NsPerOp": 260.4,
             "Mem": {
@@ -48,7 +48,7 @@
             }
           },
           {
-            "Name": "BenchmarkQA_HasNotFoundWorst-10",
+            "Name": "BenchmarkQA_HasNotFoundWorst-12",
             "Runs": 1000000,
             "NsPerOp": 2330,
             "Mem": {
@@ -58,7 +58,7 @@
             }
           },
           {
-            "Name": "BenchmarkQA_Min-10",
+            "Name": "BenchmarkQA_Min-12",
             "Runs": 1000000,
             "NsPerOp": 65.94,
             "Mem": {
@@ -68,7 +68,7 @@
             }
           },
           {
-            "Name": "BenchmarkQA_Max-10",
+            "Name": "BenchmarkQA_Max-12",
             "Runs": 1000000,
             "NsPerOp": 65.54,
             "Mem": {
@@ -78,7 +78,7 @@
             }
           },
           {
-            "Name": "BenchmarkQA_Delete-10",
+            "Name": "BenchmarkQA_Delete-12",
             "Runs": 1000000,
             "NsPerOp": 752.8,
             "Mem": {
@@ -88,7 +88,7 @@
             }
           },
           {
-            "Name": "BenchmarkQA_DeleteMin-10",
+            "Name": "BenchmarkQA_DeleteMin-12",
             "Runs": 1000000,
             "NsPerOp": 40.11,
             "Mem": {
@@ -98,7 +98,7 @@
             }
           },
           {
-            "Name": "BenchmarkQA_DeleteMax-10",
+            "Name": "BenchmarkQA_DeleteMax-12",
             "Runs": 1000000,
             "NsPerOp": 39.63,
             "Mem": {
@@ -115,7 +115,7 @@
         "Pkg": "github.com/dronnix/bwarr",
         "Benchmarks": [
           {
-            "Name": "BenchmarkLongQA_NewFromSlice-10",
+            "Name": "BenchmarkLongQA_NewFromSlice-12",
             "Runs": 265,
             "NsPerOp": 8911815,
             "Mem": {
@@ -125,7 +125,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_InsertRandom-10",
+            "Name": "BenchmarkLongQA_InsertRandom-12",
             "Runs": 175,
             "NsPerOp": 13672260,
             "Mem": {
@@ -135,7 +135,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendRandom-10",
+            "Name": "BenchmarkLongQA_AscendRandom-12",
             "Runs": 906,
             "NsPerOp": 2643087,
             "Mem": {
@@ -145,7 +145,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendInc-10",
+            "Name": "BenchmarkLongQA_AscendInc-12",
             "Runs": 3560,
             "NsPerOp": 656262,
             "Mem": {
@@ -155,7 +155,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendDec-10",
+            "Name": "BenchmarkLongQA_AscendDec-12",
             "Runs": 4483,
             "NsPerOp": 533006,
             "Mem": {
@@ -165,7 +165,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendRange-10",
+            "Name": "BenchmarkLongQA_AscendRange-12",
             "Runs": 3567,
             "NsPerOp": 675804,
             "Mem": {
@@ -175,7 +175,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendWithDelSeries-10",
+            "Name": "BenchmarkLongQA_AscendWithDelSeries-12",
             "Runs": 3513,
             "NsPerOp": 677551,
             "Mem": {
@@ -185,7 +185,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_DescendRandom-10",
+            "Name": "BenchmarkLongQA_DescendRandom-12",
             "Runs": 903,
             "NsPerOp": 2645236,
             "Mem": {
@@ -195,7 +195,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_DescendRangeWithDelSeries-10",
+            "Name": "BenchmarkLongQA_DescendRangeWithDelSeries-12",
             "Runs": 4470,
             "NsPerOp": 536773,
             "Mem": {
@@ -205,7 +205,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_UnorderedWalkRandom-10",
+            "Name": "BenchmarkLongQA_UnorderedWalkRandom-12",
             "Runs": 8960,
             "NsPerOp": 267780,
             "Mem": {
@@ -215,7 +215,7 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_UnorderedWalkWithDelSeries-10",
+            "Name": "BenchmarkLongQA_UnorderedWalkWithDelSeries-12",
             "Runs": 8973,
             "NsPerOp": 266436,
             "Mem": {
