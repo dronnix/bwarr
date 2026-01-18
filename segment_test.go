@@ -114,6 +114,13 @@ func Test_mergeSegments(t *testing.T) {
 			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
 			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, true, true, false}, deletedNum: 2, maxNonDeletedIdx: 3},
 		},
+		{
+			name:     "if elements are equal, non-deleted must be first",
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{true, false}, deletedNum: 1, maxNonDeletedIdx: 1},
+			seg2:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, true}, deletedNum: 1},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{23, 23, 42, 42}, deleted: []bool{false, true, false, true}, deletedNum: 2, maxNonDeletedIdx: 3},
+		},
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
@@ -452,6 +459,12 @@ func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 		if seg.deleted[i] {
 			deleted++
 			continue
+		}
+		// If elements are equal, deleted must be after non-deleted;
+		if i != 0 && cmp(seg.elements[i-1], seg.elements[i]) == 0 {
+			if seg.deleted[i-1] {
+				assert.False(t, seg.deleted[i], "At index %d: equal elements, but deleted comes before non-deleted", i)
+			}
 		}
 		lastNonDelIdx = i
 		if !metNonDel {

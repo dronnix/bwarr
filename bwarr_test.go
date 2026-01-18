@@ -276,6 +276,35 @@ func TestBWArr_GetStability(t *testing.T) {
 	assert.False(t, found, "should not find element with val=99")
 }
 
+func TestBWArr_DeleteStability(t *testing.T) {
+	t.Parallel()
+
+	bwa := New(stabValCmp, 10)
+
+	// Insert elements with duplicate values but different sequence numbers
+	elements := []stabVal{
+		{val: 23, seq: 0},
+		{val: 23, seq: 1},
+		{val: 23, seq: 2},
+		{val: 23, seq: 3},
+		{val: 23, seq: 4},
+		{val: 23, seq: 5},
+		{val: 23, seq: 6},
+	}
+
+	for _, elem := range elements {
+		bwa.Insert(elem)
+	}
+	validateBWArr(t, bwa)
+
+	// Delete elements one by one and check stability
+	for i := 0; i < len(elements); i++ {
+		deletedElem, found := bwa.Delete(stabVal{val: 23})
+		assert.True(t, found, "should find element to delete")
+		assert.Equal(t, i, deletedElem.seq, "should delete the leftmost (first inserted) element with seq=%d", i)
+	}
+}
+
 func TestBWArr_Min(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

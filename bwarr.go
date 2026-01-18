@@ -111,14 +111,14 @@ func (bwa *BWArr[T]) Insert(element T) {
 	for segNum := 1; segNum <= maxSegmentNumber; segNum++ {
 		if bwa.total&(1<<segNum) == 0 {
 			bwa.ensureSeg(segNum)
-			mergeSegments(bwa.whiteSegments[segNum-1], *lowBlack, bwa.cmp, &bwa.whiteSegments[segNum])
+			mergeSegments(*lowBlack, bwa.whiteSegments[segNum-1], bwa.cmp, &bwa.whiteSegments[segNum])
 			bwa.total++
 			return
 		}
 		highBlack := bwa.highBlack(segNum)
 
 		bwa.ensureSeg(segNum)
-		mergeSegments(bwa.whiteSegments[segNum-1], *lowBlack, bwa.cmp, highBlack)
+		mergeSegments(*lowBlack, bwa.whiteSegments[segNum-1], bwa.cmp, highBlack)
 		swapSegments(lowBlack, highBlack)
 	}
 }
@@ -444,7 +444,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	} else {
 		blackSeg := bwa.highBlack(segNum - 1)
 		demoteSegment(*seg, blackSeg)
-		mergeSegments(*blackSeg, bwa.whiteSegments[segNum-1], bwa.cmp, seg)
+		mergeSegments(bwa.whiteSegments[segNum-1], *blackSeg, bwa.cmp, seg)
 		bwa.total -= 1 << (segNum - 1)
 	}
 	return deleted
