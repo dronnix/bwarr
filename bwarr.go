@@ -91,12 +91,7 @@ func (bwa *BWArr[T]) Insert(element T) {
 	newSegmentRank := log2(newSegmentSize)
 	bwa.ensureSeg(newSegmentRank)
 	resultSegment := &bwa.whiteSegments[newSegmentRank]
-	for i := range newSegmentSize {
-		resultSegment.deleted[i] = false
-	}
-	resultSegment.deletedNum = 0
-	resultSegment.minNonDeletedIdx = 0
-	resultSegment.maxNonDeletedIdx = int(newSegmentSize - 1)
+	resetSegment(resultSegment)
 	resultSegment.elements[newSegmentSize-1] = element
 	resultReadPtr := int(newSegmentSize - 1)
 	for segmentNumber := range newSegmentRank {
