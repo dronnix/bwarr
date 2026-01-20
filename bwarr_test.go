@@ -298,7 +298,7 @@ func TestBWArr_DeleteStability(t *testing.T) {
 	validateBWArr(t, bwa)
 
 	// Delete elements one by one and check stability
-	for i := 0; i < len(elements); i++ {
+	for i := range elements {
 		deletedElem, found := bwa.Delete(stabVal{val: 23})
 		assert.True(t, found, "should find element to delete")
 		assert.Equal(t, i, deletedElem.seq, "should delete the leftmost (first inserted) element with seq=%d", i)
@@ -589,19 +589,19 @@ func TestBWArr_DeleteFromEmpty(t *testing.T) {
 
 func TestBWArr_RandomDelete(t *testing.T) {
 	t.Parallel()
-	rand.Seed(42) //nolint:staticcheck
+	r := rand.New(rand.NewSource(42))
 	const elements = 63
 	bwa := New(int64Cmp, 0)
 	toDel := make([]int64, elements)
 	for i := range elements {
 		toDel[i] = int64(i)
 	}
-	rand.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
+	r.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
 
 	for i := range toDel {
 		bwa.Insert(toDel[i])
 	}
-	rand.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
+	r.Shuffle(len(toDel), func(i, j int) { toDel[i], toDel[j] = toDel[j], toDel[i] })
 
 	for i := range toDel {
 		if elem, found := bwa.Delete(toDel[i]); !found || elem != toDel[i] {
@@ -742,7 +742,7 @@ func TestBWArr_Ascend(t *testing.T) {
 			}
 			expected := make([]int64, len(tt.initSeq))
 			copy(expected, tt.initSeq)
-			sort.Slice(expected, func(i, j int) bool { return expected[i] < expected[j] })
+			slices.Sort(expected)
 
 			got := make([]int64, 0, len(tt.initSeq))
 			iter := func(e int64) bool {
@@ -757,11 +757,11 @@ func TestBWArr_Ascend(t *testing.T) {
 
 func TestBWArr_AscendRandom(t *testing.T) {
 	t.Parallel()
-	rand.Seed(2342) //nolint:staticcheck
+	r := rand.New(rand.NewSource(2342))
 	const elements = 1023
 	bwa := New(int64Cmp, elements)
 	for range elements {
-		bwa.Insert(int64(rand.Intn(100)))
+		bwa.Insert(int64(r.Intn(100)))
 	}
 
 	prev := int64(0)
@@ -807,9 +807,9 @@ func TestBWArr_AscendStability(t *testing.T) {
 		bwa.Insert(stabVal{val: rand.Intn(7), seq: i + 1})
 	}
 
-	seqs := make(map[int]int, elemsNum)
+	segs := make(map[int]int, elemsNum)
 	iter := func(e stabVal) bool {
-		ps := seqs[e.val]
+		ps := segs[e.val]
 		assert.Greater(t, e.seq, ps)
 		return true
 	}
@@ -949,11 +949,11 @@ func TestBWArr_Descend(t *testing.T) {
 
 func TestBWArr_DescendRandom(t *testing.T) {
 	t.Parallel()
-	rand.Seed(2342) //nolint:staticcheck
+	r := rand.New(rand.NewSource(2342))
 	const elements = 1023
 	bwa := New(int64Cmp, elements)
 	for range elements {
-		bwa.Insert(int64(rand.Intn(100)))
+		bwa.Insert(int64(r.Intn(100)))
 	}
 
 	prev := int64(100)
@@ -1158,7 +1158,7 @@ func TestBWArr_UnorderedWalk(t *testing.T) {
 		bwa := New(int64Cmp, 1)
 		bwa.Insert(42)
 
-		elements := []int64{}
+		var elements []int64
 		bwa.UnorderedWalk(func(item int64) bool {
 			elements = append(elements, item)
 			return true
@@ -1182,7 +1182,7 @@ func TestBWArr_UnorderedWalk(t *testing.T) {
 		})
 
 		// UnorderedWalk doesn't guarantee order, so sort before comparing
-		sort.Slice(collected, func(i, j int) bool { return collected[i] < collected[j] })
+		slices.Sort(collected)
 		assert.Equal(t, expected, collected)
 	})
 
@@ -1221,7 +1221,7 @@ func TestBWArr_UnorderedWalk(t *testing.T) {
 		})
 
 		// Should not include deleted elements
-		sort.Slice(collected, func(i, j int) bool { return collected[i] < collected[j] })
+		slices.Sort(collected)
 		assert.Equal(t, []int64{1, 2, 4, 5, 6, 8, 9}, collected)
 	})
 
@@ -1231,10 +1231,10 @@ func TestBWArr_UnorderedWalk(t *testing.T) {
 		bwa := New(int64Cmp, elemsNum)
 
 		// Insert random elements
-		rand.Seed(42) //nolint:staticcheck
+		r := rand.New(rand.NewSource(42))
 		inserted := make([]int64, 0, elemsNum)
 		for range elemsNum {
-			val := int64(rand.Intn(10000))
+			val := int64(r.Intn(10000))
 			bwa.Insert(val)
 			inserted = append(inserted, val)
 		}
@@ -1249,8 +1249,8 @@ func TestBWArr_UnorderedWalk(t *testing.T) {
 		assert.Len(t, collected, elemsNum, "should visit all inserted elements")
 
 		// Sort both slices for comparison
-		sort.Slice(inserted, func(i, j int) bool { return inserted[i] < inserted[j] })
-		sort.Slice(collected, func(i, j int) bool { return collected[i] < collected[j] })
+		slices.Sort(inserted)
+		slices.Sort(collected)
 		assert.Equal(t, inserted, collected, "should collect same elements as inserted")
 	})
 

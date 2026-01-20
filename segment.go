@@ -29,7 +29,7 @@ func makeSegment[T any](rank int) segment[T] {
 	}
 }
 
-// mergeSegments joins two sorted segments into result segment (also) sorted)
+// mergeSegments joins two sorted segments into result segment (also) sorted
 // To maintain FIFO order, seg2 should be older than seg1.
 func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment[T]) {
 	i, j, k := 0, 0, 0
