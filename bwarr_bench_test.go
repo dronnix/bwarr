@@ -8,7 +8,7 @@ import (
 )
 
 // Less by 1 than segment size to provoke segment allocation
-// and to use as much segments as possible for non-modifying operations.
+// and to use as many segments as possible for non-modifying operations.
 const elemsOnStart = 4*1024*1024 - 1
 
 func BenchmarkQA_Insert(b *testing.B) {

@@ -29,10 +29,13 @@ func makeSegment[T any](rank int) segment[T] {
 	}
 }
 
+// mergeSegments joins two sorted segments into result segment (also) sorted
+// To maintain FIFO order, seg2 should be older than seg1 (rightmost non-deleted element will be found first).
 func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment[T]) {
 	i, j, k := 0, 0, 0
 	for i < len(seg1.elements) && j < len(seg2.elements) {
-		if cmp(seg1.elements[i], seg2.elements[j]) < 0 {
+		cmpRes := cmp(seg1.elements[i], seg2.elements[j])
+		if cmpRes < 0 || (cmpRes == 0 && !seg1.deleted[i]) {
 			result.elements[k] = seg1.elements[i]
 			result.deleted[k] = seg1.deleted[i]
 			i++
@@ -66,6 +69,7 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 	to.minNonDeletedIdx, to.maxNonDeletedIdx = 0, len(to.elements)-1
 }
 
+// returns index of the rightmost element equal to val that is not deleted.
 func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 	b, e := s.minNonDeletedIdx, s.maxNonDeletedIdx+1
 	elems := s.elements
@@ -78,7 +82,7 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 			e = m
 		case cmpRes > 0:
 			b = m + 1
-		default:
+		default: // elements are equal - follow invariant: deleted elements are to the right (higher index) of non-deleted ones.
 			if del[m] {
 				e = m
 			} else {
@@ -99,6 +103,22 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 		return -1
 	}
 	return idx
+}
+
+// returns minimum element index with respect to FIFO constraint: if we have
+// several equal minimum elements, returns the rightmost one.
+func (s *segment[T]) min(cmp CmpFunc[T]) int {
+	minIdx, maxIdx := s.minNonDeletedIndex(), s.maxNonDeletedIndex()
+	for i := minIdx + 1; i <= maxIdx; i++ {
+		if s.deleted[i] { // deleted elements can appear only after non-deleted equal ones;
+			return minIdx
+		}
+		if cmp(s.elements[i], s.elements[minIdx]) != 0 {
+			return minIdx
+		}
+		minIdx = i
+	}
+	return minIdx
 }
 
 // returns index of the first element that is greater or equal to val and is not deleted.

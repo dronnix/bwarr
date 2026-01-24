@@ -5,7 +5,7 @@
 [![Go Reference](https://pkg.go.dev/badge/github.com/dronnix/bwarr.svg)](https://pkg.go.dev/github.com/dronnix/bwarr)
 [![Go Report Card](https://goreportcard.com/badge/github.com/dronnix/bwarr)](https://goreportcard.com/report/github.com/dronnix/bwarr)
 
-The Black-White Array (aka BWArr) is a fast, ordered data structure based on arrays with ***O(log N)*** **memory allocations**.
+The Black-White Array (aka BWArr) is a fast, ordered data structure based on arrays with ***$O(\log N)$*** **memory allocations**.
 
 ## Data Structure
 The idea of Black-White Array was invented and published by professor [Z. George Mou](https://www.cs.brandeis.edu/~mou/) in [Black-White Array: A New Data Structure for
@@ -14,18 +14,20 @@ Dynamic Data Sets](https://arxiv.org/abs/2004.09051). This repository contains t
 ![Professor Z. George Mou](https://www.cs.brandeis.edu/~mou/mou.gif)
 
 ### Key features:
-- *O(log N)* memory allocations for Inserts - no pressure on GC;
-- Fast insert, delete, and search operations *O(log N)* time amortized complexity;
+- $O(\log N)$ memory allocations for Inserts - no pressure on GC;
+- Fast insert, delete, and search operations $O(\log N)$ time amortized complexity;
 - Array-based and pointerless makes it CPU-friendly: cache locality / sequential iteration / etc;
-- Can store equal elements multiple times - no need for wrapping values into structs to make them unique;
+- Supports duplicate elements natively (multiset behavior) - no need for wrapping values into structs to make them unique;
 - Drop-in replacement for `github.com/google/btree` and `github.com/petar/GoLLRB`;
 - Low memory overhead - no pointers per element, compact memory representation;
 - Batch-friendly: arrays under the hood allow efficient bulk operations (work in progress);
 - Easily serializable (work in progress);
 
 ### Tradeoffs
-- One per *N* insert operations complexity falls down to *O(N)*, though amortized remains *O(log N)*. For real-time systems, it may introduce latency spikes for collections with millions of elements.
-- For some rare cases when deleting special series of elements, `Search()` operations may degrade to *O(N)/4*. Can be prevented by calling Compact();
+- One per $N$ insert operations complexity falls down to $O(N)$, though amortized remains $O(\log N)$. For real-time systems, it may introduce latency spikes for collections with millions of elements. Could be mitigated by async/background inserts.
+- For a small number of elements `Search()/Delete()` operations may take $O((\log N)^2)$. 50% of elements take $O(\log N)$ time, 75%  - $O(2\log N)$, 87.5% - $O(3\log N)$, etc.
+- When deleting long series of elements, a `Max()/Min()` operation can take $O(N/4)$. Amortized complexity for series of calls remains $O(\log N)$.
+- When deleting long series of elements, iteration step can take $O(N/4)$. Amortized complexity for iteration over the whole collection remains $O(\log N)$ per element.
 
 ###  Benchmarks
 

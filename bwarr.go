@@ -11,6 +11,11 @@ import "slices"
 // elements and maintains stable ordering.
 // See data structure details at: https://arxiv.org/abs/2004.09051
 type BWArr[T any] struct {
+	// Data invariants for equal elements to maintain stable (FIFO) ordering and O(Log(N)) search complexity:
+	// 1. If equal elements are in the same segment, older is righter (greater index).
+	// 2. If equal elements are in different segments, older is placed in the higher-rank segment.
+	// 3. If segment contains equal deleted and non-deleted elements, deleted are placed after non-deleted (greater index).
+
 	whiteSegments []segment[T]
 	highBlackSeg  segment[T]
 	lowBlackSeg   segment[T]
@@ -111,14 +116,14 @@ func (bwa *BWArr[T]) Insert(element T) {
 	for segNum := 1; segNum <= maxSegmentNumber; segNum++ {
 		if bwa.total&(1<<segNum) == 0 {
 			bwa.ensureSeg(segNum)
-			mergeSegments(bwa.whiteSegments[segNum-1], *lowBlack, bwa.cmp, &bwa.whiteSegments[segNum])
+			mergeSegments(*lowBlack, bwa.whiteSegments[segNum-1], bwa.cmp, &bwa.whiteSegments[segNum])
 			bwa.total++
 			return
 		}
 		highBlack := bwa.highBlack(segNum)
 
 		bwa.ensureSeg(segNum)
-		mergeSegments(bwa.whiteSegments[segNum-1], *lowBlack, bwa.cmp, highBlack)
+		mergeSegments(*lowBlack, bwa.whiteSegments[segNum-1], bwa.cmp, highBlack)
 		swapSegments(lowBlack, highBlack)
 	}
 }
@@ -444,7 +449,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	} else {
 		blackSeg := bwa.highBlack(segNum - 1)
 		demoteSegment(*seg, blackSeg)
-		mergeSegments(*blackSeg, bwa.whiteSegments[segNum-1], bwa.cmp, seg)
+		mergeSegments(bwa.whiteSegments[segNum-1], *blackSeg, bwa.cmp, seg)
 		bwa.total -= 1 << (segNum - 1)
 	}
 	return deleted
@@ -452,21 +457,20 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 
 // min assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
-	// First set result to the first segment with elements.
-	for i := range len(bwa.whiteSegments) {
-		if bwa.total&(1<<i) != 0 {
-			segNum = i
+	// First, skip non-used segments:
+	for segNum = range bwa.whiteSegments {
+		if bwa.total&(1<<segNum) != 0 {
 			break
 		}
 	}
-	index = bwa.whiteSegments[segNum].minNonDeletedIndex()
+	index = bwa.whiteSegments[segNum].min(bwa.cmp)
 	// Then find the segment with the smallest element:
 	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
 		if bwa.total&(1<<seg) == 0 {
 			continue
 		}
 		// Less or equal is used to provide stable behavior (return the oldest one).
-		ind := bwa.whiteSegments[seg].minNonDeletedIndex()
+		ind := bwa.whiteSegments[seg].min(bwa.cmp)
 		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) <= 0 {
 			segNum, index = seg, ind
 		}
@@ -476,10 +480,9 @@ func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
 
 // max assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
-	// First set result to the first segment with elements.
-	for i := range len(bwa.whiteSegments) {
-		if bwa.total&(1<<i) != 0 {
-			segNum = i
+	// First, skip non-used segments:
+	for segNum = range bwa.whiteSegments {
+		if bwa.total&(1<<segNum) != 0 {
 			break
 		}
 	}
@@ -489,7 +492,7 @@ func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
 		if bwa.total&(1<<seg) == 0 {
 			continue
 		}
-		// Less or equal is used to provide stable behavior (return the oldest one).
+		// Greater or equal is used to provide stable behavior (return the oldest one).
 		ind := bwa.whiteSegments[seg].maxNonDeletedIndex()
 		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) >= 0 {
 			segNum, index = seg, ind
