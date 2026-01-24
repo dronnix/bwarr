@@ -300,6 +300,7 @@ func TestBWArr_DeleteStability(t *testing.T) {
 	// Delete elements one by one and check stability
 	for i := range elements {
 		deletedElem, found := bwa.Delete(stabVal{val: 23})
+		validateBWArr(t, bwa)
 		assert.True(t, found, "should find element to delete")
 		assert.Equal(t, i, deletedElem.seq, "should delete the leftmost (first inserted) element with seq=%d", i)
 	}
@@ -403,65 +404,62 @@ func TestBWArr_Max(t *testing.T) {
 	}
 }
 
-func TestBWArr_MinStability(t *testing.T) {
+func TestBWArr_DelMinStability(t *testing.T) { // Also covers Min stability.
 	t.Parallel()
-	tests := []struct {
-		name       string
-		elemsToAdd []int64
-		segment    int
-		index      int
-	}{
-		{
-			name:       "two",
-			elemsToAdd: []int64{23, 42, 23, 27, 23, 29, 61},
-			segment:    2,
-			index:      0,
-		},
+	bwa := New(stabValCmp, 10)
+
+	// Insert elements with duplicate values but different sequence numbers
+	elements := []stabVal{
+		{val: 23, seq: 0},
+		{val: 23, seq: 1},
+		{val: 23, seq: 2},
+		{val: 23, seq: 3},
+		{val: 23, seq: 4},
+		{val: 23, seq: 5},
+		{val: 23, seq: 6},
 	}
-	for _, tt := range tests { //nolint:paralleltest
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			bwa := New(int64Cmp, 0)
-			for _, elem := range tt.elemsToAdd {
-				bwa.Insert(elem)
-			}
-			validateBWArr(t, bwa)
-			seg, ind := bwa.min()
-			assert.Equal(t, tt.segment, seg)
-			assert.Equal(t, tt.index, ind)
-			validateBWArr(t, bwa)
-		})
+
+	for _, elem := range elements {
+		bwa.Insert(elem)
+	}
+	validateBWArr(t, bwa)
+
+	// Delete elements one by one and check stability
+	for i := range elements {
+		deletedElem, found := bwa.DeleteMin()
+		validateBWArr(t, bwa)
+		assert.True(t, found, "should find element to delete")
+		assert.Equal(t, i, deletedElem.seq, "should delete the leftmost (first inserted) element with seq=%d", i)
 	}
 }
 
-func TestBWArr_MaxStability(t *testing.T) {
+func TestBWArr_DelMaxStability(t *testing.T) { // Also covers Max stability.
 	t.Parallel()
-	tests := []struct {
-		name       string
-		elemsToAdd []int64
-		segment    int
-		index      int
-	}{
-		{
-			name:       "two",
-			elemsToAdd: []int64{61, 42, 23, 27, 61, 29, 61},
-			segment:    2,
-			index:      3,
-		},
+
+	bwa := New(stabValCmp, 10)
+
+	// Insert elements with duplicate values but different sequence numbers
+	elements := []stabVal{
+		{val: 23, seq: 0},
+		{val: 23, seq: 1},
+		{val: 23, seq: 2},
+		{val: 23, seq: 3},
+		{val: 23, seq: 4},
+		{val: 23, seq: 5},
+		{val: 23, seq: 6},
 	}
-	for _, tt := range tests { //nolint:paralleltest
-		t.Run(tt.name, func(t *testing.T) {
-			t.Parallel()
-			bwa := New(int64Cmp, 0)
-			for _, elem := range tt.elemsToAdd {
-				bwa.Insert(elem)
-			}
-			validateBWArr(t, bwa)
-			seg, ind := bwa.max()
-			assert.Equal(t, tt.segment, seg)
-			assert.Equal(t, tt.index, ind)
-			validateBWArr(t, bwa)
-		})
+
+	for _, elem := range elements {
+		bwa.Insert(elem)
+	}
+	validateBWArr(t, bwa)
+
+	// Delete elements one by one and check stability
+	for i := range elements {
+		deletedElem, found := bwa.DeleteMax()
+		validateBWArr(t, bwa)
+		assert.True(t, found, "should find element to delete")
+		assert.Equal(t, i, deletedElem.seq, "should delete the leftmost (first inserted) element with seq=%d", i)
 	}
 }
 
@@ -807,9 +805,9 @@ func TestBWArr_AscendStability(t *testing.T) {
 		bwa.Insert(stabVal{val: rand.Intn(7), seq: i + 1})
 	}
 
-	segs := make(map[int]int, elemsNum)
+	seqs := make(map[int]int, elemsNum)
 	iter := func(e stabVal) bool {
-		ps := segs[e.val]
+		ps := seqs[e.val]
 		assert.Greater(t, e.seq, ps)
 		return true
 	}

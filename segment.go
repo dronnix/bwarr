@@ -104,6 +104,22 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 	return idx
 }
 
+// returns minimum element index with respect to FIFO constraint: for if we have
+// several equal minimum elements, returns the rightmost one.
+func (s *segment[T]) min(cmp CmpFunc[T]) int {
+	minIdx, maxIdx := s.minNonDeletedIndex(), s.maxNonDeletedIndex()
+	for i := minIdx + 1; i <= maxIdx; i++ {
+		if s.deleted[i] { // deleted elements can appear only after non-deleted equal ones;
+			return minIdx
+		}
+		if cmp(s.elements[i], s.elements[minIdx]) != 0 {
+			return minIdx
+		}
+		minIdx = i
+	}
+	return minIdx
+}
+
 // returns index of the first element that is greater or equal to val and is not deleted.
 // If all elements are less than val, returns -1.
 func (s *segment[T]) findGTOE(cmp CmpFunc[T], val T) int {

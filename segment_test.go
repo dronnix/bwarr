@@ -451,6 +451,185 @@ func Test_segment_AllDeleted(t *testing.T) {
 	assert.Equal(t, -1, seg.maxNonDeletedIndex())
 }
 
+//nolint:exhaustruct
+func Test_segment_min(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name string
+		seg  segment[int64]
+		want int
+	}{
+		{
+			name: "single element",
+			seg: segment[int64]{
+				elements: []int64{42},
+				deleted:  []bool{false},
+			},
+			want: 0,
+		},
+		{
+			name: "two elements - first is min",
+			seg: segment[int64]{
+				elements:         []int64{17, 42},
+				deleted:          []bool{false, false},
+				maxNonDeletedIdx: 1,
+			},
+			want: 0,
+		},
+		{
+			name: "two equal elements - should return rightmost (FIFO)",
+			seg: segment[int64]{
+				elements:         []int64{23, 23},
+				deleted:          []bool{false, false},
+				maxNonDeletedIdx: 1,
+			},
+			want: 1,
+		},
+		{
+			name: "three equal elements - should return rightmost",
+			seg: segment[int64]{
+				elements:         []int64{23, 23, 23},
+				deleted:          []bool{false, false, false},
+				maxNonDeletedIdx: 2,
+			},
+			want: 2,
+		},
+		{
+			name: "equal elements with deleted after - should return last non-deleted",
+			seg: segment[int64]{
+				elements:         []int64{23, 23, 23},
+				deleted:          []bool{false, false, true},
+				maxNonDeletedIdx: 2,
+			},
+			want: 1,
+		},
+		{
+			name: "equal elements with multiple deleted after - should return last non-deleted",
+			seg: segment[int64]{
+				elements:         []int64{23, 23, 23, 23},
+				deleted:          []bool{false, false, true, true},
+				maxNonDeletedIdx: 3,
+			},
+			want: 1,
+		},
+		{
+			name: "sorted array - minimum is first",
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42},
+				deleted:          []bool{false, false, false, false},
+				maxNonDeletedIdx: 3,
+			},
+			want: 0,
+		},
+		{
+			name: "sorted array with equal minimums",
+			seg: segment[int64]{
+				elements:         []int64{17, 17, 23, 37, 42},
+				deleted:          []bool{false, false, false, false, false},
+				maxNonDeletedIdx: 4,
+			},
+			want: 1,
+		},
+		{
+			name: "sorted array with equal minimums and deleted after",
+			seg: segment[int64]{
+				elements:         []int64{17, 17, 17, 23, 37, 42},
+				deleted:          []bool{false, false, true, false, false, false},
+				maxNonDeletedIdx: 5,
+			},
+			want: 1,
+		},
+		{
+			name: "sorted array with larger elements after equal mins",
+			seg: segment[int64]{
+				elements:         []int64{5, 5, 5, 10, 20, 30},
+				deleted:          []bool{false, false, false, false, false, false},
+				maxNonDeletedIdx: 5,
+			},
+			want: 2,
+		},
+		{
+			name: "first element deleted - min is second",
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42},
+				deleted:          []bool{true, false, false, false},
+				minNonDeletedIdx: 1,
+				maxNonDeletedIdx: 3,
+			},
+			want: 1,
+		},
+		{
+			name: "sparse deleted elements",
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42},
+				deleted:          []bool{true, false, true, false},
+				minNonDeletedIdx: 1,
+				maxNonDeletedIdx: 3,
+			},
+			want: 1,
+		},
+		{
+			name: "all equal non-deleted with deleted suffix",
+			seg: segment[int64]{
+				elements:         []int64{10, 10, 10, 10, 10},
+				deleted:          []bool{false, false, false, true, true},
+				maxNonDeletedIdx: 4,
+			},
+			want: 2,
+		},
+		{
+			name: "complex case - equal mins, then deleted, then larger values",
+			seg: segment[int64]{
+				elements:         []int64{5, 5, 5, 5, 10, 15, 20},
+				deleted:          []bool{false, false, false, true, false, false, false},
+				maxNonDeletedIdx: 6,
+			},
+			want: 2,
+		},
+		{
+			name: "single non-deleted in middle of deleted",
+			seg: segment[int64]{
+				elements:         []int64{17, 23, 37, 42},
+				deleted:          []bool{true, true, false, true},
+				minNonDeletedIdx: 2,
+				maxNonDeletedIdx: 2,
+			},
+			want: 2,
+		},
+		{
+			name: "equal elements at start with larger after",
+			seg: segment[int64]{
+				elements:         []int64{1, 1, 2, 3, 4},
+				deleted:          []bool{false, false, false, false, false},
+				maxNonDeletedIdx: 4,
+			},
+			want: 1,
+		},
+		{
+			name: "invariant test - deleted only after equal non-deleted",
+			seg: segment[int64]{
+				elements:         []int64{10, 10, 10, 10, 20, 30},
+				deleted:          []bool{false, false, true, true, false, false},
+				maxNonDeletedIdx: 5,
+			},
+			want: 1,
+		},
+	}
+
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			got := tt.seg.min(int64Cmp)
+			assert.Equalf(t, tt.want, got, "min() returned index %d, want %d", got, tt.want)
+
+			// Verify the returned index is not deleted
+			if got >= 0 && got < len(tt.seg.deleted) {
+				assert.Falsef(t, tt.seg.deleted[got], "min() returned deleted element at index %d", got)
+			}
+		})
+	}
+}
+
 func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 	require.Len(t, seg.elements, len(seg.deleted))
 	deleted, firstNonDelIdx, lastNonDelIdx := 0, 0, len(seg.elements)-1
@@ -463,7 +642,7 @@ func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 		// If elements are equal, deleted must be after non-deleted;
 		if i != 0 && cmp(seg.elements[i-1], seg.elements[i]) == 0 {
 			if seg.deleted[i-1] {
-				assert.False(t, seg.deleted[i], "At index %d: equal elements, but deleted comes before non-deleted", i)
+				assert.Failf(t, "Order constraint", "at index %d and %d: equal elements %d, but deleted comes before non-deleted", i-1, i, seg.elements[i])
 			}
 		}
 		lastNonDelIdx = i

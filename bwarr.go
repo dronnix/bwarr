@@ -452,21 +452,20 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 
 // min assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
-	// First set result to the first segment with elements.
-	for i := range len(bwa.whiteSegments) {
-		if bwa.total&(1<<i) != 0 {
-			segNum = i
+	// First, skip non-used segments:
+	for segNum = range bwa.whiteSegments {
+		if bwa.total&(1<<segNum) != 0 {
 			break
 		}
 	}
-	index = bwa.whiteSegments[segNum].minNonDeletedIndex()
+	index = bwa.whiteSegments[segNum].min(bwa.cmp)
 	// Then find the segment with the smallest element:
 	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
 		if bwa.total&(1<<seg) == 0 {
 			continue
 		}
 		// Less or equal is used to provide stable behavior (return the oldest one).
-		ind := bwa.whiteSegments[seg].minNonDeletedIndex()
+		ind := bwa.whiteSegments[seg].min(bwa.cmp)
 		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) <= 0 {
 			segNum, index = seg, ind
 		}
@@ -476,10 +475,9 @@ func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
 
 // max assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
-	// First set result to the first segment with elements.
-	for i := range len(bwa.whiteSegments) {
-		if bwa.total&(1<<i) != 0 {
-			segNum = i
+	// First, skip non-used segments:
+	for segNum = range bwa.whiteSegments {
+		if bwa.total&(1<<segNum) != 0 {
 			break
 		}
 	}
@@ -489,7 +487,7 @@ func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
 		if bwa.total&(1<<seg) == 0 {
 			continue
 		}
-		// Less or equal is used to provide stable behavior (return the oldest one).
+		// Greater or equal is used to provide stable behavior (return the oldest one).
 		ind := bwa.whiteSegments[seg].maxNonDeletedIndex()
 		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) >= 0 {
 			segNum, index = seg, ind
