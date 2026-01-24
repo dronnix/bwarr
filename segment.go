@@ -105,7 +105,7 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 	return idx
 }
 
-// returns minimum element index with respect to FIFO constraint: for if we have
+// returns minimum element index with respect to FIFO constraint: if we have
 // several equal minimum elements, returns the rightmost one.
 func (s *segment[T]) min(cmp CmpFunc[T]) int {
 	minIdx, maxIdx := s.minNonDeletedIndex(), s.maxNonDeletedIndex()

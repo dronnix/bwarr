@@ -25,7 +25,7 @@ Dynamic Data Sets](https://arxiv.org/abs/2004.09051). This repository contains t
 
 ### Tradeoffs
 - One per $N$ insert operations complexity falls down to $O(N)$, though amortized remains $O(\log N)$. For real-time systems, it may introduce latency spikes for collections with millions of elements. Could be mitigated by async/background inserts.
-- For a small amount elements `Search()/Delete()` operations may take $O((\log N)^2)$. 50% of elements take $O(\log N)$ time, 75%  - $O(2\log N)$, 87.5% - $O(3\log N)$, etc.
+- For a small number of elements `Search()/Delete()` operations may take $O((\log N)^2)$. 50% of elements take $O(\log N)$ time, 75%  - $O(2\log N)$, 87.5% - $O(3\log N)$, etc.
 - When deleting long series of elements, a `Max()/Min()` operation can take $O(N/4)$. Amortized complexity for series of calls remains $O(\log N)$.
 - When deleting long series of elements, iteration step can take $O(N/4)$. Amortized complexity for iteration over the whole collection remains $O(\log N)$ per element.
 
