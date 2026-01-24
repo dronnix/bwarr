@@ -11,6 +11,11 @@ import "slices"
 // elements and maintains stable ordering.
 // See data structure details at: https://arxiv.org/abs/2004.09051
 type BWArr[T any] struct {
+	// Data invariants for equal elements to maintain stable (FIFO) ordering and O(Log(N)) search complexity:
+	// 1. If equal elements are in the same segment, older is righter (greater index).
+	// 2. If equal elements are in different segments, older is placed in the higher-rank segment.
+	// 3. If segment contains equal deleted and non-deleted elements, deleted are placed after non-deleted (greater index).
+
 	whiteSegments []segment[T]
 	highBlackSeg  segment[T]
 	lowBlackSeg   segment[T]
