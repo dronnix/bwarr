@@ -92,21 +92,19 @@ func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
 // Duplicate elements are allowed. If multiple equal elements exist, they
 // maintain stable ordering based on insertion order.
 func (bwa *BWArr[T]) Insert(element T) {
-	newSegmentSize := (bwa.total + 1) & -(bwa.total + 1)
-	newSegmentRank := log2(newSegmentSize)
-	bwa.ensureSeg(newSegmentRank)
-	resultSegment := &bwa.whiteSegments[newSegmentRank]
-	for i := range newSegmentSize {
-		resultSegment.deleted[i] = false
-	}
-	resultSegment.deletedNum = 0
-	resultSegment.minNonDeletedIdx = 0
-	resultSegment.maxNonDeletedIdx = int(newSegmentSize - 1)
-	resultSegment.elements[newSegmentSize-1] = element
-	resultReadPtr := int(newSegmentSize - 1)
-	for segmentNumber := range newSegmentRank {
-		mergeSegments1(&bwa.whiteSegments[segmentNumber], resultSegment, bwa.cmp, resultReadPtr)
-		resultReadPtr -= 1 << segmentNumber
+	// TODO: explain bit trick!
+	destSegSize := (bwa.total + 1) & -(bwa.total + 1)
+	destSegRank := log2(destSegSize)
+	bwa.ensureSeg(destSegRank)
+	destSeg := &bwa.whiteSegments[destSegRank]
+
+	// Put the new element at the end of the destination segment
+	destSeg.elements[destSegSize-1] = element
+
+	destReadPtr := int(destSegSize - 1)
+	for segmentNumber := range destSegRank {
+		mergeSegments1(&bwa.whiteSegments[segmentNumber], destSeg, bwa.cmp, destReadPtr)
+		destReadPtr -= 1 << segmentNumber
 	}
 	bwa.total++
 }
