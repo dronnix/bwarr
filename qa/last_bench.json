@@ -1,6 +1,6 @@
 [
   {
-    "Date": 1758383395,
+    "Date": 1769267840,
     "Suites": [
       {
         "Goos": "darwin",
@@ -8,9 +8,9 @@
         "Pkg": "github.com/dronnix/bwarr",
         "Benchmarks": [
           {
-            "Name": "BenchmarkQA_Insert-12",
+            "Name": "BenchmarkQA_Insert-10",
             "Runs": 1000000,
-            "NsPerOp": 179.9,
+            "NsPerOp": 179.5,
             "Mem": {
               "BytesPerOp": 66,
               "AllocsPerOp": 0,
@@ -18,9 +18,9 @@
             }
           },
           {
-            "Name": "BenchmarkQA_ReplaceOrInsertNotFound-12",
+            "Name": "BenchmarkQA_ReplaceOrInsertNotFound-10",
             "Runs": 1000000,
-            "NsPerOp": 1375,
+            "NsPerOp": 1414,
             "Mem": {
               "BytesPerOp": 66,
               "AllocsPerOp": 0,
@@ -28,49 +28,39 @@
             }
           },
           {
-            "Name": "BenchmarkQA_ReplaceOrInsertFound-12",
+            "Name": "BenchmarkQA_ReplaceOrInsertFound-10",
             "Runs": 1000000,
-            "NsPerOp": 258.5,
+            "NsPerOp": 270.9,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 30.95
+              "MBPerSec": 29.53
             }
           },
           {
-            "Name": "BenchmarkQA_HasFound-12",
+            "Name": "BenchmarkQA_HasFound-10",
             "Runs": 1000000,
-            "NsPerOp": 260.4,
+            "NsPerOp": 265.9,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 30.72
+              "MBPerSec": 30.08
             }
           },
           {
-            "Name": "BenchmarkQA_HasNotFoundWorst-12",
+            "Name": "BenchmarkQA_HasNotFoundWorst-10",
             "Runs": 1000000,
-            "NsPerOp": 2330,
+            "NsPerOp": 2382,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 3.43
+              "MBPerSec": 3.36
             }
           },
           {
-            "Name": "BenchmarkQA_Min-12",
+            "Name": "BenchmarkQA_Min-10",
             "Runs": 1000000,
-            "NsPerOp": 65.94,
-            "Mem": {
-              "BytesPerOp": 0,
-              "AllocsPerOp": 0,
-              "MBPerSec": 0
-            }
-          },
-          {
-            "Name": "BenchmarkQA_Max-12",
-            "Runs": 1000000,
-            "NsPerOp": 65.54,
+            "NsPerOp": 138.2,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -78,9 +68,9 @@
             }
           },
           {
-            "Name": "BenchmarkQA_Delete-12",
+            "Name": "BenchmarkQA_Max-10",
             "Runs": 1000000,
-            "NsPerOp": 752.8,
+            "NsPerOp": 65.23,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -88,9 +78,9 @@
             }
           },
           {
-            "Name": "BenchmarkQA_DeleteMin-12",
+            "Name": "BenchmarkQA_Delete-10",
             "Runs": 1000000,
-            "NsPerOp": 40.11,
+            "NsPerOp": 789.5,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -98,9 +88,19 @@
             }
           },
           {
-            "Name": "BenchmarkQA_DeleteMax-12",
+            "Name": "BenchmarkQA_DeleteMin-10",
             "Runs": 1000000,
-            "NsPerOp": 39.63,
+            "NsPerOp": 61.26,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_DeleteMax-10",
+            "Runs": 1000000,
+            "NsPerOp": 40.32,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -115,9 +115,9 @@
         "Pkg": "github.com/dronnix/bwarr",
         "Benchmarks": [
           {
-            "Name": "BenchmarkLongQA_NewFromSlice-12",
-            "Runs": 265,
-            "NsPerOp": 8911815,
+            "Name": "BenchmarkLongQA_NewFromSlice-10",
+            "Runs": 264,
+            "NsPerOp": 8947575,
             "Mem": {
               "BytesPerOp": 1181144,
               "AllocsPerOp": 40,
@@ -125,19 +125,19 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_InsertRandom-12",
-            "Runs": 175,
-            "NsPerOp": 13672260,
+            "Name": "BenchmarkLongQA_InsertRandom-10",
+            "Runs": 172,
+            "NsPerOp": 13829210,
             "Mem": {
-              "BytesPerOp": 2068131,
+              "BytesPerOp": 2068128,
               "AllocsPerOp": 141,
               "MBPerSec": 0
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendRandom-12",
-            "Runs": 906,
-            "NsPerOp": 2643087,
+            "Name": "BenchmarkLongQA_AscendRandom-10",
+            "Runs": 904,
+            "NsPerOp": 2645991,
             "Mem": {
               "BytesPerOp": 1680,
               "AllocsPerOp": 2,
@@ -145,9 +145,9 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendInc-12",
-            "Runs": 3560,
-            "NsPerOp": 656262,
+            "Name": "BenchmarkLongQA_AscendInc-10",
+            "Runs": 3621,
+            "NsPerOp": 661908,
             "Mem": {
               "BytesPerOp": 1680,
               "AllocsPerOp": 2,
@@ -155,9 +155,9 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendDec-12",
-            "Runs": 4483,
-            "NsPerOp": 533006,
+            "Name": "BenchmarkLongQA_AscendDec-10",
+            "Runs": 4450,
+            "NsPerOp": 534827,
             "Mem": {
               "BytesPerOp": 1680,
               "AllocsPerOp": 2,
@@ -165,9 +165,9 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendRange-12",
-            "Runs": 3567,
-            "NsPerOp": 675804,
+            "Name": "BenchmarkLongQA_AscendRange-10",
+            "Runs": 3472,
+            "NsPerOp": 674647,
             "Mem": {
               "BytesPerOp": 1680,
               "AllocsPerOp": 2,
@@ -175,9 +175,9 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_AscendWithDelSeries-12",
-            "Runs": 3513,
-            "NsPerOp": 677551,
+            "Name": "BenchmarkLongQA_AscendWithDelSeries-10",
+            "Runs": 3499,
+            "NsPerOp": 678498,
             "Mem": {
               "BytesPerOp": 1680,
               "AllocsPerOp": 2,
@@ -185,9 +185,9 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_DescendRandom-12",
+            "Name": "BenchmarkLongQA_DescendRandom-10",
             "Runs": 903,
-            "NsPerOp": 2645236,
+            "NsPerOp": 2656358,
             "Mem": {
               "BytesPerOp": 1680,
               "AllocsPerOp": 2,
@@ -195,9 +195,9 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_DescendRangeWithDelSeries-12",
-            "Runs": 4470,
-            "NsPerOp": 536773,
+            "Name": "BenchmarkLongQA_DescendRangeWithDelSeries-10",
+            "Runs": 4404,
+            "NsPerOp": 544696,
             "Mem": {
               "BytesPerOp": 1680,
               "AllocsPerOp": 2,
@@ -205,9 +205,9 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_UnorderedWalkRandom-12",
-            "Runs": 8960,
-            "NsPerOp": 267780,
+            "Name": "BenchmarkLongQA_UnorderedWalkRandom-10",
+            "Runs": 8895,
+            "NsPerOp": 269541,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -215,9 +215,9 @@
             }
           },
           {
-            "Name": "BenchmarkLongQA_UnorderedWalkWithDelSeries-12",
-            "Runs": 8973,
-            "NsPerOp": 266436,
+            "Name": "BenchmarkLongQA_UnorderedWalkWithDelSeries-10",
+            "Runs": 8869,
+            "NsPerOp": 265597,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
