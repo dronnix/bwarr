@@ -59,51 +59,51 @@ func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment
 	result.minNonDeletedIdx, result.maxNonDeletedIdx = 0, len(result.elements)-1
 }
 
-func mergeSegments1[T any](oldSegment, newSegment *segment[T], cmp CmpFunc[T], readPointer int) {
-	j := 0
-	currentSegmentLength := len(oldSegment.elements)
-	writePointer := readPointer - currentSegmentLength
-	newSegmentEnd := readPointer + currentSegmentLength
-	for readPointer < newSegmentEnd && j < currentSegmentLength {
-		cmpResult := cmp(newSegment.elements[readPointer], oldSegment.elements[j])
-		if (cmpResult < 0) || (cmpResult == 0 && !newSegment.deleted[readPointer]) {
-			newSegment.elements[writePointer] = newSegment.elements[readPointer]
-			newSegment.deleted[writePointer] = newSegment.deleted[readPointer]
-			readPointer++
+func mergeSegments1[T any](oldSeg, destSeg *segment[T], cmp CmpFunc[T], destSegReadIdx int) {
+	oldSegReadIdx := 0
+	oldSegEnd := len(oldSeg.elements)
+	destSegWriteIxd := destSegReadIdx - oldSegEnd
+	destSegEnd := destSegReadIdx + oldSegEnd
+	for destSegReadIdx < destSegEnd && oldSegReadIdx < oldSegEnd {
+		cmpResult := cmp(destSeg.elements[destSegReadIdx], oldSeg.elements[oldSegReadIdx])
+		if (cmpResult < 0) || (cmpResult == 0 && !destSeg.deleted[destSegReadIdx]) {
+			destSeg.elements[destSegWriteIxd] = destSeg.elements[destSegReadIdx]
+			destSeg.deleted[destSegWriteIxd] = destSeg.deleted[destSegReadIdx]
+			destSegReadIdx++
 		} else {
-			newSegment.elements[writePointer] = oldSegment.elements[j]
-			newSegment.deleted[writePointer] = oldSegment.deleted[j]
-			j++
+			destSeg.elements[destSegWriteIxd] = oldSeg.elements[oldSegReadIdx]
+			destSeg.deleted[destSegWriteIxd] = oldSeg.deleted[oldSegReadIdx]
+			oldSegReadIdx++
 		}
-		if !newSegment.deleted[writePointer] {
-			newSegment.maxNonDeletedIdx = max(newSegment.maxNonDeletedIdx, writePointer)
-			newSegment.minNonDeletedIdx = min(newSegment.minNonDeletedIdx, writePointer)
+		if !destSeg.deleted[destSegWriteIxd] {
+			destSeg.maxNonDeletedIdx = max(destSeg.maxNonDeletedIdx, destSegWriteIxd)
+			destSeg.minNonDeletedIdx = min(destSeg.minNonDeletedIdx, destSegWriteIxd)
 		}
-		writePointer++
+		destSegWriteIxd++
 	}
 
-	for readPointer < newSegmentEnd {
-		newSegment.elements[writePointer] = newSegment.elements[readPointer]
-		newSegment.deleted[writePointer] = newSegment.deleted[readPointer]
-		if !newSegment.deleted[writePointer] {
-			newSegment.maxNonDeletedIdx = max(newSegment.maxNonDeletedIdx, writePointer)
-			newSegment.minNonDeletedIdx = min(newSegment.minNonDeletedIdx, writePointer)
+	for destSegReadIdx < destSegEnd {
+		destSeg.elements[destSegWriteIxd] = destSeg.elements[destSegReadIdx]
+		destSeg.deleted[destSegWriteIxd] = destSeg.deleted[destSegReadIdx]
+		if !destSeg.deleted[destSegWriteIxd] {
+			destSeg.maxNonDeletedIdx = max(destSeg.maxNonDeletedIdx, destSegWriteIxd)
+			destSeg.minNonDeletedIdx = min(destSeg.minNonDeletedIdx, destSegWriteIxd)
 		}
-		writePointer++
-		readPointer++
+		destSegWriteIxd++
+		destSegReadIdx++
 	}
-	for j < currentSegmentLength {
-		newSegment.elements[writePointer] = oldSegment.elements[j]
-		newSegment.deleted[writePointer] = oldSegment.deleted[j]
-		if !newSegment.deleted[writePointer] {
-			newSegment.maxNonDeletedIdx = max(newSegment.maxNonDeletedIdx, writePointer)
-			newSegment.minNonDeletedIdx = min(newSegment.minNonDeletedIdx, writePointer)
+	for oldSegReadIdx < oldSegEnd {
+		destSeg.elements[destSegWriteIxd] = oldSeg.elements[oldSegReadIdx]
+		destSeg.deleted[destSegWriteIxd] = oldSeg.deleted[oldSegReadIdx]
+		if !destSeg.deleted[destSegWriteIxd] {
+			destSeg.maxNonDeletedIdx = max(destSeg.maxNonDeletedIdx, destSegWriteIxd)
+			destSeg.minNonDeletedIdx = min(destSeg.minNonDeletedIdx, destSegWriteIxd)
 		}
-		writePointer++
-		j++
+		destSegWriteIxd++
+		oldSegReadIdx++
 	}
 
-	newSegment.deletedNum += oldSegment.deletedNum
+	destSeg.deletedNum += oldSeg.deletedNum
 }
 
 func demoteSegment[T any](from segment[T], to *segment[T]) {
