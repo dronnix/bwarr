@@ -10,127 +10,127 @@
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_Insert-10",
-          "Value": 1.8941504178273012
+          "Value": -3.398328690807796
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_ReplaceOrInsertNotFound-10",
-          "Value": 0.49504950495049505
+          "Value": -3.7482319660537478
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_ReplaceOrInsertFound-10",
-          "Value": 0.7013658176449
+          "Value": -2.3624953857511914
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_HasFound-10",
-          "Value": 2.0684467845054533
+          "Value": -4.512974802557342
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_HasNotFoundWorst-10",
-          "Value": 0.5037783375314862
+          "Value": -1.7212426532325777
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_Min-10",
-          "Value": -4.269175108538334
+          "Value": 0.28943560057887535
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_Max-10",
-          "Value": 0.5978844090142581
+          "Value": -1.2570902958761418
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_Delete-10",
-          "Value": -3.9265357821405953
+          "Value": -6.409119696010136
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_DeleteMin-10",
-          "Value": 0.26118184786157966
+          "Value": 0.22853411687887787
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkQA_DeleteMax-10",
-          "Value": -0.17361111111111183
+          "Value": -1.0912698412698356
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_NewFromSlice-10",
-          "Value": -0.4272777819688575
+          "Value": 0.2894639050245458
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_InsertRandom-10",
-          "Value": -3.592345477435081
+          "Value": -6.336052457081785
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_AscendRandom-10",
-          "Value": -0.05151189100794371
+          "Value": 1.1096787555210883
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_AscendInc-10",
-          "Value": -0.2089414238836817
+          "Value": 0.09699233126053772
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_AscendDec-10",
-          "Value": 4.237818958279967
+          "Value": 0.14546759980330087
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_AscendRange-10",
-          "Value": 2.687627751994747
+          "Value": -0.23315897054311366
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_AscendWithDelSeries-10",
-          "Value": 0.8479022782675852
+          "Value": 0.7989706675627637
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_DescendRandom-10",
-          "Value": 0.5535398466622345
+          "Value": 0.9674524292282892
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_DescendRangeWithDelSeries-10",
-          "Value": -0.9016038303934671
+          "Value": -1.3247756546771043
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_UnorderedWalkRandom-10",
-          "Value": -0.37025907004871245
+          "Value": -0.5390645578965723
         },
         {
           "Status": "pass",
           "Package": "github.com/dronnix/bwarr",
           "Benchmark": "BenchmarkLongQA_UnorderedWalkWithDelSeries-10",
-          "Value": 0.25075584438077236
+          "Value": 0.034638945470016606
         }
       ],
       "Thresholds": {

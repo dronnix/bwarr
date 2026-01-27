@@ -103,7 +103,7 @@ func (bwa *BWArr[T]) Insert(element T) {
 
 	destReadPtr := int(destSegSize - 1)
 	for segmentNumber := range destSegRank {
-		mergeSegments1(&bwa.whiteSegments[segmentNumber], destSeg, bwa.cmp, destReadPtr)
+		mergeSegments(&bwa.whiteSegments[segmentNumber], destSeg, bwa.cmp, destReadPtr)
 		destReadPtr -= 1 << segmentNumber
 	}
 	bwa.total++
@@ -424,7 +424,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
 	} else {
 		demoteSegment1(*seg)
-		mergeSegments1(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity)
+		mergeSegments(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
 	}
 	bwa.total -= uint64(halfSegmentCapacity)

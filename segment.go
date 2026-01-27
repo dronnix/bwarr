@@ -32,78 +32,34 @@ func makeSegment[T any](rank int) segment[T] {
 	}
 }
 
-// mergeSegments joins two sorted segments into result segment (also) sorted
-// To maintain FIFO order, seg2 should be older than seg1 (rightmost non-deleted element will be found first).
-func mergeSegments[T any](seg1, seg2 segment[T], cmp CmpFunc[T], result *segment[T]) {
-	i, j, k := 0, 0, 0
-	for i < len(seg1.elements) && j < len(seg2.elements) {
-		cmpRes := cmp(seg1.elements[i], seg2.elements[j])
-		if cmpRes < 0 || (cmpRes == 0 && !seg1.deleted[i]) {
-			result.elements[k] = seg1.elements[i]
-			result.deleted[k] = seg1.deleted[i]
-			i++
+// Merge lowSeg and highSeg into highSeg using highSeg free space at the beginning.
+func mergeSegments[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) {
+	lowSegReadIdx := 0
+	lowSegEnd := len(lowSeg.elements)
+	heighSegWriteIxd := highSegReadIdx - lowSegEnd
+	heighSegEnd := highSegReadIdx + lowSegEnd
+	for highSegReadIdx < heighSegEnd && lowSegReadIdx < lowSegEnd {
+		cmpResult := cmp(highSeg.elements[highSegReadIdx], lowSeg.elements[lowSegReadIdx])
+		if (cmpResult < 0) || (cmpResult == 0 && !highSeg.deleted[highSegReadIdx]) {
+			highSeg.elements[heighSegWriteIxd] = highSeg.elements[highSegReadIdx]
+			highSeg.deleted[heighSegWriteIxd] = highSeg.deleted[highSegReadIdx]
+			highSegReadIdx++
 		} else {
-			result.elements[k] = seg2.elements[j]
-			result.deleted[k] = seg2.deleted[j]
-			j++
+			highSeg.elements[heighSegWriteIxd] = lowSeg.elements[lowSegReadIdx]
+			highSeg.deleted[heighSegWriteIxd] = lowSeg.deleted[lowSegReadIdx]
+			lowSegReadIdx++
 		}
-		k++
+		heighSegWriteIxd++
 	}
 
-	copy(result.elements[k:], seg1.elements[i:])
-	copy(result.deleted[k:], seg1.deleted[i:])
-	copy(result.elements[k:], seg2.elements[j:])
-	copy(result.deleted[k:], seg2.deleted[j:])
+	copy(highSeg.elements[heighSegWriteIxd:], highSeg.elements[highSegReadIdx:])
+	copy(highSeg.deleted[heighSegWriteIxd:], highSeg.deleted[highSegReadIdx:])
+	copy(highSeg.elements[heighSegWriteIxd:], lowSeg.elements[lowSegReadIdx:])
+	copy(highSeg.deleted[heighSegWriteIxd:], lowSeg.deleted[lowSegReadIdx:])
 
-	result.deletedNum = seg1.deletedNum + seg2.deletedNum
-	result.minNonDeletedIdx, result.maxNonDeletedIdx = 0, len(result.elements)-1
-}
-
-func mergeSegments1[T any](oldSeg, destSeg *segment[T], cmp CmpFunc[T], destSegReadIdx int) {
-	oldSegReadIdx := 0
-	oldSegEnd := len(oldSeg.elements)
-	destSegWriteIxd := destSegReadIdx - oldSegEnd
-	destSegEnd := destSegReadIdx + oldSegEnd
-	for destSegReadIdx < destSegEnd && oldSegReadIdx < oldSegEnd {
-		cmpResult := cmp(destSeg.elements[destSegReadIdx], oldSeg.elements[oldSegReadIdx])
-		if (cmpResult < 0) || (cmpResult == 0 && !destSeg.deleted[destSegReadIdx]) {
-			destSeg.elements[destSegWriteIxd] = destSeg.elements[destSegReadIdx]
-			destSeg.deleted[destSegWriteIxd] = destSeg.deleted[destSegReadIdx]
-			destSegReadIdx++
-		} else {
-			destSeg.elements[destSegWriteIxd] = oldSeg.elements[oldSegReadIdx]
-			destSeg.deleted[destSegWriteIxd] = oldSeg.deleted[oldSegReadIdx]
-			oldSegReadIdx++
-		}
-		if !destSeg.deleted[destSegWriteIxd] {
-			destSeg.maxNonDeletedIdx = max(destSeg.maxNonDeletedIdx, destSegWriteIxd)
-			destSeg.minNonDeletedIdx = min(destSeg.minNonDeletedIdx, destSegWriteIxd)
-		}
-		destSegWriteIxd++
-	}
-
-	for destSegReadIdx < destSegEnd {
-		destSeg.elements[destSegWriteIxd] = destSeg.elements[destSegReadIdx]
-		destSeg.deleted[destSegWriteIxd] = destSeg.deleted[destSegReadIdx]
-		if !destSeg.deleted[destSegWriteIxd] {
-			destSeg.maxNonDeletedIdx = max(destSeg.maxNonDeletedIdx, destSegWriteIxd)
-			destSeg.minNonDeletedIdx = min(destSeg.minNonDeletedIdx, destSegWriteIxd)
-		}
-		destSegWriteIxd++
-		destSegReadIdx++
-	}
-	for oldSegReadIdx < oldSegEnd {
-		destSeg.elements[destSegWriteIxd] = oldSeg.elements[oldSegReadIdx]
-		destSeg.deleted[destSegWriteIxd] = oldSeg.deleted[oldSegReadIdx]
-		if !destSeg.deleted[destSegWriteIxd] {
-			destSeg.maxNonDeletedIdx = max(destSeg.maxNonDeletedIdx, destSegWriteIxd)
-			destSeg.minNonDeletedIdx = min(destSeg.minNonDeletedIdx, destSegWriteIxd)
-		}
-		destSegWriteIxd++
-		oldSegReadIdx++
-	}
-
-	destSeg.deletedNum += oldSeg.deletedNum
+	highSeg.minNonDeletedIdx = 0
+	highSeg.maxNonDeletedIdx = len(highSeg.elements) - 1
+	highSeg.deletedNum += lowSeg.deletedNum
 }
 
 func demoteSegment[T any](from segment[T], to *segment[T]) {

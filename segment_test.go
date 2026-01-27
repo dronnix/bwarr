@@ -125,7 +125,13 @@ func Test_mergeSegments(t *testing.T) {
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
-			mergeSegments(tt.seg1, tt.seg2, int64Cmp, tt.result)
+			// Copy seg2 into the second half of result
+			seg2Len := len(tt.seg2.elements)
+			copy(tt.result.elements[seg2Len:], tt.seg2.elements)
+			copy(tt.result.deleted[seg2Len:], tt.seg2.deleted)
+			tt.result.deletedNum = tt.seg2.deletedNum
+			// Merge seg1 into result starting at position seg2Len
+			mergeSegments(&tt.seg1, tt.result, int64Cmp, seg2Len)
 			require.Equal(t, tt.expected, *tt.result)
 		})
 	}
