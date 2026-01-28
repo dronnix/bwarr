@@ -424,7 +424,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
 	} else {
 		demoteSegment1(*seg)
-		mergeSegments(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity)
+		mergeSegmentsForDel(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
 	}
 	bwa.total -= uint64(halfSegmentCapacity)

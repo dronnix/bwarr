@@ -38,6 +38,7 @@ func mergeSegments[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegRe
 	lowSegEnd := len(lowSeg.elements)
 	heighSegWriteIxd := highSegReadIdx - lowSegEnd
 	heighSegEnd := highSegReadIdx + lowSegEnd
+
 	for highSegReadIdx < heighSegEnd && lowSegReadIdx < lowSegEnd {
 		cmpResult := cmp(highSeg.elements[highSegReadIdx], lowSeg.elements[lowSegReadIdx])
 		if (cmpResult < 0) || (cmpResult == 0 && !highSeg.deleted[highSegReadIdx]) {
@@ -52,6 +53,7 @@ func mergeSegments[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegRe
 		heighSegWriteIxd++
 	}
 
+	// Copy remaining elements (only one of the segments contains it):
 	copy(highSeg.elements[heighSegWriteIxd:], highSeg.elements[highSegReadIdx:])
 	copy(highSeg.deleted[heighSegWriteIxd:], highSeg.deleted[highSegReadIdx:])
 	copy(highSeg.elements[heighSegWriteIxd:], lowSeg.elements[lowSegReadIdx:])
@@ -59,6 +61,56 @@ func mergeSegments[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegRe
 
 	highSeg.minNonDeletedIdx = 0
 	highSeg.maxNonDeletedIdx = len(highSeg.elements) - 1
+	highSeg.deletedNum += lowSeg.deletedNum
+}
+
+// Merge lowSeg and highSeg into highSeg using highSeg free space at the beginning.
+// Preserve FIFO order for deleting. Maintain min/max non-deleted indexes.
+func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) {
+	lowSegReadIdx := 0
+	lowSegEnd := len(lowSeg.elements)
+	highSegWriteIdx := highSegReadIdx - lowSegEnd
+	highSegEnd := highSegReadIdx + lowSegEnd
+
+	for highSegReadIdx < highSegEnd && lowSegReadIdx < lowSegEnd {
+		cmpResult := cmp(highSeg.elements[highSegReadIdx], lowSeg.elements[lowSegReadIdx])
+		if (cmpResult > 0) || (cmpResult == 0 && !lowSeg.deleted[lowSegReadIdx]) {
+			highSeg.elements[highSegWriteIdx] = lowSeg.elements[lowSegReadIdx]
+			highSeg.deleted[highSegWriteIdx] = lowSeg.deleted[lowSegReadIdx]
+			lowSegReadIdx++
+		} else {
+			highSeg.elements[highSegWriteIdx] = highSeg.elements[highSegReadIdx]
+			highSeg.deleted[highSegWriteIdx] = highSeg.deleted[highSegReadIdx]
+			highSegReadIdx++
+		}
+		if !highSeg.deleted[highSegWriteIdx] {
+			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
+			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
+		}
+		highSegWriteIdx++
+	}
+
+	for highSegReadIdx < highSegEnd {
+		highSeg.elements[highSegWriteIdx] = highSeg.elements[highSegReadIdx]
+		highSeg.deleted[highSegWriteIdx] = highSeg.deleted[highSegReadIdx]
+		if !highSeg.deleted[highSegWriteIdx] {
+			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
+			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
+		}
+		highSegWriteIdx++
+		highSegReadIdx++
+	}
+	for lowSegReadIdx < lowSegEnd {
+		highSeg.elements[highSegWriteIdx] = lowSeg.elements[lowSegReadIdx]
+		highSeg.deleted[highSegWriteIdx] = lowSeg.deleted[lowSegReadIdx]
+		if !highSeg.deleted[highSegWriteIdx] {
+			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
+			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
+		}
+		highSegWriteIdx++
+		lowSegReadIdx++
+	}
+
 	highSeg.deletedNum += lowSeg.deletedNum
 }
 

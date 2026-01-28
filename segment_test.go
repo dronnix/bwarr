@@ -137,6 +137,67 @@ func Test_mergeSegments(t *testing.T) {
 	}
 }
 
+func Test_mergeSegmentsForDel(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name     string
+		seg1     segment[int64]
+		seg2     segment[int64]
+		result   *segment[int64]
+		expected segment[int64]
+	}{
+		{
+			name:     "two elements",
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: make([]bool, 4), maxNonDeletedIdx: 3},
+		},
+		{
+			name:     "rewind from first",
+			seg1:     segment[int64]{elements: []int64{3, 4}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{3, 4, 17, 37}, deleted: make([]bool, 4), maxNonDeletedIdx: 3},
+		},
+		{
+			name:     "two with one deleted element",
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, false}, maxNonDeletedIdx: 1},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, true}, deletedNum: 1},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, false, true, false}, deletedNum: 1, maxNonDeletedIdx: 3},
+		},
+		{
+			name:     "two with two deleted elements",
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{true, false}, deletedNum: 1, maxNonDeletedIdx: 1},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: []bool{false, true}, deletedNum: 1},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: []bool{false, true, true, false}, deletedNum: 2, maxNonDeletedIdx: 3},
+		},
+		{
+			name:     "if elements are equal, non-deleted must be first",
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{true, false}, deletedNum: 1, maxNonDeletedIdx: 1},
+			seg2:     segment[int64]{elements: []int64{23, 42}, deleted: []bool{false, true}, deletedNum: 1},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: make([]bool, 4)},
+			expected: segment[int64]{elements: []int64{23, 23, 42, 42}, deleted: []bool{false, true, false, true}, deletedNum: 2, maxNonDeletedIdx: 2},
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			// Copy seg2 into the second half of result
+			seg2Len := len(tt.seg2.elements)
+			copy(tt.result.elements[seg2Len:], tt.seg2.elements)
+			copy(tt.result.deleted[seg2Len:], tt.seg2.deleted)
+			tt.result.deletedNum = tt.seg2.deletedNum
+			// Merge seg1 into result starting at position seg2Len
+			mergeSegmentsForDel(&tt.seg1, tt.result, int64Cmp, seg2Len)
+			require.Equal(t, tt.expected, *tt.result)
+		})
+	}
+}
+
 //nolint:exhaustruct
 func Test_findRightmostNotDeleted(t *testing.T) {
 	t.Parallel()
