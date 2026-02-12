@@ -92,7 +92,8 @@ func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
 // Duplicate elements are allowed. If multiple equal elements exist, they
 // maintain stable ordering based on insertion order.
 func (bwa *BWArr[T]) Insert(element T) {
-	// TODO: explain bit trick!
+	// bwa.total + 1 - the new total number of elements after insertion, including the new element.
+	// & -(bwa.total + 1)  bit trick to get  the lowest set bit - segment that will become active after insertion.
 	destSegSize := (bwa.total + 1) & -(bwa.total + 1)
 	destSegRank := log2(destSegSize)
 	bwa.ensureSeg(destSegRank)

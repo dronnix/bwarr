@@ -435,6 +435,7 @@ func TestBWArr_DelMinStability(t *testing.T) { // Also covers Min stability.
 
 func TestBWArr_DelMaxStability(t *testing.T) { // Also covers Max stability.
 	t.Parallel()
+
 	bwa := New(stabValCmp, 10)
 
 	// Insert elements with duplicate values but different sequence numbers
