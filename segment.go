@@ -127,20 +127,22 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 	to.minNonDeletedIdx, to.maxNonDeletedIdx = 0, len(to.elements)-1
 }
 
-func demoteSegment1[T any](from segment[T]) {
-	length := len(from.elements)
+// moveNonDeletedValuesToSegmentStart moves all non-deleted values to the beginning of the segment, preserving their order.
+// It is used when we have half of the elements in the segment deleted, as preparation for merging with lover segment.
+func moveNonDeletedValuesToSegmentStart[T any](seg segment[T]) {
+	length := len(seg.elements)
 	writePointer := length - 1
 	readPointer := length - 1
 	for writePointer >= (length >> 1) {
-		if !from.deleted[readPointer] {
-			from.elements[writePointer] = from.elements[readPointer]
-			from.deleted[writePointer] = false
+		if !seg.deleted[readPointer] {
+			seg.elements[writePointer] = seg.elements[readPointer]
+			seg.deleted[writePointer] = false
 			writePointer--
 		}
 		readPointer--
 	}
-	from.deletedNum = length >> 1
-	from.minNonDeletedIdx, from.maxNonDeletedIdx = length>>1, length-1
+	seg.deletedNum = length >> 1
+	seg.minNonDeletedIdx, seg.maxNonDeletedIdx = length>>1, length-1
 }
 
 // returns index of the rightmost element equal to val that is not deleted.
