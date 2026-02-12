@@ -17,7 +17,7 @@ type BWArr[T any] struct {
 	// 3. If segment contains equal deleted and non-deleted elements, deleted are placed after non-deleted (greater index).
 
 	whiteSegments []segment[T]
-	total         uint64 // Total number of elements in the array, including deleted ones.
+	total         int // Total number of elements in the array, including deleted ones.
 	cmp           CmpFunc[T]
 }
 
@@ -53,7 +53,6 @@ func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 // The original slice is not modified.
 func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
 	l := len(slice)
-	total := uint64(l)
 	if l == 0 {
 		return New[T](cmp, 0)
 	}
@@ -80,7 +79,7 @@ func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
 	}
 	return &BWArr[T]{
 		whiteSegments: segs,
-		total:         total,
+		total:         len(slice),
 		cmp:           cmp,
 	}
 }
@@ -102,7 +101,7 @@ func (bwa *BWArr[T]) Insert(element T) {
 	// Put the new element at the end of the destination segment
 	destSeg.elements[destSegSize-1] = element
 
-	destReadPtr := int(destSegSize - 1)
+	destReadPtr := destSegSize - 1
 	for segmentNumber := range destSegRank {
 		mergeSegments(&bwa.whiteSegments[segmentNumber], destSeg, bwa.cmp, destReadPtr)
 		destReadPtr -= 1 << segmentNumber
@@ -202,7 +201,7 @@ func (bwa *BWArr[T]) Len() int {
 			deleted += bwa.whiteSegments[i].deletedNum
 		}
 	}
-	return int(bwa.total) - deleted
+	return bwa.total - deleted
 }
 
 // Max returns the maximum element in the BWArr and true, or the zero value
@@ -420,7 +419,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		seg.deleted[0] = false
 		return deleted
 	}
-	if uint64(halfSegmentCapacity)&bwa.total == 0 {
+	if halfSegmentCapacity&bwa.total == 0 {
 		bwa.ensureSeg(segNum - 1)
 		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
 	} else {
@@ -428,7 +427,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		mergeSegmentsForDel(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
 	}
-	bwa.total -= uint64(halfSegmentCapacity)
+	bwa.total -= halfSegmentCapacity
 	return deleted
 }
 
