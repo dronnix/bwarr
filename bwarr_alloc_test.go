@@ -11,29 +11,28 @@ import (
 const testAllocsSize = 11 // 4 segments to fit;
 
 func TestBWArr_SizeOfEmpty(t *testing.T) {
-	t.Skip()
 	tests := []struct {
 		name         string
 		bwarr        *BWArr[int64]
 		expectedSize int
 	}{
 		// Count words (8 bytes):
-		// whiteSegments 3, // highBlackSeg 9, lowBlackSeg 9, // total 1, cmp 1 --> // 3 + 9 + 9 + 1 + 1 = 23;
-		// 23 * 8 = 184 bytes;
+		// whiteSegments 3, // total 1, cmp 1 --> // 3 + 1 + 1 = 5;
+		// 5 * 8 = 40 bytes;
 		{
 			name:         "Empty",
 			bwarr:        &BWArr[int64]{},
-			expectedSize: 184,
+			expectedSize: 40,
 		},
 		{
 			name:         "New(0)",
 			bwarr:        New[int64](int64Cmp, 0),
-			expectedSize: 184,
+			expectedSize: 40,
 		},
 		{
 			name:         "New(testAllocsSize)",
 			bwarr:        New[int64](int64Cmp, testAllocsSize),
-			expectedSize: 661,
+			expectedSize: 463,
 		},
 	}
 
@@ -46,12 +45,10 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 }
 
 func TestBWArr_Allocs_New(t *testing.T) {
-	t.Skip()
 	// Slice of segments - 1, BWArr struct - 1 --> 2;
 	// 4 segments, each contains two slices: elements and deleted flags --> 8;
-	// 2 black segments, each contains two slices: elements and deleted flags --> 4;
-	// Total: 2 + 8 + 4 = 14;
-	const expectedAllocs = 14
+	// Total: 2 + 8 = 10;
+	const expectedAllocs = 10
 
 	allocs := testing.AllocsPerRun(100, func() {
 		bwarr := New[int64](int64Cmp, testAllocsSize)
@@ -62,12 +59,10 @@ func TestBWArr_Allocs_New(t *testing.T) {
 }
 
 func TestBWArr_Allocs_NewFromSlice(t *testing.T) {
-	t.Skip()
-	const expectedAllocs = 12
+	const expectedAllocs = 8
 	// Slice of segments - 1, BWArr struct - 1 --> 2;
-	// 2 black segments, each contains two slices: elements and deleted flags --> 4;
 	// Allocated only occupied segments: 42 = 32 + 8 + 2 --> 3 segments, 6 allocs;
-	// Total: 2 + 4 + 6 = 12;
+	// Total: 2 + 6 = 12;
 	testSlice := make([]int64, testAllocsSize)
 	for i := range testSlice {
 		testSlice[i] = int64(i)
@@ -82,7 +77,6 @@ func TestBWArr_Allocs_NewFromSlice(t *testing.T) {
 }
 
 func TestBWArr_Allocs_Insert(t *testing.T) {
-	t.Skip()
 	const N = 100
 	bwarrs := make([]*BWArr[int64], N+1)
 	for i := range bwarrs {
@@ -490,7 +484,6 @@ func TestBWArr_Allocs_Compact(t *testing.T) {
 }
 
 func TestBWArr_Allocs_ShouldBeLessAfterCompact(t *testing.T) {
-	t.Skip()
 	const testAllocsSize = 1024
 	bwarr := New[int64](int64Cmp, testAllocsSize)
 
@@ -502,7 +495,9 @@ func TestBWArr_Allocs_ShouldBeLessAfterCompact(t *testing.T) {
 	bwarr.Compact()
 	szAfter := calculateBWArrSize(bwarr)
 
-	assert.Greater(t, float64(szBefore)/float64(szAfter), 2.0, "BWArr size should be at least twice less after Compact")
+	const expectedReductionFactor = 1.9 // Struct root fields remain unchanged so a bit less than 2x reduction is expected
+
+	assert.Greater(t, float64(szBefore)/float64(szAfter), expectedReductionFactor, "BWArr size should be ~ twice less after Compact")
 }
 
 // calculateBWArrSize calculates the total size of a BWArr struct including all nested fields
