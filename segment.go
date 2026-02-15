@@ -36,28 +36,28 @@ func makeSegment[T any](rank int) segment[T] {
 func mergeSegments[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) {
 	lowSegReadIdx := 0
 	lowSegEnd := len(lowSeg.elements)
-	heighSegWriteIxd := highSegReadIdx - lowSegEnd
-	heighSegEnd := highSegReadIdx + lowSegEnd
+	highSegWriteIdx := highSegReadIdx - lowSegEnd
+	highSegEnd := highSegReadIdx + lowSegEnd
 
-	for highSegReadIdx < heighSegEnd && lowSegReadIdx < lowSegEnd {
+	for highSegReadIdx < highSegEnd && lowSegReadIdx < lowSegEnd {
 		cmpResult := cmp(highSeg.elements[highSegReadIdx], lowSeg.elements[lowSegReadIdx])
 		if (cmpResult < 0) || (cmpResult == 0 && !highSeg.deleted[highSegReadIdx]) {
-			highSeg.elements[heighSegWriteIxd] = highSeg.elements[highSegReadIdx]
-			highSeg.deleted[heighSegWriteIxd] = highSeg.deleted[highSegReadIdx]
+			highSeg.elements[highSegWriteIdx] = highSeg.elements[highSegReadIdx]
+			highSeg.deleted[highSegWriteIdx] = highSeg.deleted[highSegReadIdx]
 			highSegReadIdx++
 		} else {
-			highSeg.elements[heighSegWriteIxd] = lowSeg.elements[lowSegReadIdx]
-			highSeg.deleted[heighSegWriteIxd] = lowSeg.deleted[lowSegReadIdx]
+			highSeg.elements[highSegWriteIdx] = lowSeg.elements[lowSegReadIdx]
+			highSeg.deleted[highSegWriteIdx] = lowSeg.deleted[lowSegReadIdx]
 			lowSegReadIdx++
 		}
-		heighSegWriteIxd++
+		highSegWriteIdx++
 	}
 
 	// Copy remaining elements (only one of the segments contains it):
-	copy(highSeg.elements[heighSegWriteIxd:], highSeg.elements[highSegReadIdx:])
-	copy(highSeg.deleted[heighSegWriteIxd:], highSeg.deleted[highSegReadIdx:])
-	copy(highSeg.elements[heighSegWriteIxd:], lowSeg.elements[lowSegReadIdx:])
-	copy(highSeg.deleted[heighSegWriteIxd:], lowSeg.deleted[lowSegReadIdx:])
+	copy(highSeg.elements[highSegWriteIdx:], highSeg.elements[highSegReadIdx:])
+	copy(highSeg.deleted[highSegWriteIdx:], highSeg.deleted[highSegReadIdx:])
+	copy(highSeg.elements[highSegWriteIdx:], lowSeg.elements[lowSegReadIdx:])
+	copy(highSeg.deleted[highSegWriteIdx:], lowSeg.deleted[lowSegReadIdx:])
 
 	highSeg.minNonDeletedIdx = 0
 	highSeg.maxNonDeletedIdx = len(highSeg.elements) - 1
@@ -127,9 +127,9 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 	to.minNonDeletedIdx, to.maxNonDeletedIdx = 0, len(to.elements)-1
 }
 
-// moveNonDeletedValuesToSegmentStart moves all non-deleted values to the beginning of the segment, preserving their order.
-// It is used when we have half of the elements in the segment deleted, as preparation for merging with lover segment.
-func moveNonDeletedValuesToSegmentStart[T any](seg segment[T]) {
+// moveNonDeletedValuesToSegmentEnd moves all non-deleted values to the end of the segment, preserving their order.
+// It is used when a half of the elements in the segment deleted, as preparation for merging with lower segment.
+func moveNonDeletedValuesToSegmentEnd[T any](seg segment[T]) {
 	length := len(seg.elements)
 	writePointer := length - 1
 	readPointer := length - 1

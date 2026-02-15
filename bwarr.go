@@ -423,7 +423,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		bwa.ensureSeg(segNum - 1)
 		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
 	} else {
-		moveNonDeletedValuesToSegmentStart(*seg)
+		moveNonDeletedValuesToSegmentEnd(*seg)
 		mergeSegmentsForDel(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
 	}

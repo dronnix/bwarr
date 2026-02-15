@@ -62,7 +62,7 @@ func TestBWArr_Allocs_NewFromSlice(t *testing.T) {
 	const expectedAllocs = 8
 	// Slice of segments - 1, BWArr struct - 1 --> 2;
 	// Allocated only occupied segments: 42 = 32 + 8 + 2 --> 3 segments, 6 allocs;
-	// Total: 2 + 6 = 12;
+	// Total: 2 + 6 = 8;
 	testSlice := make([]int64, testAllocsSize)
 	for i := range testSlice {
 		testSlice[i] = int64(i)
