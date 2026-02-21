@@ -113,14 +113,26 @@ func (bwa *BWArr[T]) Insert(element T) {
 	bwa.total++
 }
 
+// InsertBatch inserts multiple elements into the BWArr.
+// More efficient than calling Insert repeatedly, as it restructures segments in bulk.
+//
+// The algorithm compares the binary representations of old total and new total to determine
+// which segments to keep, remove, and create. Existing sorted data from removed segments
+// is redistributed into new segments to minimize sorting work.
+//
+// Example: inserting 7 elements into a BWArr with 4 (binary: 0100 -> 1011).
+//   - segsToDel = 0100 (rank-2 segment is removed)
+//   - segsToAdd = 1011 (rank-0, rank-1, and rank-3 segments are created)
+//   - Step 2 fills rank-0 and rank-1 from the sorted rank-2 data (no re-sort needed)
+//   - Step 3 copies remaining rank-2 data into rank-3, then fills the rest from the batch and sorts
 func (bwa *BWArr[T]) InsertBatch(elements []T) {
-	newTotal := bwa.total + len(elements) // New segments mask
-	segsToDel := bwa.total & ^newTotal    // Mask of segments that will be merged into the new segments after batch insertion
-	segsToAdd := newTotal & ^bwa.total    // Mask of segments that will be added after batch insertion
-	segsNum := bits.Len(uint(newTotal))   // nolint:gosec
-	segReadPtrs := make([]int, segsNum)   // Read pointers for segments that will be merged
+	newTotal := bwa.total + len(elements)
+	segsToDel := bwa.total & ^newTotal  // Bits set in old but not new: segments to disassemble
+	segsToAdd := newTotal & ^bwa.total  // Bits set in new but not old: segments to create
+	segsNum := bits.Len(uint(newTotal)) // nolint:gosec
+	segReadPtrs := make([]int, segsNum) // How far each delSeg has been consumed
 
-	// 1. Create newly added segments:
+	// 1. Allocate memory for all new segments.
 	for sNum := range segsNum {
 		if segsToAdd&(1<<sNum) == 0 {
 			continue
@@ -128,8 +140,10 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 		bwa.ensureSeg(sNum)
 	}
 
-	// 2. Infill segsToAdd using sorted data from segsToDel.
-	// Since delSegIdx > newSegIdx, the delSeg is always strictly larger and has enough remaining elements.
+	// 2. Fill new segments from larger deleted segments (preserves sort order, no re-sort needed).
+	// Each new segment at rank N is filled by copying 2^N contiguous elements from a deleted
+	// segment at rank D > N. Since D > N, the deleted segment is at least 2x larger and always
+	// has enough remaining elements (max consumption by all ranks < D is 2^D - 1 < 2^D).
 	for newSegIdx := range segsNum {
 		if segsToAdd&(1<<newSegIdx) == 0 {
 			continue
@@ -148,13 +162,16 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 		}
 	}
 
-	// 3. Infill remaining segsToAdd with cuts of segsToDel, then fill from the input batch:
+	// 3. Fill remaining new segments: first gather leftover data from deleted segments,
+	// then append unsorted batch elements and sort the whole segment.
+	// Only new segments with no larger deleted segment reach here (step 2 handles all others),
+	// so all remaining deleted segments are strictly smaller and fit entirely.
 	batchReadPtr := 0
 	for newSegIdx := range segsNum {
 		if segsToAdd&(1<<newSegIdx) == 0 {
 			continue
 		}
-		w := 0
+		w := 0 // Write position within the new segment
 		for delSegIdx := range segsNum {
 			if segsToDel&(1<<delSegIdx) == 0 {
 				continue
@@ -164,8 +181,9 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 			n := copy(bwa.whiteSegments[newSegIdx].elements[w:], bwa.whiteSegments[delSegIdx].elements[rb:re])
 			copy(bwa.whiteSegments[newSegIdx].deleted[w:], bwa.whiteSegments[delSegIdx].deleted[rb:re])
 			w += n
-			segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
+			segsToDel &= ^(1 << delSegIdx)
 		}
+		// Fill the remaining space from the input batch
 		we := 1 << newSegIdx
 		re := batchReadPtr + (we - w)
 		copy(bwa.whiteSegments[newSegIdx].elements[w:we], elements[batchReadPtr:re])
@@ -174,7 +192,7 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 		sort.Sort(&bwa.whiteSegments[newSegIdx])
 	}
 
-	// Finally, delete unused segments:
+	// Clean up: update total and release memory from deactivated segments.
 	bwa.total = newTotal
 	bwa.Compact()
 }
