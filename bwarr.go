@@ -114,13 +114,11 @@ func (bwa *BWArr[T]) Insert(element T) {
 }
 
 func (bwa *BWArr[T]) InsertBatch(elements []T) {
-	newTotal := bwa.total + len(elements)   // New segments mask
-	segsRemaining := newTotal & bwa.total   // Mask of segments that will remain unchanged after batch insertion
-	segsToDel := bwa.total & ^segsRemaining // Mask of segments that will be merged into the new segments after batch insertion
-	segsToAdd := newTotal & ^bwa.total      // Mask of segments that will be added after batch insertion
-	segsNum := bits.Len(uint(newTotal))     // nolint:gosec
-	segReadPtrs := make([]int, segsNum)     // Read pointers for segments that will be merged
-	segWritePtrs := make([]int, segsNum)    // Write pointers for segments, data will be written into
+	newTotal := bwa.total + len(elements) // New segments mask
+	segsToDel := bwa.total & ^newTotal    // Mask of segments that will be merged into the new segments after batch insertion
+	segsToAdd := newTotal & ^bwa.total    // Mask of segments that will be added after batch insertion
+	segsNum := bits.Len(uint(newTotal))   // nolint:gosec
+	segReadPtrs := make([]int, segsNum)   // Read pointers for segments that will be merged
 
 	// 1. Create newly added segments:
 	for sNum := range segsNum {
@@ -130,57 +128,48 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 		bwa.ensureSeg(sNum)
 	}
 
-	// 2. Infill segsToAdd using sorted data from segsToDel:
+	// 2. Infill segsToAdd using sorted data from segsToDel.
+	// Since delSegIdx > newSegIdx, the delSeg is always strictly larger and has enough remaining elements.
 	for newSegIdx := range segsNum {
 		if segsToAdd&(1<<newSegIdx) == 0 {
 			continue
 		}
-		newSegLen := 1 << newSegIdx
 		for delSegIdx := newSegIdx + 1; delSegIdx < segsNum; delSegIdx++ {
 			if segsToDel&(1<<delSegIdx) == 0 {
 				continue
 			}
-
 			b := segReadPtrs[delSegIdx]
-			e := segReadPtrs[delSegIdx] + newSegLen
+			e := b + 1<<newSegIdx
 			copy(bwa.whiteSegments[newSegIdx].elements, bwa.whiteSegments[delSegIdx].elements[b:e])
 			copy(bwa.whiteSegments[newSegIdx].deleted, bwa.whiteSegments[delSegIdx].deleted[b:e])
-			segReadPtrs[delSegIdx] += newSegLen
+			segReadPtrs[delSegIdx] = e
 			segsToAdd &= ^(1 << newSegIdx) // Mark the new segment as filled
 			break
 		}
 	}
 
-	// 3. Infill remaining segsToAdd with cuts of segsToDel
-	for newSegIdx := range segsNum {
-		if segsToAdd&(1<<newSegIdx) == 0 {
-			continue
-		}
-		for delSegIdx := range segsNum {
-			if segsToDel&(1<<delSegIdx) == 0 {
-				continue
-			}
-			w := segWritePtrs[newSegIdx]
-			rb := segReadPtrs[delSegIdx]
-			re := 1 << delSegIdx
-			n := copy(bwa.whiteSegments[newSegIdx].elements[w:], bwa.whiteSegments[delSegIdx].elements[rb:re])
-			copy(bwa.whiteSegments[newSegIdx].deleted[w:], bwa.whiteSegments[delSegIdx].deleted[rb:re])
-			segWritePtrs[newSegIdx] += n
-			segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
-		}
-	}
-
-	// 4. Infill remaining segsToAdd elements from the input batch:
+	// 3. Infill remaining segsToAdd with cuts of segsToDel, then fill from the input batch:
 	batchReadPtr := 0
 	for newSegIdx := range segsNum {
 		if segsToAdd&(1<<newSegIdx) == 0 {
 			continue
 		}
-		wb := segWritePtrs[newSegIdx]
+		w := 0
+		for delSegIdx := range segsNum {
+			if segsToDel&(1<<delSegIdx) == 0 {
+				continue
+			}
+			rb := segReadPtrs[delSegIdx]
+			re := 1 << delSegIdx
+			n := copy(bwa.whiteSegments[newSegIdx].elements[w:], bwa.whiteSegments[delSegIdx].elements[rb:re])
+			copy(bwa.whiteSegments[newSegIdx].deleted[w:], bwa.whiteSegments[delSegIdx].deleted[rb:re])
+			w += n
+			segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
+		}
 		we := 1 << newSegIdx
-		re := batchReadPtr + (we - wb)
-		copy(bwa.whiteSegments[newSegIdx].elements[wb:we], elements[batchReadPtr:re])
-		batchReadPtr += re - batchReadPtr
+		re := batchReadPtr + (we - w)
+		copy(bwa.whiteSegments[newSegIdx].elements[w:we], elements[batchReadPtr:re])
+		batchReadPtr = re
 		bwa.whiteSegments[newSegIdx].cmp = bwa.cmp // TODO: pass via constructor
 		sort.Sort(&bwa.whiteSegments[newSegIdx])
 	}
