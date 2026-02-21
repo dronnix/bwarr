@@ -150,7 +150,9 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 			copy(bwa.whiteSegments[newSegIdx].deleted, bwa.whiteSegments[delSegIdx].deleted[b:e])
 			segReadPtrs[delSegIdx] += newSegLen
 			segsToAdd &= ^(1 << newSegIdx) // Mark the new segment as filled
-			segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
+			if segReadPtrs[delSegIdx] == 1<<delSegIdx {
+				segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
+			}
 			break
 		}
 	}

@@ -1429,9 +1429,10 @@ func TestBWArr_InsertBatch(t *testing.T) {
 			results: []int64{1, 2, 3, 4, 5, 6, 7, 8},
 		},
 		{
-			name:  "insert 7 to 4",
-			bwa:   NewFromSlice(int64Cmp, []int64{1, 2, 3, 4}),
-			batch: []int64{5, 6, 7, 8, 9, 10, 11},
+			name:    "insert 7 to 4",
+			bwa:     NewFromSlice(int64Cmp, []int64{1, 2, 3, 4}),
+			batch:   []int64{5, 6, 7, 8, 9, 10, 11},
+			results: []int64{1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11},
 		},
 	}
 	for _, tt := range tests {
