@@ -140,19 +140,13 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 			if segsToDel&(1<<delSegIdx) == 0 {
 				continue
 			}
-			segToDelElemsRemain := 1<<delSegIdx - segReadPtrs[delSegIdx] // segment len - already read elements
-			if newSegLen > segToDelElemsRemain {
-				continue
-			}
+
 			b := segReadPtrs[delSegIdx]
 			e := segReadPtrs[delSegIdx] + newSegLen
 			copy(bwa.whiteSegments[newSegIdx].elements, bwa.whiteSegments[delSegIdx].elements[b:e])
 			copy(bwa.whiteSegments[newSegIdx].deleted, bwa.whiteSegments[delSegIdx].deleted[b:e])
 			segReadPtrs[delSegIdx] += newSegLen
 			segsToAdd &= ^(1 << newSegIdx) // Mark the new segment as filled
-			if segReadPtrs[delSegIdx] == 1<<delSegIdx {
-				segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
-			}
 			break
 		}
 	}
@@ -169,23 +163,10 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 			w := segWritePtrs[newSegIdx]
 			rb := segReadPtrs[delSegIdx]
 			re := 1 << delSegIdx
-			if re > 1<<newSegIdx {
-				re = 1 << newSegIdx
-			}
 			n := copy(bwa.whiteSegments[newSegIdx].elements[w:], bwa.whiteSegments[delSegIdx].elements[rb:re])
 			copy(bwa.whiteSegments[newSegIdx].deleted[w:], bwa.whiteSegments[delSegIdx].deleted[rb:re])
-			if w+n == 1<<newSegIdx {
-				segsToAdd &= ^(1 << newSegIdx)             // Mark the new segment as filled
-				bwa.whiteSegments[newSegIdx].cmp = bwa.cmp // TODO: pass via constructor
-				sort.Sort(&bwa.whiteSegments[newSegIdx])
-			} else {
-				segWritePtrs[newSegIdx] += n
-			}
-			if rb+n == 1<<delSegIdx {
-				segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
-			} else {
-				segReadPtrs[delSegIdx] += n
-			}
+			segWritePtrs[newSegIdx] += n
+			segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
 		}
 	}
 
