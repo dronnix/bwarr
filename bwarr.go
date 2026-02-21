@@ -4,7 +4,10 @@
 // See data structure details at: https://arxiv.org/abs/2004.09051
 package bwarr
 
-import "slices"
+import (
+	"math/bits"
+	"slices"
+)
 
 // BWArr is a Black-White Array, a fast, ordered data structure with O(log N) memory allocations
 // and O(log N) amortized complexity for insert, delete, and search operations. Can store equal
@@ -107,6 +110,53 @@ func (bwa *BWArr[T]) Insert(element T) {
 		destReadPtr -= 1 << segmentNumber
 	}
 	bwa.total++
+}
+
+func (bwa *BWArr[T]) InsertBatch(elements []T) {
+	newTotal := bwa.total + len(elements)   // New segments mask
+	segsRemaining := newTotal & bwa.total   // Mask of segments that will remain unchanged after batch insertion
+	segsToDel := bwa.total & ^segsRemaining // Mask of segments that will be merged into the new segments after batch insertion
+	segsToAdd := newTotal & ^bwa.total      // Mask of segments that will be added after batch insertion
+	segsNum := bits.Len(uint(newTotal))     // nolint:gosec
+	segReadPtrs := make([]int, segsNum)     // Read pointers for segments that will be merged
+	//	segWritePtrs := make([]int, segsNum)    // Write pointers for segments, data will be written into
+
+	// 1. Create newly added segments:
+	for sNum := range segsNum {
+		if segsToAdd&(1<<sNum) == 0 {
+			continue
+		}
+		bwa.ensureSeg(sNum)
+	}
+
+	// 2. Infill segsToAdd using sorted data from segsToDel:
+	for newSegIdx := range segsNum {
+		if segsToAdd&(1<<newSegIdx) == 0 {
+			continue
+		}
+		newSegLen := 1 << newSegIdx
+		for delSegIdx := newSegIdx + 1; delSegIdx < segsNum; delSegIdx++ {
+			if segsToDel&(1<<delSegIdx) == 0 {
+				continue
+			}
+			segToDelElemsRemain := 1<<delSegIdx - segReadPtrs[delSegIdx] // segment len - already read elements
+			if newSegLen > segToDelElemsRemain {
+				continue
+			}
+			b := segReadPtrs[delSegIdx]
+			e := segReadPtrs[delSegIdx] + newSegLen
+			copy(bwa.whiteSegments[newSegIdx].elements, bwa.whiteSegments[delSegIdx].elements[b:e])
+			copy(bwa.whiteSegments[newSegIdx].deleted, bwa.whiteSegments[delSegIdx].deleted[b:e])
+			segReadPtrs[delSegIdx] += newSegLen
+			segsToAdd &= ^(1 << newSegIdx) // Mark the new segment as filled
+			break
+		}
+	}
+
+	// 3. Infill remaining segsToAdd with cuts of segsToDel
+
+	// Finally, delete unused segments:
+	bwa.Compact()
 }
 
 // ReplaceOrInsert inserts an element into the BWArr, or replaces an existing

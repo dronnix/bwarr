@@ -1395,3 +1395,26 @@ func markDel[T any](bwa *BWArr[T], toDel ...bwaIdx) *BWArr[T] {
 	}
 	return bwa
 }
+
+func TestBWArr_InsertBatch(t *testing.T) {
+	type testCase struct {
+		name  string
+		bwa   *BWArr[int64]
+		batch []int64
+	}
+	tests := []testCase{
+		{
+			name:  "insert 3 to 3",
+			bwa:   NewFromSlice(int64Cmp, []int64{1, 2, 3}),
+			batch: []int64{4, 5, 6},
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			expectedLen := tt.bwa.Len() + len(tt.batch)
+			tt.bwa.InsertBatch(tt.batch)
+			validateBWArr(t, tt.bwa)
+			assert.Equal(t, expectedLen, tt.bwa.Len())
+		})
+	}
+}
