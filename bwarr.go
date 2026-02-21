@@ -119,7 +119,7 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 	segsToAdd := newTotal & ^bwa.total      // Mask of segments that will be added after batch insertion
 	segsNum := bits.Len(uint(newTotal))     // nolint:gosec
 	segReadPtrs := make([]int, segsNum)     // Read pointers for segments that will be merged
-	//	segWritePtrs := make([]int, segsNum)    // Write pointers for segments, data will be written into
+	segWritePtrs := make([]int, segsNum)    // Write pointers for segments, data will be written into
 
 	// 1. Create newly added segments:
 	for sNum := range segsNum {
@@ -149,13 +149,45 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 			copy(bwa.whiteSegments[newSegIdx].deleted, bwa.whiteSegments[delSegIdx].deleted[b:e])
 			segReadPtrs[delSegIdx] += newSegLen
 			segsToAdd &= ^(1 << newSegIdx) // Mark the new segment as filled
+			segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
 			break
 		}
 	}
 
 	// 3. Infill remaining segsToAdd with cuts of segsToDel
+	for newSegIdx := range segsNum {
+		if segsToAdd&(1<<newSegIdx) == 0 {
+			continue
+		}
+		for delSegIdx := range segsNum {
+			if segsToDel&(1<<delSegIdx) == 0 {
+				continue
+			}
+			w := segWritePtrs[newSegIdx]
+			rb := segReadPtrs[delSegIdx]
+			re := 1 << delSegIdx
+			if re > 1<<newSegIdx {
+				re = 1 << newSegIdx
+			}
+			n := copy(bwa.whiteSegments[newSegIdx].elements[w:], bwa.whiteSegments[delSegIdx].elements[rb:re])
+			copy(bwa.whiteSegments[newSegIdx].deleted[w:], bwa.whiteSegments[delSegIdx].deleted[rb:re])
+			if w+n == 1<<newSegIdx {
+				segsToAdd &= ^(1 << newSegIdx) // Mark the new segment as filled
+				// TODO: Sort:
+				// sort.Sort(bwa.whiteSegments[newSegIdx])
+			} else {
+				segWritePtrs[newSegIdx] += n
+			}
+			if rb+n == 1<<delSegIdx {
+				segsToDel &= ^(1 << delSegIdx) // Mark the old segment as fully used
+			} else {
+				segReadPtrs[delSegIdx] += n
+			}
+		}
+	}
 
 	// Finally, delete unused segments:
+	bwa.total = newTotal
 	bwa.Compact()
 }
 
