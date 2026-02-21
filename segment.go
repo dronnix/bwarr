@@ -11,6 +11,20 @@ type segment[T any] struct {
 	deletedNum       int    // Number of deleted elements in the segment.
 	minNonDeletedIdx int    // Index of the first non-deleted element in the segment.
 	maxNonDeletedIdx int    // Index of the last non-deleted element in the segment.
+	cmp              CmpFunc[T]
+}
+
+func (s *segment[T]) Len() int { // To implement sort.Interface
+	return len(s.elements)
+}
+
+func (s *segment[T]) Less(i, j int) bool { // To implement sort.Interface
+	return s.cmp(s.elements[i], s.elements[j]) < 0
+}
+
+func (s *segment[T]) Swap(i, j int) { // To implement sort.Interface
+	s.elements[i], s.elements[j] = s.elements[j], s.elements[i]
+	s.deleted[i], s.deleted[j] = s.deleted[j], s.deleted[i]
 }
 
 func createSegments[T any](fromRank, toRank int) []segment[T] {

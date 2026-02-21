@@ -1405,10 +1405,33 @@ func TestBWArr_InsertBatch(t *testing.T) {
 	}
 	tests := []testCase{
 		{
+			name:    "insert to empty",
+			bwa:     New(int64Cmp, 0),
+			batch:   []int64{1, 2, 3},
+			results: []int64{1, 2, 3},
+		},
+		{
 			name:    "insert 3 to 3",
 			bwa:     NewFromSlice(int64Cmp, []int64{1, 2, 3}),
 			batch:   []int64{4, 5, 6},
 			results: []int64{1, 2, 3, 4, 5, 6},
+		},
+		{
+			"insert 2 to 6",
+			NewFromSlice(int64Cmp, []int64{1, 2, 3, 4, 5, 6}),
+			[]int64{7, 8},
+			[]int64{1, 2, 3, 4, 5, 6, 7, 8},
+		},
+		{
+			name:    "insert 1 to 7",
+			bwa:     NewFromSlice(int64Cmp, []int64{1, 3, 4, 5, 6, 7, 8}),
+			batch:   []int64{2},
+			results: []int64{1, 2, 3, 4, 5, 6, 7, 8},
+		},
+		{
+			name:  "insert 7 to 4",
+			bwa:   NewFromSlice(int64Cmp, []int64{1, 2, 3, 4}),
+			batch: []int64{5, 6, 7, 8, 9, 10, 11},
 		},
 	}
 	for _, tt := range tests {

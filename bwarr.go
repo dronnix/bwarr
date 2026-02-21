@@ -7,6 +7,7 @@ package bwarr
 import (
 	"math/bits"
 	"slices"
+	"sort"
 )
 
 // BWArr is a Black-White Array, a fast, ordered data structure with O(log N) memory allocations
@@ -172,9 +173,9 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 			n := copy(bwa.whiteSegments[newSegIdx].elements[w:], bwa.whiteSegments[delSegIdx].elements[rb:re])
 			copy(bwa.whiteSegments[newSegIdx].deleted[w:], bwa.whiteSegments[delSegIdx].deleted[rb:re])
 			if w+n == 1<<newSegIdx {
-				segsToAdd &= ^(1 << newSegIdx) // Mark the new segment as filled
-				// TODO: Sort:
-				// sort.Sort(bwa.whiteSegments[newSegIdx])
+				segsToAdd &= ^(1 << newSegIdx)             // Mark the new segment as filled
+				bwa.whiteSegments[newSegIdx].cmp = bwa.cmp // TODO: pass via constructor
+				sort.Sort(&bwa.whiteSegments[newSegIdx])
 			} else {
 				segWritePtrs[newSegIdx] += n
 			}
@@ -184,6 +185,21 @@ func (bwa *BWArr[T]) InsertBatch(elements []T) {
 				segReadPtrs[delSegIdx] += n
 			}
 		}
+	}
+
+	// 4. Infill remaining segsToAdd elements from the input batch:
+	batchReadPtr := 0
+	for newSegIdx := range segsNum {
+		if segsToAdd&(1<<newSegIdx) == 0 {
+			continue
+		}
+		wb := segWritePtrs[newSegIdx]
+		we := 1 << newSegIdx
+		re := batchReadPtr + (we - wb)
+		copy(bwa.whiteSegments[newSegIdx].elements[wb:we], elements[batchReadPtr:re])
+		batchReadPtr += re - batchReadPtr
+		bwa.whiteSegments[newSegIdx].cmp = bwa.cmp // TODO: pass via constructor
+		sort.Sort(&bwa.whiteSegments[newSegIdx])
 	}
 
 	// Finally, delete unused segments:

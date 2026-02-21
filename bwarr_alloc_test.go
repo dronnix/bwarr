@@ -32,7 +32,7 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 		{
 			name:         "New(testAllocsSize)",
 			bwarr:        New[int64](int64Cmp, testAllocsSize),
-			expectedSize: 463,
+			expectedSize: 495,
 		},
 	}
 
