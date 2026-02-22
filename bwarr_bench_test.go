@@ -15,6 +15,58 @@ func BenchmarkQA_Insert(b *testing.B) {
 	benchmarkAppend(b, elemsOnStart, elemsOnStart)
 }
 
+func BenchmarkBatch_InsertInCycleAvg(b *testing.B) {
+	const elemsBefore = 0b101100101100
+	const elemsAfter = 0b110101100011
+	const elemsToInsert = elemsAfter - elemsBefore
+	bwaSample := New(int64Cmp, elemsAfter)
+	for range elemsBefore {
+		bwaSample.Insert(rand.Int63())
+	}
+
+	preparedData := make([]int64, elemsToInsert)
+	for i := range elemsToInsert {
+		preparedData[i] = rand.Int63()
+	}
+
+	b.SetBytes(8 * elemsToInsert)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		b.StopTimer()
+		bwa := bwaSample.Clone() // Deep copy to start from the same state.
+		b.StartTimer()
+		for i := range elemsToInsert {
+			bwa.Insert(preparedData[i])
+		}
+	}
+}
+
+func BenchmarkBatch_InsertBatchAvg(b *testing.B) {
+	const elemsBefore = 0b101100101100
+	const elemsAfter = 0b110101100011
+	const elemsToInsert = elemsAfter - elemsBefore
+	bwaSample := New(int64Cmp, elemsAfter)
+	for range elemsBefore {
+		bwaSample.Insert(rand.Int63())
+	}
+
+	preparedData := make([]int64, elemsToInsert)
+	for i := range elemsToInsert {
+		preparedData[i] = rand.Int63()
+	}
+
+	b.SetBytes(8 * elemsToInsert)
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		b.StopTimer()
+		bwa := bwaSample.Clone()
+		b.StartTimer()
+		bwa.InsertBatch(preparedData)
+	}
+}
+
 func BenchmarkQA_ReplaceOrInsertNotFound(b *testing.B) {
 	benchmarkReplace(b, elemsOnStart, elemsOnStart)
 }
