@@ -34,30 +34,37 @@ func makeSegment[T any](rank int) segment[T] {
 
 // Merge lowSeg and highSeg into highSeg using highSeg free space at the beginning.
 func mergeSegments[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) {
-	lowSegReadIdx := 0
 	lowSegEnd := len(lowSeg.elements)
 	highSegWriteIdx := highSegReadIdx - lowSegEnd
 	highSegEnd := highSegReadIdx + lowSegEnd
 
+	// Sub-slice so the compiler can prove loop indices are in bounds (BCE).
+	highElems := highSeg.elements[:highSegEnd]
+	highDel := highSeg.deleted[:highSegEnd]
+	lowElems := lowSeg.elements[:lowSegEnd]
+	lowDel := lowSeg.deleted[:lowSegEnd]
+
+	lowSegReadIdx := 0
+
 	for highSegReadIdx < highSegEnd && lowSegReadIdx < lowSegEnd {
-		cmpResult := cmp(highSeg.elements[highSegReadIdx], lowSeg.elements[lowSegReadIdx])
-		if (cmpResult < 0) || (cmpResult == 0 && !highSeg.deleted[highSegReadIdx]) {
-			highSeg.elements[highSegWriteIdx] = highSeg.elements[highSegReadIdx]
-			highSeg.deleted[highSegWriteIdx] = highSeg.deleted[highSegReadIdx]
+		cmpResult := cmp(highElems[highSegReadIdx], lowElems[lowSegReadIdx])
+		if (cmpResult < 0) || (cmpResult == 0 && !highDel[highSegReadIdx]) {
+			highElems[highSegWriteIdx] = highElems[highSegReadIdx]
+			highDel[highSegWriteIdx] = highDel[highSegReadIdx]
 			highSegReadIdx++
 		} else {
-			highSeg.elements[highSegWriteIdx] = lowSeg.elements[lowSegReadIdx]
-			highSeg.deleted[highSegWriteIdx] = lowSeg.deleted[lowSegReadIdx]
+			highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
+			highDel[highSegWriteIdx] = lowDel[lowSegReadIdx]
 			lowSegReadIdx++
 		}
 		highSegWriteIdx++
 	}
 
-	// Copy remaining elements (only one of the segments contains it):
-	copy(highSeg.elements[highSegWriteIdx:], highSeg.elements[highSegReadIdx:])
-	copy(highSeg.deleted[highSegWriteIdx:], highSeg.deleted[highSegReadIdx:])
-	copy(highSeg.elements[highSegWriteIdx:], lowSeg.elements[lowSegReadIdx:])
-	copy(highSeg.deleted[highSegWriteIdx:], lowSeg.deleted[lowSegReadIdx:])
+	// Copy remaining elements (only one of the segments has remaining):
+	copy(highSeg.elements[highSegWriteIdx:], highSeg.elements[highSegReadIdx:highSegEnd])
+	copy(highSeg.deleted[highSegWriteIdx:], highSeg.deleted[highSegReadIdx:highSegEnd])
+	copy(highSeg.elements[highSegWriteIdx:], lowSeg.elements[lowSegReadIdx:lowSegEnd])
+	copy(highSeg.deleted[highSegWriteIdx:], lowSeg.deleted[lowSegReadIdx:lowSegEnd])
 
 	highSeg.minNonDeletedIdx = 0
 	highSeg.maxNonDeletedIdx = len(highSeg.elements) - 1
