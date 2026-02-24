@@ -257,8 +257,9 @@ func (s *segment[T]) min(cmp CmpFunc[T]) int {
 // returns index of the first element that is greater or equal to val and is not deleted.
 // If all elements are less than val, returns -1.
 func (s *segment[T]) findGTOE(cmp CmpFunc[T], val T) int {
-	elems := s.elements
-	b, e := s.minNonDeletedIdx, s.maxNonDeletedIdx+1
+	elems := s.elements[:s.maxNonDeletedIdx+1]
+	b := s.minNonDeletedIdx
+	e := len(elems)
 	for b < e {
 		m := (b + e) >> 1
 		cmpRes := cmp(val, elems[m])
@@ -277,7 +278,7 @@ func (s *segment[T]) findGTOE(cmp CmpFunc[T], val T) int {
 // returns index of the first element that is less than val and is not deleted.
 // If all elements are greater or equal to val, returns -1.
 func (s *segment[T]) findLess(cmp CmpFunc[T], val T) int {
-	elems := s.elements
+	elems := s.elements[:s.maxNonDeletedIdx+1]
 	b, e := s.minNonDeletedIdx-1, s.maxNonDeletedIdx
 	for b < e {
 		m := (b+e)>>1 + 1
