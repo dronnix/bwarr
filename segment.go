@@ -34,6 +34,45 @@ func makeSegment[T any](rank int) segment[T] {
 
 // Merge lowSeg and highSeg into highSeg using highSeg free space at the beginning.
 func mergeSegments[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) {
+	if lowSeg.deletedNum == 0 && highSeg.deletedNum == 0 {
+		mergeSegmentsClean(lowSeg, highSeg, cmp, highSegReadIdx)
+	} else {
+		mergeSegmentsDirty(lowSeg, highSeg, cmp, highSegReadIdx)
+	}
+
+	highSeg.minNonDeletedIdx = 0
+	highSeg.maxNonDeletedIdx = len(highSeg.elements) - 1
+}
+
+// mergeSegmentsClean is the fast path for merging segments with no deleted elements.
+func mergeSegmentsClean[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) {
+	lowSegEnd := len(lowSeg.elements)
+	highSegWriteIdx := highSegReadIdx - lowSegEnd
+	highSegEnd := highSegReadIdx + lowSegEnd
+
+	// Sub-slice so the compiler can prove loop indices are in bounds (BCE).
+	highElems := highSeg.elements[:highSegEnd]
+	lowElems := lowSeg.elements[:lowSegEnd]
+
+	lowSegReadIdx := 0
+
+	for highSegReadIdx < len(highElems) && lowSegReadIdx < len(lowElems) {
+		if cmp(highElems[highSegReadIdx], lowElems[lowSegReadIdx]) <= 0 {
+			highElems[highSegWriteIdx] = highElems[highSegReadIdx]
+			highSegReadIdx++
+		} else {
+			highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
+			lowSegReadIdx++
+		}
+		highSegWriteIdx++
+	}
+
+	copy(highSeg.elements[highSegWriteIdx:], highSeg.elements[highSegReadIdx:highSegEnd])
+	copy(highSeg.elements[highSegWriteIdx:], lowSeg.elements[lowSegReadIdx:lowSegEnd])
+}
+
+// mergeSegmentsDirty is the slow path for merging segments that have deleted elements.
+func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) {
 	lowSegEnd := len(lowSeg.elements)
 	highSegWriteIdx := highSegReadIdx - lowSegEnd
 	highSegEnd := highSegReadIdx + lowSegEnd
@@ -46,7 +85,7 @@ func mergeSegments[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegRe
 
 	lowSegReadIdx := 0
 
-	for highSegReadIdx < highSegEnd && lowSegReadIdx < lowSegEnd {
+	for highSegReadIdx < len(highElems) && lowSegReadIdx < len(lowElems) {
 		cmpResult := cmp(highElems[highSegReadIdx], lowElems[lowSegReadIdx])
 		if (cmpResult < 0) || (cmpResult == 0 && !highDel[highSegReadIdx]) {
 			highElems[highSegWriteIdx] = highElems[highSegReadIdx]
@@ -60,14 +99,11 @@ func mergeSegments[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegRe
 		highSegWriteIdx++
 	}
 
-	// Copy remaining elements (only one of the segments has remaining):
 	copy(highSeg.elements[highSegWriteIdx:], highSeg.elements[highSegReadIdx:highSegEnd])
 	copy(highSeg.deleted[highSegWriteIdx:], highSeg.deleted[highSegReadIdx:highSegEnd])
 	copy(highSeg.elements[highSegWriteIdx:], lowSeg.elements[lowSegReadIdx:lowSegEnd])
 	copy(highSeg.deleted[highSegWriteIdx:], lowSeg.deleted[lowSegReadIdx:lowSegEnd])
 
-	highSeg.minNonDeletedIdx = 0
-	highSeg.maxNonDeletedIdx = len(highSeg.elements) - 1
 	highSeg.deletedNum += lowSeg.deletedNum
 }
 
