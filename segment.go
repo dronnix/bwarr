@@ -202,9 +202,11 @@ func moveNonDeletedValuesToSegmentEnd[T any](seg segment[T]) {
 
 // returns index of the rightmost element equal to val that is not deleted.
 func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
-	b, e := s.minNonDeletedIdx, s.maxNonDeletedIdx+1
-	elems := s.elements
-	del := s.deleted
+	// Sub-slice for BCE: the compiler tracks len(elems) through e's mutations.
+	elems := s.elements[:s.maxNonDeletedIdx+1]
+	del := s.deleted[:s.maxNonDeletedIdx+1]
+	b := s.minNonDeletedIdx
+	e := len(elems)
 	for b < e {
 		m := (b + e) >> 1
 		cmpRes := cmp(val, elems[m])
@@ -227,10 +229,10 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 		return -1
 	}
 	idx--
-	if s.deleted[idx] {
+	if del[idx] {
 		return -1
 	}
-	if cmp(s.elements[idx], val) != 0 {
+	if cmp(elems[idx], val) != 0 {
 		return -1
 	}
 	return idx
