@@ -354,6 +354,6 @@ func calculateWhiteSegmentsQuantity(capacity int) int {
 	return int(math.Log2(float64(capacity)) + 1) // Maybe: rewrite without using math (bit operations)?
 }
 
-func log2(x int) int {
+func rightmostTrueBitPosition(x int) int {
 	return bits.TrailingZeros64(uint64(x)) //nolint: gosec // x is always non-negative, so it is safe to convert it to uint64.
 }

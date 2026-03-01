@@ -1268,6 +1268,35 @@ func TestBWArr_UnorderedWalk(t *testing.T) {
 	})
 }
 
+func TestBWArr_DeleteAutoCompact(t *testing.T) {
+	t.Parallel()
+	testArray := makeInt64BWAFromWhite([][]int64{{17}, {23, 42}}, 3)
+	assert.Equal(t, 1, testArray.maxRank())
+	testArray.Delete(23)
+	assert.Equal(t, 1, testArray.maxRank())
+	testArray.Delete(42)
+	assert.Equal(t, 0, testArray.maxRank())
+	assert.Len(t, testArray.whiteSegments[0].elements, 1)
+	// Segment with rank 1 is deleted
+	assert.Empty(t, testArray.whiteSegments[1].elements)
+	assert.Empty(t, testArray.whiteSegments[1].deleted)
+}
+
+func TestBWArr_DeleteAutoCompactNoEffect(t *testing.T) {
+	t.Parallel()
+	testArray := makeInt64BWAFromWhite([][]int64{{17}, {23, 42}}, 3)
+	testArray.maxSegmentRankToKeep = 1
+	assert.Equal(t, 1, testArray.maxRank())
+	testArray.Delete(23)
+	assert.Equal(t, 1, testArray.maxRank())
+	testArray.Delete(42)
+	assert.Equal(t, 0, testArray.maxRank())
+	assert.Len(t, testArray.whiteSegments[0].elements, 1)
+	// Segment with rank 1 is preserved
+	assert.Len(t, testArray.whiteSegments[1].elements, 2)
+	assert.Len(t, testArray.whiteSegments[1].deleted, 2)
+}
+
 func int64Cmp(a, b int64) int {
 	return int(a - b)
 }
@@ -1394,4 +1423,37 @@ func markDel[T any](bwa *BWArr[T], toDel ...bwaIdx) *BWArr[T] {
 		bwa.whiteSegments[toDel[i].segNum].deletedNum++
 	}
 	return bwa
+}
+
+func TestNewWithOptions_KeepSegments(t *testing.T) {
+	t.Parallel()
+	type testCase struct {
+		name                  string
+		ElementsKeepAllocated uint64
+		wantKeepSegmentRank   int
+	}
+	tests := []testCase{
+		{
+			name:                  "keep 0 elements",
+			ElementsKeepAllocated: 0,
+			wantKeepSegmentRank:   -1,
+		},
+		{
+			name:                  "keep 7 elements",
+			ElementsKeepAllocated: 7,
+			wantKeepSegmentRank:   2,
+		},
+		{
+			name:                  "keep 8 elements",
+			ElementsKeepAllocated: 8,
+			wantKeepSegmentRank:   3,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			bwa := NewWithOptions(int64Cmp, 0, Options{ElementsKeepAllocated: tt.ElementsKeepAllocated})
+			require.Equal(t, tt.wantKeepSegmentRank, bwa.maxSegmentRankToKeep)
+		})
+	}
 }

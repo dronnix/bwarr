@@ -17,22 +17,22 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 		expectedSize int
 	}{
 		// Count words (8 bytes):
-		// whiteSegments 3, // total 1, cmp 1 --> // 3 + 1 + 1 = 5;
-		// 5 * 8 = 40 bytes;
+		// whiteSegments 3, // total 1, cmp 1 --> // 3 + 1 + 1 + 1 = 6;
+		// 6 * 8 = 48 bytes;
 		{
 			name:         "Empty",
 			bwarr:        &BWArr[int64]{},
-			expectedSize: 40,
+			expectedSize: 48,
 		},
 		{
 			name:         "New(0)",
 			bwarr:        New[int64](int64Cmp, 0),
-			expectedSize: 40,
+			expectedSize: 48,
 		},
 		{
 			name:         "New(testAllocsSize)",
 			bwarr:        New[int64](int64Cmp, testAllocsSize),
-			expectedSize: 463,
+			expectedSize: 471,
 		},
 	}
 
