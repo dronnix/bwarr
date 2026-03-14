@@ -2,7 +2,7 @@ module github.com/dronnix/bwarr
 
 go 1.22
 
-toolchain go1.25.4
+toolchain go1.26.1
 
 require github.com/stretchr/testify v1.9.0
 
