@@ -21,11 +21,14 @@ type BWArr[T any] struct {
 	// 2. If equal elements are in different segments, older is placed in the higher-rank segment.
 	// 3. If segment contains equal deleted and non-deleted elements, deleted are placed after non-deleted (greater index).
 
-	whiteSegments        []segment[T]
-	total                int // Total number of elements in the array, including deleted ones.
-	cmp                  CmpFunc[T]
-	maxSegmentRankToKeep int // Always keep segments with rank <= maxSegmentRankToKeep
+	whiteSegments []segment[T]
+	total         int // Total number of elements in the array, including deleted ones.
+	cmp           CmpFunc[T]
+	// Always keep segments with rank <= maxSegmentRankToKeep.
 	// If maxSegmentRankToKeep is 10 the structure will never shrink below 2047 elements.
+	maxSegmentRankToKeep int
+
+	deleteUnusedSegments bool
 }
 
 // CmpFunc is a comparison function that defines the ordering of elements.
@@ -45,7 +48,7 @@ type IteratorFunc[T any] func(item T) bool
 // number of elements to optimize initial memory allocation. Use 0 if the
 // capacity is unknown.
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
-	return NewWithOptions[T](cmp, capacity, Options{1 << defaultMaxSegmentRank})
+	return NewWithOptions[T](cmp, capacity, Options{1 << defaultMaxSegmentRank, false})
 }
 
 // NewFromSlice creates a new BWArr from an existing slice of elements and a comparison
@@ -90,13 +93,22 @@ type Options struct {
 	// Number of elements to keep allocated in segments after deletion to prevent allocations on smaller sizes.
 	// Will be rounded up to the nearest power of 2. For example, if set to 10, 16 elements will be kept allocated.
 	ElementsKeepAllocated uint64
+
+	// If true, segments that become unused after deletions will be released immediately.
+	// The only exception are segments, needed to keep ElementsKeepAllocated.
+	DeleteUnusedSegments bool
 }
 
 // NewWithOptions creates a new empty BWArr with the given comparison function CmpFunc, capacity hint, and Options.
 // See Options struct for details on available options.
 func NewWithOptions[T any](cmp CmpFunc[T], capacity int, options Options) *BWArr[T] {
 	maxSegmentRankToKeep := bits.Len64(options.ElementsKeepAllocated) - 1 //nolint: gosec
-	bwa := &BWArr[T]{cmp: cmp, total: 0, maxSegmentRankToKeep: maxSegmentRankToKeep}
+	bwa := &BWArr[T]{
+		cmp:                  cmp,
+		total:                0,
+		maxSegmentRankToKeep: maxSegmentRankToKeep,
+		deleteUnusedSegments: options.DeleteUnusedSegments,
+	}
 
 	wSegNum := calculateWhiteSegmentsQuantity(capacity)
 	if wSegNum > 0 {
@@ -125,6 +137,9 @@ func (bwa *BWArr[T]) Insert(element T) {
 	destReadPtr := destSegSize - 1
 	for segmentNumber := range destSegRank {
 		mergeSegments(&bwa.whiteSegments[segmentNumber], destSeg, bwa.cmp, destReadPtr)
+		if bwa.deleteUnusedSegments && segmentNumber > bwa.maxSegmentRankToKeep {
+			bwa.whiteSegments[segmentNumber] = segment[T]{} //nolint:exhaustruct
+		}
 		destReadPtr -= 1 << segmentNumber
 	}
 	bwa.total++
@@ -443,13 +458,17 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	if halfSegmentCapacity&bwa.total == 0 {
 		bwa.ensureSeg(segNum - 1)
 		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
-		if bwa.maxRank() == segNum && segNum > bwa.maxSegmentRankToKeep {
+		// Highest segment was emptied or deleteUnusedSegments option is enabled and segment is not needed to keep ElementsKeepAllocated, so release it.
+		if (bwa.maxRank() == segNum || bwa.deleteUnusedSegments) && segNum > bwa.maxSegmentRankToKeep {
 			bwa.whiteSegments[segNum] = segment[T]{} //nolint:exhaustruct
 		}
 	} else {
 		moveNonDeletedValuesToSegmentEnd(*seg)
 		mergeSegmentsForDel(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
+		if bwa.deleteUnusedSegments && segNum-1 > bwa.maxSegmentRankToKeep {
+			bwa.whiteSegments[segNum-1] = segment[T]{} //nolint:exhaustruct
+		}
 	}
 	bwa.total -= halfSegmentCapacity
 	return deleted
