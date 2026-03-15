@@ -113,6 +113,116 @@ func TestBWArr_Insert(t *testing.T) {
 	}
 }
 
+func TestBWArr_InsertWithDelUnusedSegs(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name             string
+		bwaBefore        *BWArr[int64]
+		addedElement     int64
+		bwaAfter         *BWArr[int64]
+		releasedSegments []int
+		keptSegments     []int
+	}{
+		{
+			name: "add to empty",
+			bwaBefore: NewWithOptions(int64Cmp, 0, Options{
+				ElementsKeepAllocated: 0,
+				DeleteUnusedSegments:  true,
+			}),
+			addedElement: 23,
+			bwaAfter:     makeInt64BWAFromWhite([][]int64{{23}}, 1),
+		},
+		{
+			name: "add having one element",
+			bwaBefore: func() *BWArr[int64] {
+				bwa := makeInt64BWAFromWhite([][]int64{{23}}, 1)
+				bwa.deleteUnusedSegments = true
+				bwa.maxSegmentRankToKeep = -1
+				return bwa
+			}(),
+			addedElement:     42,
+			bwaAfter:         makeInt64BWAFromWhite([][]int64{{0}, {23, 42}}, 2),
+			releasedSegments: []int{0},
+		},
+		{
+			name: "add to full",
+			bwaBefore: func() *BWArr[int64] {
+				bwa := makeInt64BWAFromWhite([][]int64{{31}, {23, 42}}, 3)
+				bwa.deleteUnusedSegments = true
+				bwa.maxSegmentRankToKeep = -1
+				return bwa
+			}(),
+			addedElement:     37,
+			bwaAfter:         makeInt64BWAFromWhite([][]int64{{0}, {0, 0}, {23, 31, 37, 42}}, 4),
+			releasedSegments: []int{0, 1},
+		},
+		{
+			name: "add to full keeps segments below threshold",
+			bwaBefore: func() *BWArr[int64] {
+				bwa := makeInt64BWAFromWhite([][]int64{{31}, {23, 42}}, 3)
+				bwa.deleteUnusedSegments = true
+				bwa.maxSegmentRankToKeep = 0
+				return bwa
+			}(),
+			addedElement:     37,
+			bwaAfter:         makeInt64BWAFromWhite([][]int64{{0}, {0, 0}, {23, 31, 37, 42}}, 4),
+			releasedSegments: []int{1},
+			keptSegments:     []int{0},
+		},
+		{
+			name: "add to full keeps all segments below threshold",
+			bwaBefore: func() *BWArr[int64] {
+				bwa := makeInt64BWAFromWhite([][]int64{{31}, {23, 42}}, 3)
+				bwa.deleteUnusedSegments = true
+				bwa.maxSegmentRankToKeep = 1
+				return bwa
+			}(),
+			addedElement: 37,
+			bwaAfter:     makeInt64BWAFromWhite([][]int64{{0}, {0, 0}, {23, 31, 37, 42}}, 4),
+			keptSegments: []int{0, 1},
+		},
+	}
+	for _, tt := range tests { //nolint:paralleltest
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			tt.bwaBefore.Insert(tt.addedElement)
+			validateBWArr(t, tt.bwaBefore)
+			bwaEqual(t, tt.bwaAfter, tt.bwaBefore)
+			for _, segIdx := range tt.releasedSegments {
+				assert.Nil(t, tt.bwaBefore.whiteSegments[segIdx].elements,
+					"segment %d should be released", segIdx)
+			}
+			for _, segIdx := range tt.keptSegments {
+				assert.NotNil(t, tt.bwaBefore.whiteSegments[segIdx].elements,
+					"segment %d should be kept", segIdx)
+			}
+		})
+	}
+}
+
+func TestBWArr_IncrementalInsertWithDelUnusedSegs(t *testing.T) {
+	t.Parallel()
+	bwa := NewWithOptions(int64Cmp, 2, Options{
+		ElementsKeepAllocated: 7,
+		DeleteUnusedSegments:  true,
+	})
+
+	const elementsNum = 64
+	for i := range elementsNum {
+		bwa.Insert(int64(i))
+		validateBWArr(t, bwa)
+	}
+	require.Equal(t, elementsNum, bwa.Len())
+
+	expected := 0
+	bwa.Ascend(func(e int64) bool {
+		require.Equal(t, int64(expected), e)
+		expected++
+		return true
+	})
+	require.Equal(t, elementsNum, expected)
+}
+
 //nolint:exhaustruct
 func TestBWArr_ReplaceOrInsert(t *testing.T) {
 	t.Parallel()
