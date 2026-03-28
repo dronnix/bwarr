@@ -20,8 +20,7 @@ Dynamic Data Sets](https://arxiv.org/abs/2004.09051). This repository contains t
 - Supports duplicate elements natively (multiset behavior) - no need for wrapping values into structs to make them unique;
 - Drop-in replacement for `github.com/google/btree` and `github.com/petar/GoLLRB`;
 - Low memory overhead - no pointers per element, compact memory representation;
-- Batch-friendly: arrays under the hood allow efficient bulk operations (work in progress);
-- Easily serializable (work in progress);
+- Easily serializable;
 
 ### Tradeoffs
 - One per $N$ insert operations complexity falls down to $O(N)$, though amortized remains $O(\log N)$. For real-time systems, it may introduce latency spikes for collections with millions of elements. Could be mitigated by async/background inserts.
