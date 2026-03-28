@@ -175,7 +175,7 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 			continue
 		}
 		to.elements[w] = from.elements[r]
-		to.deleted[w] = false
+		to.deleted[w] = false // TODO: replace with deleted.Reset() when needed!
 		w++
 	}
 	to.deletedNum = 0 // Since demoteSegment is called only when we have exact len(to.elements) undeleted elements in from.
