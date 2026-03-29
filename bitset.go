@@ -46,12 +46,11 @@ func (s *LayeredBitSet) Set(idx int) {
 }
 
 func (s *LayeredBitSet) Get(idx int) bool {
-	elementIdx := idx / bitsNum
-	if s.layers[0][elementIdx] == 0 {
+	element := s.layers[0][idx>>intDiv64]
+	if element == 0 {
 		return false
 	}
-	bitIdx := idx % bitsNum
-	return (s.layers[0][elementIdx] & (1 << bitIdx)) != 0
+	return (element & (1 << (idx & reminder64))) != 0
 }
 
 func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
