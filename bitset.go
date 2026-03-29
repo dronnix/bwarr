@@ -14,6 +14,8 @@ type LayeredBitSet struct {
 }
 
 const bitsNum = 64
+const intDiv64 = 6 // log2(bitsNum)
+const reminder64 = bitsNum - 1
 const allSet = ^uint64(0)
 
 func NewLayeredBitSet(size int) *LayeredBitSet {
@@ -74,11 +76,11 @@ func (s *LayeredBitSet) Reset() {
 func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
 	// The algorithm is optimized to work faster with small series of unset bits, which is the common case for BWArr deleted elements.
 	// So, it is bottom-up-bottom: we start from the lowest layer and go up until we find a layer with an unset bit,
-	//then we go down to find the exact index of that bit.
+	// then we go down to find the exact index of that bit.
 	l, bitIdx := 0, 0
 	for ; l < len(s.layers); l++ {
-		bitIdx = idx % bitsNum
-		idx = idx / bitsNum
+		bitIdx = idx & reminder64
+		idx = idx >> intDiv64 // nolint:gocritic
 		bitIdx = findPrevUnsetBit(s.layers[l][idx], bitIdx)
 		if bitIdx >= 0 {
 			break
@@ -89,18 +91,18 @@ func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
 	}
 
 	for ; l > 0; l-- {
-		idx = idx*bitsNum + bitIdx
+		idx = idx<<intDiv64 + bitIdx
 		bitIdx = findPrevUnsetBit(s.layers[l-1][idx], bitsNum)
 	}
 
-	return idx*bitsNum + bitIdx
+	return idx<<intDiv64 + bitIdx
 }
 
 // findPrevUnsetBit returns position of the closest unset bit with lower index than pos in the given element,
 // or negative if all bits with lower index are set.
 func findPrevUnsetBit(element uint64, pos int) int {
-	skipBits := bitsNum - pos // skip bits with higher index than pos, including pos itself
-	element = element << skipBits
+	skipBits := bitsNum - pos     // skip bits with higher index than pos, including pos itself
+	element = element << skipBits // nolint:gocritic
 	// Invert bits to be able to use LeadingZeros to skip ones
 	// -1 because 0 leading zeros means next bit to pos, according to the skipBits:
 	return pos - bits.LeadingZeros64(^element) - 1

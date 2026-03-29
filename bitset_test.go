@@ -419,6 +419,42 @@ func TestLayeredBitSet_FindPrevUnsetBit(t *testing.T) {
 			idx:  4095,
 			want: 0,
 		},
+		// Non-power-of-2 sizes.
+		{
+			name: "size 100, no bits set, idx 99",
+			size: 100,
+			set:  nil,
+			idx:  99,
+			want: 98,
+		},
+		{
+			name: "size 100, bits 0-98 set, idx 99",
+			size: 100,
+			set:  seq(0, 99),
+			idx:  99,
+			want: -1,
+		},
+		{
+			name: "size 100, bits 65-98 set, idx 99 — falls back to element 0",
+			size: 100,
+			set:  seq(65, 99),
+			idx:  99,
+			want: 64,
+		},
+		{
+			name: "size 200, bits 1-199 set, bit 0 unset, idx 199",
+			size: 200,
+			set:  seq(1, 199),
+			idx:  199,
+			want: 0,
+		},
+		{
+			name: "size 5000, bits 1-4999 set, bit 0 unset, idx 4999",
+			size: 5000,
+			set:  seq(1, 4999),
+			idx:  4999,
+			want: 0,
+		},
 	}
 
 	for _, tt := range tests {
@@ -468,6 +504,86 @@ func Benchmark_findPrevUnsetBit(b *testing.B) {
 	b.Run("all_set", func(b *testing.B) {
 		for range b.N {
 			benchResult = findPrevUnsetBit(allSet, 63)
+		}
+	})
+}
+
+func Benchmark_FindPrevUnsetBit(b *testing.B) {
+	const size = 4 * 1024 * 1024
+
+	b.Run("best_case_prev_bit_unset", func(b *testing.B) {
+		// Bit right before idx is unset — found in layer 0, no ascend.
+		bs := NewLayeredBitSet(size)
+		bs.Set(size - 1)
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindPrevUnsetBit(size - 1)
+		}
+	})
+
+	b.Run("same_element", func(b *testing.B) {
+		// All bits in the element set except bit 0 — found in layer 0, same element.
+		bs := NewLayeredBitSet(size)
+		for i := 1; i < 64; i++ {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindPrevUnsetBit(63)
+		}
+	})
+
+	b.Run("prev_element", func(b *testing.B) {
+		// Current element fully set — falls back to previous element in layer 0.
+		bs := NewLayeredBitSet(size)
+		for i := 64; i < 128; i++ {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindPrevUnsetBit(127)
+		}
+	})
+
+	b.Run("cross_64_elements", func(b *testing.B) {
+		// 64 elements (4096 bits) fully set — ascend to layer 1, descend back.
+		bs := NewLayeredBitSet(size)
+		for i := 1; i < 4096; i++ {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindPrevUnsetBit(4095)
+		}
+	})
+
+	b.Run("worst_case_4M", func(b *testing.B) {
+		// All bits set except bit 0 — must traverse all layers up and back down.
+		bs := NewLayeredBitSet(size)
+		for i := 1; i < size; i++ {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindPrevUnsetBit(size - 1)
+		}
+	})
+
+	b.Run("not_found_4M", func(b *testing.B) {
+		// All bits set — must go all the way up and return -1.
+		bs := NewLayeredBitSet(size)
+		for i := range size {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindPrevUnsetBit(size - 1)
 		}
 	})
 }
