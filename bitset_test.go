@@ -300,6 +300,12 @@ func Test_findPrevUnsetBit(t *testing.T) {
 			pos:     5,
 			want:    4,
 		},
+		{
+			name:    "full element search",
+			element: allSet - 2,
+			pos:     bitsNum,
+			want:    1,
+		},
 	}
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
@@ -307,6 +313,139 @@ func Test_findPrevUnsetBit(t *testing.T) {
 			assert.Equalf(t, tt.want, findPrevUnsetBit(tt.element, tt.pos), "findPrevUnsetBit(%064b, %d)", tt.element, tt.pos)
 		})
 	}
+}
+
+func TestLayeredBitSet_FindPrevUnsetBit(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		size int
+		set  []int // bits to set before searching
+		idx  int
+		want int
+	}{
+		{
+			name: "no bits set, idx 0 — nothing below 0",
+			size: 64,
+			set:  nil,
+			idx:  0,
+			want: -1,
+		},
+		{
+			name: "no bits set, idx 10",
+			size: 64,
+			set:  nil,
+			idx:  10,
+			want: 9,
+		},
+		{
+			name: "bit 5 set, idx 10",
+			size: 64,
+			set:  []int{5},
+			idx:  10,
+			want: 9,
+		},
+		{
+			name: "bits 0-8 set, idx 10 — bit 9 unset",
+			size: 64,
+			set:  []int{0, 1, 2, 3, 4, 5, 6, 7, 8},
+			idx:  10,
+			want: 9,
+		},
+		{
+			name: "bits 0-9 all set, idx 10 — none below",
+			size: 64,
+			set:  []int{0, 1, 2, 3, 4, 5, 6, 7, 8, 9},
+			idx:  10,
+			want: -1,
+		},
+		{
+			name: "all 64 bits set, idx 63",
+			size: 64,
+			set:  seq(0, 64),
+			idx:  63,
+			want: -1,
+		},
+		// Cross-element: idx in element 1, result in element 0.
+		{
+			name: "no bits set, idx 100 — crosses element boundary",
+			size: 256,
+			set:  nil,
+			idx:  100,
+			want: 99,
+		},
+		{
+			name: "bits 64-99 set, idx 100 — falls back to element 0",
+			size: 256,
+			set:  seq(64, 100),
+			idx:  100,
+			want: 63,
+		},
+		{
+			name: "bits 0-99 all set, idx 100",
+			size: 256,
+			set:  seq(0, 100),
+			idx:  100,
+			want: -1,
+		},
+		// Cross-layer: needs to go up to layer 1 and back down.
+		{
+			name: "first 128 bits set, idx 128 — skips via layer 1",
+			size: 4096,
+			set:  seq(0, 128),
+			idx:  128,
+			want: -1,
+		},
+		{
+			name: "bits 1-127 set, bit 0 unset, idx 128",
+			size: 4096,
+			set:  seq(1, 128),
+			idx:  128,
+			want: 0,
+		},
+		{
+			name: "first element full, second partial, idx 100",
+			size: 256,
+			set:  seq(0, 64),
+			idx:  100,
+			want: 99,
+		},
+		// Large multi-layer traversal.
+		{
+			name: "bits 1-4095 set, bit 0 unset, idx 4095",
+			size: 4096,
+			set:  seq(1, 4095),
+			idx:  4095,
+			want: 0,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			bs := NewLayeredBitSet(tt.size)
+			for _, i := range tt.set {
+				bs.Set(i)
+			}
+
+			var got int
+			require.NotPanics(t, func() {
+				got = bs.FindPrevUnsetBit(tt.idx)
+			})
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+// seq returns a slice of ints [from, to).
+func seq(from, to int) []int {
+	s := make([]int, 0, to-from)
+	for i := from; i < to; i++ {
+		s = append(s, i)
+	}
+	return s
 }
 
 var benchResult int //nolint:gochecknoglobals // prevent compiler optimization

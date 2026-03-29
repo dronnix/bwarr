@@ -70,30 +70,30 @@ func (s *LayeredBitSet) Reset() {
 	}
 }
 
-// FindRightmostUnsetBit returns the index of the leftmost (closest with higher index) unset bit starting from idx,
-// or -1 if all bits are set.
-func (s *LayeredBitSet) FindRightmostUnsetBit(idx int) int {
+// FindPrevUnsetBit returns the index of the closest unset bit with lower index  or -1 if all bits are set.
+func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
 	// The algorithm is optimized to work faster with small series of unset bits, which is the common case for BWArr deleted elements.
 	// So, it is bottom-up-bottom: we start from the lowest layer and go up until we find a layer with an unset bit,
 	//then we go down to find the exact index of that bit.
-	elementIdx := idx / bitsNum
-	bitIdx := idx % bitsNum
-	l := 0
-	for l < len(s.layers) {
-		element := s.layers[l][elementIdx]
-		// set smaller bits to 1, so we can find the rightmost unset bit with trailing zeros count:
-		element |= (1 << bitIdx) - 1
-		bitIdx = bits.LeadingZeros64(element)
-		if element == allSet { // Go upper layer
-			bitIdx = elementIdx % bitsNum
-			elementIdx = elementIdx / bitsNum
-			l++
-			continue
+	l, bitIdx := 0, 0
+	for ; l < len(s.layers); l++ {
+		bitIdx = idx % bitsNum
+		idx = idx / bitsNum
+		bitIdx = findPrevUnsetBit(s.layers[l][idx], bitIdx)
+		if bitIdx >= 0 {
+			break
 		}
-		// Found element, let's find the rightmost unset bit in it:
-
 	}
-	panic("not implemented")
+	if bitIdx < 0 {
+		return -1
+	}
+
+	for ; l > 0; l-- {
+		idx = idx*bitsNum + bitIdx
+		bitIdx = findPrevUnsetBit(s.layers[l-1][idx], bitsNum)
+	}
+
+	return idx*bitsNum + bitIdx
 }
 
 // findPrevUnsetBit returns position of the closest unset bit with lower index than pos in the given element,
