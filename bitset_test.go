@@ -1,6 +1,7 @@
 package bwarr
 
 import (
+	"math/rand"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -584,6 +585,76 @@ func Benchmark_FindPrevUnsetBit(b *testing.B) {
 		b.ResetTimer()
 		for range b.N {
 			benchResult = bs.FindPrevUnsetBit(size - 1)
+		}
+	})
+}
+
+var benchBoolResult bool //nolint:gochecknoglobals // prevent compiler optimization
+
+func Benchmark_Get(b *testing.B) {
+	const size = 4 * 1024 * 1024
+
+	b.Run("hit_sparse", func(b *testing.B) {
+		// Only a few bits set — tests the bit-check path.
+		bs := NewLayeredBitSet(size)
+		bs.Set(size / 2)
+
+		b.ResetTimer()
+		for range b.N {
+			benchBoolResult = bs.Get(size / 2)
+		}
+	})
+
+	b.Run("miss_zero_element", func(b *testing.B) {
+		// Element is all zeros — tests the fast path (element == 0).
+		bs := NewLayeredBitSet(size)
+
+		b.ResetTimer()
+		for range b.N {
+			benchBoolResult = bs.Get(size / 2)
+		}
+	})
+
+	b.Run("miss_nonzero_element", func(b *testing.B) {
+		// Element has bits set but not the one we query.
+		bs := NewLayeredBitSet(size)
+		bs.Set(size/2 + 1)
+
+		b.ResetTimer()
+		for range b.N {
+			benchBoolResult = bs.Get(size / 2)
+		}
+	})
+
+	b.Run("random_access_hit", func(b *testing.B) {
+		// Set every other bit, query random set bits — stresses cache.
+		bs := NewLayeredBitSet(size)
+		for i := 0; i < size; i += 2 {
+			bs.Set(i)
+		}
+		// Pre-generate random indices to avoid RNG cost in the loop.
+		indices := make([]int, 1024)
+		for i := range indices {
+			indices[i] = rand.Intn(size/2) * 2 // even indices only (set bits)
+		}
+
+		b.ResetTimer()
+		for i := range b.N {
+			benchBoolResult = bs.Get(indices[i&1023])
+		}
+	})
+
+	b.Run("random_access_miss", func(b *testing.B) {
+		// All bits unset, query random indices — stresses cache on zero elements.
+		bs := NewLayeredBitSet(size)
+		indices := make([]int, 1024)
+		for i := range indices {
+			indices[i] = rand.Intn(size)
+		}
+
+		b.ResetTimer()
+		for i := range b.N {
+			benchBoolResult = bs.Get(indices[i&1023])
 		}
 	})
 }
