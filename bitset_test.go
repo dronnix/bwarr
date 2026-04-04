@@ -112,6 +112,98 @@ func TestLayeredBitSet_Set(t *testing.T) {
 	assert.Equal(t, uint64(1), bs.layers[2][0], "layer 2 bit 0 set")
 }
 
+func TestLayeredBitSet_Unset(t *testing.T) {
+	t.Parallel()
+
+	t.Run("unset already unset bit is no-op", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		bs.Unset(42)
+		assert.False(t, bs.Get(42))
+	})
+
+	t.Run("unset single bit no propagation", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		bs.Set(3)
+		bs.Set(10)
+		bs.Unset(3)
+		assert.False(t, bs.Get(3))
+		assert.True(t, bs.Get(10), "neighboring bit should be unaffected")
+	})
+
+	t.Run("unset propagates to layer 1", func(t *testing.T) {
+		t.Parallel()
+		// 3 layers: [4096][64][1]
+		bs := NewLayeredBitSet(262144)
+		// Fill element 0 of layer 0 fully — propagates to layer 1.
+		for i := range bitsNum {
+			bs.Set(i)
+		}
+		require.Equal(t, allSet, bs.layers[0][0])
+		require.Equal(t, uint64(1), bs.layers[1][0])
+
+		// Unset one bit — must clear the summary bit in layer 1.
+		bs.Unset(3)
+		assert.False(t, bs.Get(3))
+		assert.NotEqual(t, allSet, bs.layers[0][0], "layer 0 element 0 should no longer be all-set")
+		assert.Equal(t, uint64(0), bs.layers[1][0], "layer 1 bit 0 should be cleared")
+	})
+
+	t.Run("unset propagates through all layers", func(t *testing.T) {
+		t.Parallel()
+		// 3 layers: [4096][64][1]
+		bs := NewLayeredBitSet(262144)
+		// Fill all bits 0..4095 — full propagation to layer 2.
+		for i := range 4096 {
+			bs.Set(i)
+		}
+		require.Equal(t, allSet, bs.layers[1][0])
+		require.Equal(t, uint64(1), bs.layers[2][0])
+
+		bs.Unset(0)
+		assert.False(t, bs.Get(0))
+		assert.Equal(t, uint64(0), bs.layers[1][0]&1, "layer 1 bit 0 should be cleared")
+		assert.Equal(t, uint64(0), bs.layers[2][0], "layer 2 bit 0 should be cleared")
+	})
+
+	t.Run("set after unset restores bit", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		bs.Set(50)
+		bs.Unset(50)
+		assert.False(t, bs.Get(50))
+		bs.Set(50)
+		assert.True(t, bs.Get(50))
+	})
+
+	t.Run("unset is idempotent", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		bs.Set(7)
+		bs.Unset(7)
+		bs.Unset(7)
+		assert.False(t, bs.Get(7))
+	})
+
+	t.Run("unset only affects target bit in element", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		// Set all 64 bits then unset one.
+		for i := range bitsNum {
+			bs.Set(i)
+		}
+		bs.Unset(31)
+		for i := range bitsNum {
+			if i == 31 {
+				assert.False(t, bs.Get(i), "bit 31 should be unset")
+			} else {
+				assert.True(t, bs.Get(i), "bit %d should remain set", i)
+			}
+		}
+	})
+}
+
 func TestLayeredBitSet_Get(t *testing.T) {
 	t.Parallel()
 
@@ -623,6 +715,70 @@ func Benchmark_Set(b *testing.B) {
 		b.ResetTimer()
 		for i := range b.N {
 			bs.Set(indices[i&reminderSize])
+		}
+	})
+}
+
+func Benchmark_Unset(b *testing.B) {
+	b.Run("already_unset", func(b *testing.B) {
+		// Bit is not set — early return via Get.
+		bs := NewLayeredBitSet(size)
+
+		b.ResetTimer()
+		for i := range b.N {
+			bs.Unset(i & reminderSize)
+		}
+	})
+
+	b.Run("no_propagation", func(b *testing.B) {
+		// Element is partially set — unset exits after layer 0.
+		bs := NewLayeredBitSet(size)
+		for i := 0; i < size; i += 2 {
+			bs.Set(i) // set even bits only, no element is fully set
+		}
+		indices := make([]int, size/2)
+		for i := range indices {
+			indices[i] = i * 2 // even indices (set bits)
+		}
+
+		b.ResetTimer()
+		for i := range b.N {
+			idx := indices[i%(size/2)]
+			bs.Unset(idx)
+			bs.layers[0][idx>>intDiv64] |= 1 << (idx & reminder64) // restore for next iteration
+		}
+	})
+
+	b.Run("propagation", func(b *testing.B) {
+		// Element fully set — unset must propagate to clear summary bits.
+		bs := NewLayeredBitSet(size)
+		for i := range size {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for i := range b.N {
+			idx := (i * bitsNum) & reminderSize // bit 0 of each element
+			bs.Unset(idx)
+			// Restore: re-set the bit and fix propagation.
+			bs.Set(idx)
+		}
+	})
+
+	b.Run("random_access", func(b *testing.B) {
+		// Random unset/restore on a sparse bitset.
+		bs := NewLayeredBitSet(size)
+		indices := make([]int, size)
+		for i := range indices {
+			indices[i] = rand.Intn(size)
+			bs.Set(indices[i])
+		}
+
+		b.ResetTimer()
+		for i := range b.N {
+			idx := indices[i&reminderSize]
+			bs.Unset(idx)
+			bs.Set(idx) // restore for next iteration
 		}
 	})
 }

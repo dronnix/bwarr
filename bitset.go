@@ -45,16 +45,27 @@ func (s *LayeredBitSet) Set(idx int) {
 	}
 }
 
-// SetIfNeed used ONLY for newly created or reset bitset, so we can skip Unset operation.
-func (s *LayeredBitSet) SetIfNeed(idx int, value bool) {
+// SetIfTrue Sets a bit if it's true. Useful for newly created or reset bitset, so we can skip Unset operation.
+func (s *LayeredBitSet) SetIfTrue(idx int, value bool) {
 	if value {
 		s.Set(idx)
 	}
 }
 
-// Prefer to use Reset + SetIfNeed instead of Unset if possible
+// Unset given bit. Prefer to use Reset + SetIfTrue instead of Unset if possible
 func (s *LayeredBitSet) Unset(idx int) {
-	panic("not implemented")
+	if !s.Get(idx) {
+		return
+	}
+	for _, layer := range s.layers {
+		elementIdx := idx >> intDiv64
+		wasAllSet := layer[elementIdx] == allSet
+		layer[elementIdx] &^= 1 << (idx & reminder64)
+		if !wasAllSet {
+			break
+		}
+		idx = elementIdx
+	}
 }
 
 func (s *LayeredBitSet) Get(idx int) bool {

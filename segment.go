@@ -89,12 +89,12 @@ func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], high
 	for highSegReadIdx < len(highElems) && lowSegReadIdx < len(lowElems) {
 		cmpResult := cmp(highElems[highSegReadIdx], lowElems[lowSegReadIdx])
 		if (cmpResult < 0) || (cmpResult == 0 && !highDel[highSegReadIdx]) {
-			highElems[highSegWriteIdx] = highElems[highSegReadIdx] // TODO: Use RestFrom before copying, and SetIfNeed here.
+			highElems[highSegWriteIdx] = highElems[highSegReadIdx] // TODO: Use RestFrom before copying, and SetIfTrue here.
 			highDel[highSegWriteIdx] = highDel[highSegReadIdx]
 			highSegReadIdx++
 		} else {
 			highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
-			highDel[highSegWriteIdx] = lowDel[lowSegReadIdx] // TODO: Use RestFrom before copying, and SetIfNeed here.
+			highDel[highSegWriteIdx] = lowDel[lowSegReadIdx] // TODO: Use RestFrom before copying, and SetIfTrue here.
 			lowSegReadIdx++
 		}
 		highSegWriteIdx++
@@ -129,12 +129,12 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 		if (cmpResult > 0) || (cmpResult == 0 && !lowDel[lowSegReadIdx]) {
 			highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
 			del = lowDel[lowSegReadIdx]
-			highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfNeed here.
+			highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfTrue here.
 			lowSegReadIdx++
 		} else {
 			highElems[highSegWriteIdx] = highElems[highSegReadIdx]
 			del = highDel[highSegReadIdx]
-			highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfNeed here.
+			highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfTrue here.
 			highSegReadIdx++
 		}
 		if !del { // TODO remove after switching LayeredBitSet
@@ -147,7 +147,7 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 	for highSegReadIdx < len(highElems) {
 		highElems[highSegWriteIdx] = highElems[highSegReadIdx]
 		del := highDel[highSegReadIdx]
-		highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfNeed here.
+		highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfTrue here.
 		if !del {                      // TODO remove after switching LayeredBitSet
 			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
 			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
@@ -158,7 +158,7 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 	for lowSegReadIdx < len(lowElems) {
 		highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
 		del := lowDel[lowSegReadIdx]
-		highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfNeed here.
+		highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfTrue here.
 		if !del {                      // TODO remove after switching LayeredBitSet
 			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
 			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
