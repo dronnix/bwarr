@@ -8,6 +8,9 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+const size = 4 * 1024 * 1024
+const reminderSize = size - 1
+
 func TestNewLayeredBitSet(t *testing.T) {
 	t.Parallel()
 
@@ -510,8 +513,6 @@ func Benchmark_findPrevUnsetBit(b *testing.B) {
 }
 
 func Benchmark_FindPrevUnsetBit(b *testing.B) {
-	const size = 4 * 1024 * 1024
-
 	b.Run("best_case_prev_bit_unset", func(b *testing.B) {
 		// Bit right before idx is unset — found in layer 0, no ascend.
 		bs := NewLayeredBitSet(size)
@@ -589,11 +590,46 @@ func Benchmark_FindPrevUnsetBit(b *testing.B) {
 	})
 }
 
+func Benchmark_Set(b *testing.B) {
+	b.Run("no_propagation", func(b *testing.B) {
+		// One bit per element — no element ever becomes fully set, no propagation.
+		bs := NewLayeredBitSet(size)
+
+		b.ResetTimer()
+		for i := range b.N {
+			bs.Set((i * bitsNum) % size)
+		}
+	})
+
+	b.Run("full_propagation", func(b *testing.B) {
+		bs := NewLayeredBitSet(size)
+		for i := range size {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for i := range b.N {
+			bs.Set(i & reminderSize)
+		}
+	})
+
+	b.Run("random_access", func(b *testing.B) {
+		bs := NewLayeredBitSet(size)
+		indices := make([]int, size)
+		for i := range indices {
+			indices[i] = rand.Intn(size)
+		}
+
+		b.ResetTimer()
+		for i := range b.N {
+			bs.Set(indices[i&reminderSize])
+		}
+	})
+}
+
 var benchBoolResult bool //nolint:gochecknoglobals // prevent compiler optimization
 
 func Benchmark_Get(b *testing.B) {
-	const size = 4 * 1024 * 1024
-
 	b.Run("hit_sparse", func(b *testing.B) {
 		// Only a few bits set — tests the bit-check path.
 		bs := NewLayeredBitSet(size)
