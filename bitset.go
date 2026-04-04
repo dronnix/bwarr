@@ -11,6 +11,7 @@ import (
 // This way, we can quickly skip over large blocks of deleted elements.
 type LayeredBitSet struct {
 	layers [][]uint64
+	setNum int
 }
 
 const bitsNum = 64
@@ -34,6 +35,10 @@ func NewLayeredBitSet(size int) *LayeredBitSet {
 }
 
 func (s *LayeredBitSet) Set(idx int) {
+	if s.Get(idx) {
+		return
+	}
+	s.setNum++
 	for _, layer := range s.layers {
 		elementIdx := idx >> intDiv64
 		bitIdx := idx & reminder64
@@ -57,6 +62,7 @@ func (s *LayeredBitSet) Unset(idx int) {
 	if !s.Get(idx) {
 		return
 	}
+	s.setNum--
 	for _, layer := range s.layers {
 		elementIdx := idx >> intDiv64
 		wasAllSet := layer[elementIdx] == allSet
@@ -77,7 +83,7 @@ func (s *LayeredBitSet) Get(idx int) bool {
 }
 
 func (s *LayeredBitSet) SetNum() int {
-	panic("not implemented")
+	return s.setNum
 }
 
 func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
@@ -87,10 +93,11 @@ func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
 		copy(layerCopy, layer)
 		layersCopy[i] = layerCopy
 	}
-	return &LayeredBitSet{layers: layersCopy}
+	return &LayeredBitSet{layers: layersCopy, setNum: s.setNum}
 }
 
 func (s *LayeredBitSet) Reset() { // TODO: Optimize it - use some memset equivalent for uint64 slices;
+	s.setNum = 0
 	for _, layer := range s.layers {
 		for i := range layer {
 			layer[i] = 0
