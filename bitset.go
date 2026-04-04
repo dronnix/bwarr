@@ -45,12 +45,28 @@ func (s *LayeredBitSet) Set(idx int) {
 	}
 }
 
+// SetIfNeed used ONLY for newly created or reset bitset, so we can skip Unset operation.
+func (s *LayeredBitSet) SetIfNeed(idx int, value bool) {
+	if value {
+		s.Set(idx)
+	}
+}
+
+// Prefer to use Reset + SetIfNeed instead of Unset if possible
+func (s *LayeredBitSet) Unset(idx int) {
+	panic("not implemented")
+}
+
 func (s *LayeredBitSet) Get(idx int) bool {
 	element := s.layers[0][idx>>intDiv64]
 	if element == 0 {
 		return false
 	}
 	return (element & (1 << (idx & reminder64))) != 0
+}
+
+func (s *LayeredBitSet) SetNum() int {
+	panic("not implemented")
 }
 
 func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
@@ -69,6 +85,14 @@ func (s *LayeredBitSet) Reset() { // TODO: Optimize it - use some memset equival
 			layer[i] = 0
 		}
 	}
+}
+
+func (s *LayeredBitSet) ResetFrom(idx int) {
+	panic("not implemented")
+}
+
+func (s *LayeredBitSet) CopyFrom(from *LayeredBitSet, idx int) {
+	panic("not implemented")
 }
 
 // FindPrevUnsetBit returns the index of the closest unset bit with lower index  or -1 if all bits are set.
@@ -95,6 +119,18 @@ func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
 	}
 
 	return idx<<intDiv64 + bitIdx
+}
+
+func (s *LayeredBitSet) FindNextUnsetBit(idx int) int {
+	panic("not implemented")
+}
+
+func (s *LayeredBitSet) FindFirstUnsetBit() int {
+	panic("not implemented")
+}
+
+func (s *LayeredBitSet) FindLastUnsetBit() int {
+	panic("not implemented")
 }
 
 // findPrevUnsetBit returns position of the closest unset bit with lower index than pos in the given element,
