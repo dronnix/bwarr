@@ -6,11 +6,12 @@ import (
 )
 
 type segment[T any] struct {
-	elements         []T    // Stores user's data.
-	deleted          []bool // Stores whether i-th element is deleted.
-	deletedNum       int    // Number of deleted elements in the segment.
-	minNonDeletedIdx int    // Index of the first non-deleted element in the segment.
-	maxNonDeletedIdx int    // Index of the last non-deleted element in the segment.
+	elements []T    // Stores user's data.
+	deleted  []bool // Stores whether i-th element is deleted.
+	// TODO: replace following fields with LayeredBitSet methods
+	deletedNum       int // Number of deleted elements in the segment.
+	minNonDeletedIdx int // Index of the first non-deleted element in the segment.
+	maxNonDeletedIdx int // Index of the last non-deleted element in the segment.
 }
 
 func createSegments[T any](fromRank, toRank int) []segment[T] {
@@ -79,7 +80,7 @@ func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], high
 
 	// Sub-slice so the compiler can prove loop indices are in bounds (BCE).
 	highElems := highSeg.elements[:highSegEnd]
-	highDel := highSeg.deleted[:highSegEnd]
+	highDel := highSeg.deleted[:highSegEnd] // TODO: Use RestFrom here
 	lowElems := lowSeg.elements[:lowSegEnd]
 	lowDel := lowSeg.deleted[:lowSegEnd]
 
@@ -88,20 +89,20 @@ func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], high
 	for highSegReadIdx < len(highElems) && lowSegReadIdx < len(lowElems) {
 		cmpResult := cmp(highElems[highSegReadIdx], lowElems[lowSegReadIdx])
 		if (cmpResult < 0) || (cmpResult == 0 && !highDel[highSegReadIdx]) {
-			highElems[highSegWriteIdx] = highElems[highSegReadIdx]
+			highElems[highSegWriteIdx] = highElems[highSegReadIdx] // TODO: Use RestFrom before copying, and SetIfNeed here.
 			highDel[highSegWriteIdx] = highDel[highSegReadIdx]
 			highSegReadIdx++
 		} else {
 			highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
-			highDel[highSegWriteIdx] = lowDel[lowSegReadIdx]
+			highDel[highSegWriteIdx] = lowDel[lowSegReadIdx] // TODO: Use RestFrom before copying, and SetIfNeed here.
 			lowSegReadIdx++
 		}
 		highSegWriteIdx++
 	}
 
 	copy(highSeg.elements[highSegWriteIdx:], highSeg.elements[highSegReadIdx:highSegEnd])
-	copy(highSeg.deleted[highSegWriteIdx:], highSeg.deleted[highSegReadIdx:highSegEnd])
-	copy(highSeg.elements[highSegWriteIdx:], lowSeg.elements[lowSegReadIdx:lowSegEnd])
+	copy(highSeg.deleted[highSegWriteIdx:], highSeg.deleted[highSegReadIdx:highSegEnd]) // TODO: Use CopyFrom here.
+	copy(highSeg.elements[highSegWriteIdx:], lowSeg.elements[lowSegReadIdx:lowSegEnd])  // TODO: Use CopyFrom here.
 	copy(highSeg.deleted[highSegWriteIdx:], lowSeg.deleted[lowSegReadIdx:lowSegEnd])
 
 	highSeg.deletedNum += lowSeg.deletedNum
@@ -116,7 +117,7 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 
 	// Sub-slice so the compiler can prove loop indices are in bounds (BCE).
 	highElems := highSeg.elements[:highSegEnd]
-	highDel := highSeg.deleted[:highSegEnd]
+	highDel := highSeg.deleted[:highSegEnd] // TODO: Use RestFrom before copying
 	lowElems := lowSeg.elements[:lowSegEnd]
 	lowDel := lowSeg.deleted[:lowSegEnd]
 
@@ -128,15 +129,15 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 		if (cmpResult > 0) || (cmpResult == 0 && !lowDel[lowSegReadIdx]) {
 			highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
 			del = lowDel[lowSegReadIdx]
-			highDel[highSegWriteIdx] = del
+			highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfNeed here.
 			lowSegReadIdx++
 		} else {
 			highElems[highSegWriteIdx] = highElems[highSegReadIdx]
 			del = highDel[highSegReadIdx]
-			highDel[highSegWriteIdx] = del
+			highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfNeed here.
 			highSegReadIdx++
 		}
-		if !del {
+		if !del { // TODO remove after switching LayeredBitSet
 			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
 			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
 		}
@@ -146,8 +147,8 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 	for highSegReadIdx < len(highElems) {
 		highElems[highSegWriteIdx] = highElems[highSegReadIdx]
 		del := highDel[highSegReadIdx]
-		highDel[highSegWriteIdx] = del
-		if !del {
+		highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfNeed here.
+		if !del {                      // TODO remove after switching LayeredBitSet
 			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
 			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
 		}
@@ -157,8 +158,8 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 	for lowSegReadIdx < len(lowElems) {
 		highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
 		del := lowDel[lowSegReadIdx]
-		highDel[highSegWriteIdx] = del
-		if !del {
+		highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfNeed here.
+		if !del {                      // TODO remove after switching LayeredBitSet
 			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
 			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
 		}
@@ -191,7 +192,7 @@ func moveNonDeletedValuesToSegmentEnd[T any](seg segment[T]) {
 	for writePointer >= (length >> 1) {
 		if !seg.deleted[readPointer] {
 			seg.elements[writePointer] = seg.elements[readPointer]
-			seg.deleted[writePointer] = false
+			seg.deleted[writePointer] = false // TODO: Use Unset here
 			writePointer--
 		}
 		readPointer--
@@ -216,7 +217,7 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 		case cmpRes > 0:
 			b = m + 1
 		default: // elements are equal - follow invariant: deleted elements are to the right (higher index) of non-deleted ones.
-			if del[m] {
+			if del[m] { // TODO: use FindPrevUnsetBit here
 				e = m
 			} else {
 				b = m + 1
@@ -242,7 +243,7 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 // several equal minimum elements, returns the rightmost one.
 func (s *segment[T]) min(cmp CmpFunc[T]) int {
 	minIdx, maxIdx := s.minNonDeletedIndex(), s.maxNonDeletedIndex()
-	for i := minIdx + 1; i <= maxIdx; i++ {
+	for i := minIdx + 1; i <= maxIdx; i++ { // TODO: use FindNextUnsetBit here
 		if s.deleted[i] { // deleted elements can appear only after non-deleted equal ones;
 			return minIdx
 		}
@@ -292,7 +293,7 @@ func (s *segment[T]) findLess(cmp CmpFunc[T], val T) int {
 	return s.prevNonDeletedBefore(e + 1)
 }
 
-func (s *segment[T]) minNonDeletedIndex() (index int) {
+func (s *segment[T]) minNonDeletedIndex() (index int) { // TODO: replace with FindFirstUnsetBit
 	for i := s.minNonDeletedIdx; i < len(s.deleted); i++ {
 		if !s.deleted[i] {
 			s.minNonDeletedIdx = i
@@ -302,7 +303,7 @@ func (s *segment[T]) minNonDeletedIndex() (index int) {
 	return -1
 }
 
-func (s *segment[T]) maxNonDeletedIndex() (index int) {
+func (s *segment[T]) maxNonDeletedIndex() (index int) { // TODO: replace with FindLastUnsetBit
 	for i := s.maxNonDeletedIdx; i >= 0; i-- {
 		if !s.deleted[i] {
 			s.maxNonDeletedIdx = i
@@ -312,7 +313,7 @@ func (s *segment[T]) maxNonDeletedIndex() (index int) {
 	return -1
 }
 
-func (s *segment[T]) nextNonDeletedAfter(index int) int {
+func (s *segment[T]) nextNonDeletedAfter(index int) int { // TODO: replace with FindNextUnsetBit
 	l := len(s.deleted)
 	for i := index + 1; i < l; i++ {
 		if !s.deleted[i] {
@@ -322,7 +323,7 @@ func (s *segment[T]) nextNonDeletedAfter(index int) int {
 	return l
 }
 
-func (s *segment[T]) prevNonDeletedBefore(index int) int {
+func (s *segment[T]) prevNonDeletedBefore(index int) int { // TODO: replace with FindPrevUnsetBit
 	for i := index - 1; i >= 0; i-- {
 		if !s.deleted[i] {
 			return i
