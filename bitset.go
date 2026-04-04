@@ -35,8 +35,8 @@ func NewLayeredBitSet(size int) *LayeredBitSet {
 
 func (s *LayeredBitSet) Set(idx int) {
 	for _, layer := range s.layers {
-		elementIdx := idx / bitsNum
-		bitIdx := idx % bitsNum
+		elementIdx := idx >> intDiv64
+		bitIdx := idx & reminder64
 		layer[elementIdx] |= 1 << bitIdx
 		if layer[elementIdx] != allSet {
 			break
@@ -63,7 +63,7 @@ func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
 	return &LayeredBitSet{layers: layersCopy}
 }
 
-func (s *LayeredBitSet) Reset() {
+func (s *LayeredBitSet) Reset() { // TODO: Optimize it - use some memset equivalent for uint64 slices;
 	for _, layer := range s.layers {
 		for i := range layer {
 			layer[i] = 0
