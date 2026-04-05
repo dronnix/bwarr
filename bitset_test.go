@@ -508,6 +508,202 @@ func TestLayeredBitSet_CopyFrom(t *testing.T) {
 	})
 }
 
+func TestLayeredBitSet_FindFirstUnsetBit(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		size int
+		set  []int
+		want int
+	}{
+		{
+			name: "no bits set",
+			size: 64,
+			set:  nil,
+			want: 0,
+		},
+		{
+			name: "bit 0 set",
+			size: 64,
+			set:  []int{0},
+			want: 1,
+		},
+		{
+			name: "all 64 bits set",
+			size: 64,
+			set:  seq(0, 64),
+			want: -1,
+		},
+		{
+			name: "first element full, second empty",
+			size: 256,
+			set:  seq(0, 64),
+			want: 64,
+		},
+		{
+			name: "all bits set, size 256 — phantom bit protection",
+			size: 256,
+			set:  seq(0, 256),
+			want: -1,
+		},
+		{
+			name: "first 128 set",
+			size: 4096,
+			set:  seq(0, 128),
+			want: 128,
+		},
+		{
+			name: "all set except last, size 4096",
+			size: 4096,
+			set:  seq(0, 4095),
+			want: 4095,
+		},
+		{
+			name: "all set, size 4096",
+			size: 4096,
+			set:  seq(0, 4096),
+			want: -1,
+		},
+		{
+			name: "sparse — only bit 5 set",
+			size: 256,
+			set:  []int{5},
+			want: 0,
+		},
+		{
+			name: "bits 0-4094 set, 3 layers",
+			size: 262144,
+			set:  seq(0, 4095),
+			want: 4095,
+		},
+		{
+			name: "non-power-of-2 size, all set — returns first phantom bit",
+			size: 100,
+			set:  seq(0, 100),
+			want: 100, // caller must bound-check against logical size
+		},
+		{
+			name: "non-power-of-2 size, partial",
+			size: 100,
+			set:  seq(0, 50),
+			want: 50,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			bs := NewLayeredBitSet(tt.size)
+			for _, i := range tt.set {
+				bs.Set(i)
+			}
+
+			var got int
+			require.NotPanics(t, func() {
+				got = bs.FindFirstUnsetBit()
+			})
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
+func TestLayeredBitSet_FindLastUnsetBit(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		size int
+		set  []int
+		want int
+	}{
+		{
+			name: "no bits set",
+			size: 64,
+			set:  nil,
+			want: 63,
+		},
+		{
+			name: "last bit set",
+			size: 64,
+			set:  []int{63},
+			want: 62,
+		},
+		{
+			name: "all 64 bits set",
+			size: 64,
+			set:  seq(0, 64),
+			want: -1,
+		},
+		{
+			name: "last element full, first empty",
+			size: 256,
+			set:  seq(192, 256),
+			want: 191,
+		},
+		{
+			name: "all bits set, size 256 — phantom bit protection",
+			size: 256,
+			set:  seq(0, 256),
+			want: -1,
+		},
+		{
+			name: "last 128 set",
+			size: 4096,
+			set:  seq(4096-128, 4096),
+			want: 4096 - 129,
+		},
+		{
+			name: "all set except first, size 4096",
+			size: 4096,
+			set:  seq(1, 4096),
+			want: 0,
+		},
+		{
+			name: "all set, size 4096",
+			size: 4096,
+			set:  seq(0, 4096),
+			want: -1,
+		},
+		{
+			name: "sparse — only bit 5 set",
+			size: 256,
+			set:  []int{5},
+			want: 255,
+		},
+		{
+			name: "bits 0-4094 set, 3 layers",
+			size: 262144,
+			set:  seq(0, 4095),
+			want: 262143,
+		},
+		{
+			name: "non-power-of-2 size, partial — returns layer 0 phantom bit",
+			size: 100,
+			set:  seq(50, 100),
+			want: 127, // caller must bound-check against logical size
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			bs := NewLayeredBitSet(tt.size)
+			for _, i := range tt.set {
+				bs.Set(i)
+			}
+
+			var got int
+			require.NotPanics(t, func() {
+				got = bs.FindLastUnsetBit()
+			})
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 func Test_findPrevUnsetBit(t *testing.T) {
 	t.Parallel()
 
@@ -796,6 +992,208 @@ func TestLayeredBitSet_FindPrevUnsetBit(t *testing.T) {
 	}
 }
 
+func Test_findNextUnsetBit(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name    string
+		element uint64
+		pos     int
+		want    int
+	}{
+		{
+			name:    "all zeros, pos -1 — first bit",
+			element: 0,
+			pos:     -1,
+			want:    0,
+		},
+		{
+			name:    "all zeros, pos 0",
+			element: 0,
+			pos:     0,
+			want:    1,
+		},
+		{
+			name:    "all set, pos 0 — nothing after",
+			element: ^uint64(0),
+			pos:     0,
+			want:    bitsNum,
+		},
+		{
+			name:    "all set, pos -1",
+			element: ^uint64(0),
+			pos:     -1,
+			want:    bitsNum,
+		},
+		{
+			name:    "bits 0-3 set, pos 0",
+			element: 0b1111,
+			pos:     0,
+			want:    4,
+		},
+		{
+			name:    "only bit 0 unset, pos -1",
+			element: ^uint64(0) &^ 1,
+			pos:     -1,
+			want:    0,
+		},
+		{
+			name:    "bit 62 unset, pos 0",
+			element: ^uint64(0) &^ (1 << 62),
+			pos:     0,
+			want:    62,
+		},
+		{
+			name:    "pos 63 — nothing after last bit",
+			element: 0,
+			pos:     63,
+			want:    bitsNum,
+		},
+		{
+			name:    "alternating 0b...01010101, pos 0",
+			element: 0x55, // 01010101
+			pos:     0,
+			want:    1,
+		},
+		{
+			name:    "alternating 0b...01010101, pos 1",
+			element: 0x55,
+			pos:     1,
+			want:    3,
+		},
+		{
+			name:    "full element search",
+			element: allSet - (1 << 62),
+			pos:     -1,
+			want:    62,
+		},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			assert.Equalf(t, tt.want, findNextUnsetBit(tt.element, tt.pos), "findNextUnsetBit(%064b, %d)", tt.element, tt.pos)
+		})
+	}
+}
+
+func TestLayeredBitSet_FindNextUnsetBit(t *testing.T) {
+	t.Parallel()
+
+	tests := []struct {
+		name string
+		size int
+		set  []int
+		idx  int
+		want int
+	}{
+		{
+			name: "no bits set, idx 0",
+			size: 64,
+			set:  nil,
+			idx:  0,
+			want: 1,
+		},
+		{
+			name: "no bits set, idx 10",
+			size: 64,
+			set:  nil,
+			idx:  10,
+			want: 11,
+		},
+		{
+			name: "bits 11-63 set, idx 10",
+			size: 64,
+			set:  seq(11, 64),
+			idx:  10,
+			want: -1,
+		},
+		{
+			name: "all 64 bits set, idx 0",
+			size: 64,
+			set:  seq(0, 64),
+			idx:  0,
+			want: -1,
+		},
+		// Cross-element: idx in element 0, result in element 1.
+		{
+			name: "bits 1-63 set, idx 0 — crosses element boundary",
+			size: 256,
+			set:  seq(1, 64),
+			idx:  0,
+			want: 64,
+		},
+		{
+			name: "bits 1-99 set, idx 0",
+			size: 256,
+			set:  seq(1, 100),
+			idx:  0,
+			want: 100,
+		},
+		{
+			name: "bits 1-255 set, idx 0",
+			size: 256,
+			set:  seq(1, 256),
+			idx:  0,
+			want: -1,
+		},
+		// Cross-layer: needs to go up to layer 1 and back down.
+		{
+			name: "first 128 bits set, idx 0 — skips via layer 1",
+			size: 4096,
+			set:  seq(0, 128),
+			idx:  0,
+			want: 128,
+		},
+		{
+			name: "bits 0-4094 set, bit 4095 unset, idx 0",
+			size: 4096,
+			set:  seq(0, 4095),
+			idx:  0,
+			want: 4095,
+		},
+		// Large multi-layer traversal.
+		{
+			name: "bits 0-4094 set, bit 4095 unset, idx 100",
+			size: 4096,
+			set:  seq(0, 4095),
+			idx:  100,
+			want: 4095,
+		},
+		// Non-power-of-2 sizes.
+		{
+			name: "size 100, bits 0-97 set, idx 0",
+			size: 100,
+			set:  seq(0, 98),
+			idx:  0,
+			want: 98,
+		},
+		{
+			name: "size 5000, bits 0-4998 set, bit 4999 unset, idx 0",
+			size: 5000,
+			set:  seq(0, 4999),
+			idx:  0,
+			want: 4999,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+
+			bs := NewLayeredBitSet(tt.size)
+			for _, i := range tt.set {
+				bs.Set(i)
+			}
+
+			var got int
+			require.NotPanics(t, func() {
+				got = bs.FindNextUnsetBit(tt.idx)
+			})
+			assert.Equal(t, tt.want, got)
+		})
+	}
+}
+
 // seq returns a slice of ints [from, to).
 func seq(from, to int) []int {
 	s := make([]int, 0, to-from)
@@ -825,6 +1223,108 @@ func Benchmark_findPrevUnsetBit(b *testing.B) {
 	b.Run("all_set", func(b *testing.B) {
 		for range b.N {
 			benchResult = findPrevUnsetBit(allSet, 63)
+		}
+	})
+}
+
+func Benchmark_FindFirstUnsetBit(b *testing.B) {
+	b.Run("first_bit_unset", func(b *testing.B) {
+		// Bit 0 unset — found immediately at every layer.
+		bs := NewLayeredBitSet(size)
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindFirstUnsetBit()
+		}
+	})
+
+	b.Run("first_element_full", func(b *testing.B) {
+		// First 64 bits set — descends to element 1.
+		bs := NewLayeredBitSet(size)
+		for i := range bitsNum {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindFirstUnsetBit()
+		}
+	})
+
+	b.Run("worst_case_4M", func(b *testing.B) {
+		// All set except last bit — full descent through all layers.
+		bs := NewLayeredBitSet(size)
+		for i := range size - 1 {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindFirstUnsetBit()
+		}
+	})
+
+	b.Run("not_found_4M", func(b *testing.B) {
+		// All set — returns -1.
+		bs := NewLayeredBitSet(size)
+		for i := range size {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindFirstUnsetBit()
+		}
+	})
+}
+
+func Benchmark_FindLastUnsetBit(b *testing.B) {
+	b.Run("last_bit_unset", func(b *testing.B) {
+		// Last bit unset — found immediately at every layer.
+		bs := NewLayeredBitSet(size)
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindLastUnsetBit()
+		}
+	})
+
+	b.Run("last_element_full", func(b *testing.B) {
+		// Last 64 bits set — descends to second-to-last element.
+		bs := NewLayeredBitSet(size)
+		for i := size - bitsNum; i < size; i++ {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindLastUnsetBit()
+		}
+	})
+
+	b.Run("worst_case_4M", func(b *testing.B) {
+		// All set except first bit — full descent through all layers.
+		bs := NewLayeredBitSet(size)
+		for i := 1; i < size; i++ {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindLastUnsetBit()
+		}
+	})
+
+	b.Run("not_found_4M", func(b *testing.B) {
+		// All set — returns -1.
+		bs := NewLayeredBitSet(size)
+		for i := range size {
+			bs.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			benchResult = bs.FindLastUnsetBit()
 		}
 	})
 }

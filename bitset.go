@@ -148,22 +148,98 @@ func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
 
 	for ; l > 0; l-- {
 		idx = idx<<intDiv64 + bitIdx
-		bitIdx = findPrevUnsetBit(s.layers[l-1][idx], bitsNum)
+		bitIdx = findLastUnsetBit(s.layers[l-1][idx])
 	}
 
 	return idx<<intDiv64 + bitIdx
 }
 
+// FindNextUnsetBit returns the index of the closest unset bit with higher index or -1 if all bits are set.
 func (s *LayeredBitSet) FindNextUnsetBit(idx int) int {
-	panic("not implemented")
+	l, bitIdx := 0, 0
+	for ; l < len(s.layers); l++ {
+		bitIdx = idx & reminder64
+		idx >>= intDiv64
+		bitIdx = findNextUnsetBit(s.layers[l][idx], bitIdx)
+		if bitIdx < bitsNum {
+			break
+		}
+	}
+	if bitIdx >= bitsNum {
+		return -1
+	}
+
+	for ; l > 0; l-- {
+		idx = idx<<intDiv64 + bitIdx
+		if idx >= len(s.layers[l-1]) {
+			return -1 // phantom bit in summary layer — beyond actual data
+		}
+		bitIdx = findFirstUnsetBit(s.layers[l-1][idx])
+	}
+
+	return idx<<intDiv64 + bitIdx
 }
 
 func (s *LayeredBitSet) FindFirstUnsetBit() int {
-	panic("not implemented")
+	// Use top-bottom approach, optimized for tail deletions:
+	elemIdx := 0
+	for l := len(s.layers) - 1; l >= 0; l-- {
+		if elemIdx >= len(s.layers[l]) {
+			return -1 // phantom bit in summary layer — beyond actual data
+		}
+		bitIndex := findFirstUnsetBit(s.layers[l][elemIdx])
+		if bitIndex >= bitsNum {
+			return -1
+		}
+		elemIdx = elemIdx<<intDiv64 + bitIndex
+	}
+	return elemIdx
 }
 
 func (s *LayeredBitSet) FindLastUnsetBit() int {
-	panic("not implemented")
+	elemIdx := 0
+	for l := len(s.layers) - 1; l >= 0; l-- {
+		if elemIdx >= len(s.layers[l]) {
+			return -1
+		}
+		// Constrain search to valid bits: upper layers may have phantom zeros
+		// beyond the actual number of elements in the layer below.
+		lastValidBit := bitsNum
+		if l > 0 {
+			remaining := len(s.layers[l-1]) - elemIdx<<intDiv64
+			if remaining < bitsNum {
+				lastValidBit = remaining
+			}
+		}
+		bitIndex := findPrevUnsetBit(s.layers[l][elemIdx], lastValidBit)
+		if bitIndex < 0 {
+			return -1
+		}
+		elemIdx = elemIdx<<intDiv64 + bitIndex
+	}
+	return elemIdx
+}
+
+// findFirstUnsetBit returns position of the lowest unset bit in the given element,
+// or bitsNum if all bits are set.
+func findFirstUnsetBit(element uint64) int {
+	return bits.TrailingZeros64(^element)
+}
+
+// findLastUnsetBit returns position of the highest unset bit in the given element,
+// or -1 if all bits are set.
+func findLastUnsetBit(element uint64) int {
+	return bitsNum - 1 - bits.LeadingZeros64(^element)
+}
+
+// findNextUnsetBit returns position of the closest unset bit with higher index than pos in the given element,
+// or bitsNum if all bits with higher index are set.
+func findNextUnsetBit(element uint64, pos int) int {
+	skipBits := pos + 1
+	if skipBits >= bitsNum {
+		return bitsNum
+	}
+	return skipBits + bits.TrailingZeros64(^(element >> skipBits))
 }
 
 // findPrevUnsetBit returns position of the closest unset bit with lower index than pos in the given element,
