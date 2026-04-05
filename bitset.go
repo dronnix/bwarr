@@ -96,12 +96,10 @@ func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
 	return &LayeredBitSet{layers: layersCopy, setNum: s.setNum}
 }
 
-func (s *LayeredBitSet) Reset() { // TODO: Optimize it - use some memset equivalent for uint64 slices;
+func (s *LayeredBitSet) Reset() {
 	s.setNum = 0
 	for _, layer := range s.layers {
-		for i := range layer {
-			layer[i] = 0
-		}
+		clear(layer)
 	}
 }
 

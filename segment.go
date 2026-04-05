@@ -80,7 +80,7 @@ func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], high
 
 	// Sub-slice so the compiler can prove loop indices are in bounds (BCE).
 	highElems := highSeg.elements[:highSegEnd]
-	highDel := highSeg.deleted[:highSegEnd] // TODO: Use RestFrom here
+	highDel := highSeg.deleted[:highSegEnd] // TODO: Use ResetFrom here
 	lowElems := lowSeg.elements[:lowSegEnd]
 	lowDel := lowSeg.deleted[:lowSegEnd]
 
@@ -89,12 +89,12 @@ func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], high
 	for highSegReadIdx < len(highElems) && lowSegReadIdx < len(lowElems) {
 		cmpResult := cmp(highElems[highSegReadIdx], lowElems[lowSegReadIdx])
 		if (cmpResult < 0) || (cmpResult == 0 && !highDel[highSegReadIdx]) {
-			highElems[highSegWriteIdx] = highElems[highSegReadIdx] // TODO: Use RestFrom before copying, and SetIfTrue here.
+			highElems[highSegWriteIdx] = highElems[highSegReadIdx] // TODO: Use ResetFrom before copying, and SetIfTrue here.
 			highDel[highSegWriteIdx] = highDel[highSegReadIdx]
 			highSegReadIdx++
 		} else {
 			highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
-			highDel[highSegWriteIdx] = lowDel[lowSegReadIdx] // TODO: Use RestFrom before copying, and SetIfTrue here.
+			highDel[highSegWriteIdx] = lowDel[lowSegReadIdx] // TODO: Use ResetFrom before copying, and SetIfTrue here.
 			lowSegReadIdx++
 		}
 		highSegWriteIdx++
@@ -117,7 +117,7 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 
 	// Sub-slice so the compiler can prove loop indices are in bounds (BCE).
 	highElems := highSeg.elements[:highSegEnd]
-	highDel := highSeg.deleted[:highSegEnd] // TODO: Use RestFrom before copying
+	highDel := highSeg.deleted[:highSegEnd] // TODO: Use ResetFrom before copying
 	lowElems := lowSeg.elements[:lowSegEnd]
 	lowDel := lowSeg.deleted[:lowSegEnd]
 
@@ -129,12 +129,12 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 		if (cmpResult > 0) || (cmpResult == 0 && !lowDel[lowSegReadIdx]) {
 			highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
 			del = lowDel[lowSegReadIdx]
-			highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfTrue here.
+			highDel[highSegWriteIdx] = del // TODO: Use ResetFrom before copying, and SetIfTrue here.
 			lowSegReadIdx++
 		} else {
 			highElems[highSegWriteIdx] = highElems[highSegReadIdx]
 			del = highDel[highSegReadIdx]
-			highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfTrue here.
+			highDel[highSegWriteIdx] = del // TODO: Use ResetFrom before copying, and SetIfTrue here.
 			highSegReadIdx++
 		}
 		if !del { // TODO remove after switching LayeredBitSet
@@ -147,7 +147,7 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 	for highSegReadIdx < len(highElems) {
 		highElems[highSegWriteIdx] = highElems[highSegReadIdx]
 		del := highDel[highSegReadIdx]
-		highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfTrue here.
+		highDel[highSegWriteIdx] = del // TODO: Use ResetFrom before copying, and SetIfTrue here.
 		if !del {                      // TODO remove after switching LayeredBitSet
 			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
 			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
@@ -158,7 +158,7 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 	for lowSegReadIdx < len(lowElems) {
 		highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
 		del := lowDel[lowSegReadIdx]
-		highDel[highSegWriteIdx] = del // TODO: Use RestFrom before copying, and SetIfTrue here.
+		highDel[highSegWriteIdx] = del // TODO: Use ResetFrom before copying, and SetIfTrue here.
 		if !del {                      // TODO remove after switching LayeredBitSet
 			highSeg.maxNonDeletedIdx = max(highSeg.maxNonDeletedIdx, highSegWriteIdx)
 			highSeg.minNonDeletedIdx = min(highSeg.minNonDeletedIdx, highSegWriteIdx)
@@ -176,10 +176,10 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 			continue
 		}
 		to.elements[w] = from.elements[r]
-		to.deleted[w] = false // TODO: replace with deleted.Reset() when needed!
 		w++
 	}
 	to.deletedNum = 0 // Since demoteSegment is called only when we have exact len(to.elements) undeleted elements in from.
+	clear(to.deleted) // TODO: replace with deleted.Reset()
 	to.minNonDeletedIdx, to.maxNonDeletedIdx = 0, len(to.elements)-1
 }
 

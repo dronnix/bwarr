@@ -874,6 +874,17 @@ func Benchmark_Unset(b *testing.B) {
 	})
 }
 
+func Benchmark_Reset(b *testing.B) {
+	b.Run("basic", func(b *testing.B) {
+		bs := NewLayeredBitSet(size)
+
+		b.ResetTimer()
+		for range b.N {
+			bs.Reset()
+		}
+	})
+}
+
 var benchBoolResult bool //nolint:gochecknoglobals // prevent compiler optimization
 
 func Benchmark_Get(b *testing.B) {
