@@ -283,6 +283,231 @@ func TestLayeredBitSet_Reset(t *testing.T) {
 	assert.True(t, bs.Get(42))
 }
 
+func TestLayeredBitSet_ResetFrom(t *testing.T) {
+	t.Parallel()
+
+	t.Run("mid element boundary", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		for i := range 256 {
+			bs.Set(i)
+		}
+		bs.ResetFrom(100)
+		for i := range 256 {
+			if i < 100 {
+				assert.True(t, bs.Get(i), "bit %d should remain set", i)
+			} else {
+				assert.False(t, bs.Get(i), "bit %d should be cleared", i)
+			}
+		}
+	})
+
+	t.Run("element aligned boundary", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		for i := range 256 {
+			bs.Set(i)
+		}
+		bs.ResetFrom(64)
+		for i := range 256 {
+			if i < 64 {
+				assert.True(t, bs.Get(i), "bit %d should remain set", i)
+			} else {
+				assert.False(t, bs.Get(i), "bit %d should be cleared", i)
+			}
+		}
+	})
+
+	t.Run("from zero is equivalent to Reset", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		for i := range 256 {
+			bs.Set(i)
+		}
+		bs.ResetFrom(0)
+		for i, layer := range bs.layers {
+			for j, val := range layer {
+				assert.Zerof(t, val, "layer[%d][%d] should be zero", i, j)
+			}
+		}
+	})
+
+	t.Run("clears summary layers", func(t *testing.T) {
+		t.Parallel()
+		// 3 layers: [4096][64][1]
+		bs := NewLayeredBitSet(262144)
+		for i := range 4096 {
+			bs.Set(i)
+		}
+		require.Equal(t, allSet, bs.layers[1][0])
+		require.Equal(t, uint64(1), bs.layers[2][0])
+
+		bs.ResetFrom(64) // clear bits 64+
+		assert.Equal(t, allSet, bs.layers[0][0], "element 0 untouched")
+		assert.Equal(t, uint64(1), bs.layers[1][0], "layer 1 bit 0 still set")
+		assert.Equal(t, uint64(0), bs.layers[2][0], "layer 2 cleared")
+		for i := 1; i < len(bs.layers[0]); i++ {
+			assert.Zerof(t, bs.layers[0][i], "layer[0][%d] should be zero", i)
+		}
+	})
+
+	t.Run("Set works after ResetFrom", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		for i := range 256 {
+			bs.Set(i)
+		}
+		bs.ResetFrom(50)
+		bs.Set(100)
+		assert.True(t, bs.Get(100))
+		assert.False(t, bs.Get(50))
+	})
+
+	t.Run("from last bit", func(t *testing.T) {
+		t.Parallel()
+		bs := NewLayeredBitSet(256)
+		for i := range 256 {
+			bs.Set(i)
+		}
+		bs.ResetFrom(255)
+		for i := range 255 {
+			assert.True(t, bs.Get(i), "bit %d should remain set", i)
+		}
+		assert.False(t, bs.Get(255))
+	})
+}
+
+func TestLayeredBitSet_CopyFrom(t *testing.T) {
+	t.Parallel()
+
+	t.Run("mid element boundary", func(t *testing.T) {
+		t.Parallel()
+		dst := NewLayeredBitSet(256)
+		src := NewLayeredBitSet(256)
+		for i := range 256 {
+			src.Set(i)
+		}
+		dst.CopyFrom(src, 100)
+		for i := range 256 {
+			if i < 100 {
+				assert.False(t, dst.Get(i), "bit %d should remain unset", i)
+			} else {
+				assert.True(t, dst.Get(i), "bit %d should be copied", i)
+			}
+		}
+	})
+
+	t.Run("element aligned boundary", func(t *testing.T) {
+		t.Parallel()
+		dst := NewLayeredBitSet(256)
+		src := NewLayeredBitSet(256)
+		for i := range 256 {
+			src.Set(i)
+		}
+		dst.CopyFrom(src, 64)
+		for i := range 256 {
+			if i < 64 {
+				assert.False(t, dst.Get(i), "bit %d should remain unset", i)
+			} else {
+				assert.True(t, dst.Get(i), "bit %d should be copied", i)
+			}
+		}
+	})
+
+	t.Run("from zero copies everything", func(t *testing.T) {
+		t.Parallel()
+		dst := NewLayeredBitSet(256)
+		src := NewLayeredBitSet(256)
+		for i := 0; i < 256; i += 2 {
+			src.Set(i)
+		}
+		dst.CopyFrom(src, 0)
+		for i := range 256 {
+			assert.Equal(t, src.Get(i), dst.Get(i), "bit %d", i)
+		}
+	})
+
+	t.Run("preserves dst bits below idx", func(t *testing.T) {
+		t.Parallel()
+		dst := NewLayeredBitSet(256)
+		src := NewLayeredBitSet(256)
+		for i := range 256 {
+			dst.Set(i)
+		}
+		// src is empty — copying from 128 should clear bits 128+, keep 0-127
+		dst.CopyFrom(src, 128)
+		for i := range 256 {
+			if i < 128 {
+				assert.True(t, dst.Get(i), "bit %d should be preserved", i)
+			} else {
+				assert.False(t, dst.Get(i), "bit %d should be cleared", i)
+			}
+		}
+	})
+
+	t.Run("merge creates allSet element", func(t *testing.T) {
+		t.Parallel()
+		// dst has low bits, src has high bits — merge produces allSet
+		dst := NewLayeredBitSet(4096)
+		src := NewLayeredBitSet(4096)
+		for i := range 32 {
+			dst.Set(i) // bits 0-31 of element 0
+		}
+		for i := 32; i < 64; i++ {
+			src.Set(i) // bits 32-63 of element 0
+		}
+		dst.CopyFrom(src, 32)
+		assert.Equal(t, allSet, dst.layers[0][0], "merged element should be allSet")
+		assert.Equal(t, uint64(1), dst.layers[1][0], "summary bit should propagate")
+	})
+
+	t.Run("merge breaks allSet element", func(t *testing.T) {
+		t.Parallel()
+		// dst fully set, src empty — merge at mid-element breaks allSet
+		dst := NewLayeredBitSet(4096)
+		for i := range 4096 {
+			dst.Set(i)
+		}
+		src := NewLayeredBitSet(4096)
+		dst.CopyFrom(src, 32)
+		assert.NotEqual(t, allSet, dst.layers[0][0], "merged element should not be allSet")
+		assert.Equal(t, uint64(0), dst.layers[1][0], "summary bit should be cleared")
+	})
+
+	t.Run("summary layers correct with 3 layers", func(t *testing.T) {
+		t.Parallel()
+		// 3 layers: [4096][64][1]
+		dst := NewLayeredBitSet(262144)
+		src := NewLayeredBitSet(262144)
+		for i := range 262144 {
+			dst.Set(i)
+		}
+		// Copy empty src from bit 64 — clears everything except element 0
+		dst.CopyFrom(src, 64)
+		assert.Equal(t, allSet, dst.layers[0][0], "element 0 preserved")
+		assert.Equal(t, uint64(1), dst.layers[1][0], "layer 1 bit 0 still set")
+		assert.Equal(t, uint64(0), dst.layers[2][0], "layer 2 cleared")
+	})
+
+	t.Run("FindPrevUnsetBit works after CopyFrom", func(t *testing.T) {
+		t.Parallel()
+		dst := NewLayeredBitSet(4096)
+		src := NewLayeredBitSet(4096)
+		// dst: bits 1-127 set, bit 0 unset
+		for i := 1; i < 128; i++ {
+			dst.Set(i)
+		}
+		// src: all bits 128-4095 set
+		for i := 128; i < 4096; i++ {
+			src.Set(i)
+		}
+		dst.CopyFrom(src, 128)
+		// Now bits 1-4095 set, bit 0 unset
+		got := dst.FindPrevUnsetBit(4095)
+		assert.Equal(t, 0, got)
+	})
+}
+
 func Test_findPrevUnsetBit(t *testing.T) {
 	t.Parallel()
 
@@ -790,6 +1015,63 @@ func Benchmark_Reset(b *testing.B) {
 		b.ResetTimer()
 		for range b.N {
 			bs.Reset()
+		}
+	})
+}
+
+func Benchmark_ResetFrom(b *testing.B) {
+	b.Run("from_zero", func(b *testing.B) {
+		bs := NewLayeredBitSet(size)
+
+		b.ResetTimer()
+		for range b.N {
+			bs.ResetFrom(0)
+		}
+	})
+
+	b.Run("from_half", func(b *testing.B) {
+		bs := NewLayeredBitSet(size)
+
+		b.ResetTimer()
+		for range b.N {
+			bs.ResetFrom(size / 2)
+		}
+	})
+
+	b.Run("from_last_element", func(b *testing.B) {
+		bs := NewLayeredBitSet(size)
+
+		b.ResetTimer()
+		for range b.N {
+			bs.ResetFrom(size - bitsNum)
+		}
+	})
+}
+
+func Benchmark_CopyFrom(b *testing.B) {
+	b.Run("almost_full", func(b *testing.B) {
+		dst := NewLayeredBitSet(size)
+		src := NewLayeredBitSet(size)
+		for i := range size {
+			src.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			dst.CopyFrom(src, 1)
+		}
+	})
+
+	b.Run("mid_copy", func(b *testing.B) {
+		dst := NewLayeredBitSet(size)
+		src := NewLayeredBitSet(size)
+		for i := range size {
+			src.Set(i)
+		}
+
+		b.ResetTimer()
+		for range b.N {
+			dst.CopyFrom(src, size/2)
 		}
 	})
 }
