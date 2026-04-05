@@ -89,8 +89,8 @@ func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], high
 	for highSegReadIdx < len(highElems) && lowSegReadIdx < len(lowElems) {
 		cmpResult := cmp(highElems[highSegReadIdx], lowElems[lowSegReadIdx])
 		if (cmpResult < 0) || (cmpResult == 0 && !highDel[highSegReadIdx]) {
-			highElems[highSegWriteIdx] = highElems[highSegReadIdx] // TODO: Use ResetFrom before copying, and SetIfTrue here.
-			highDel[highSegWriteIdx] = highDel[highSegReadIdx]
+			highElems[highSegWriteIdx] = highElems[highSegReadIdx]
+			highDel[highSegWriteIdx] = highDel[highSegReadIdx] // TODO: Use ResetFrom before copying, and SetIfTrue here.
 			highSegReadIdx++
 		} else {
 			highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
