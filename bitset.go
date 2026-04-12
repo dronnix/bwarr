@@ -10,8 +10,10 @@ import (
 // Layer I is a bitset where each bit represents whether the corresponding 64 bits in layer I-1 are all set.
 // This way, we can quickly skip over large blocks of deleted elements.
 type LayeredBitSet struct {
-	layers [][]uint64
-	size   int // logical number of bits; Find methods constrain results to [0, size)
+	layers     [][]uint64
+	size       int // logical number of bits; Find methods constrain results to [0, size)
+	firstUnset int
+	lastUnset  int
 }
 
 const bitsNum = 64
@@ -31,13 +33,14 @@ func NewLayeredBitSet(size int) *LayeredBitSet {
 		bitsPerElement *= bitsNum
 	}
 
-	return &LayeredBitSet{layers: layers, size: size}
+	return &LayeredBitSet{layers: layers, size: size, firstUnset: 0, lastUnset: size - 1}
 }
 
 func (s *LayeredBitSet) Set(idx int) {
 	if s.Get(idx) {
 		return
 	}
+	origIdx := idx
 	for _, layer := range s.layers {
 		elementIdx := idx >> intDiv64
 		bitIdx := idx & reminder64
@@ -46,6 +49,12 @@ func (s *LayeredBitSet) Set(idx int) {
 			break
 		}
 		idx = elementIdx
+	}
+	if s.firstUnset == origIdx {
+		s.firstUnset = s.findFirstUnsetBit()
+	}
+	if s.lastUnset == origIdx {
+		s.lastUnset = s.findLastUnsetBit()
 	}
 }
 
@@ -61,6 +70,7 @@ func (s *LayeredBitSet) Unset(idx int) {
 	if !s.Get(idx) {
 		return
 	}
+	origIdx := idx
 	for _, layer := range s.layers {
 		elementIdx := idx >> intDiv64
 		wasAllSet := layer[elementIdx] == allSet
@@ -69,6 +79,12 @@ func (s *LayeredBitSet) Unset(idx int) {
 			break
 		}
 		idx = elementIdx
+	}
+	if origIdx < s.firstUnset || s.firstUnset < 0 {
+		s.firstUnset = origIdx
+	}
+	if origIdx > s.lastUnset {
+		s.lastUnset = origIdx
 	}
 }
 
@@ -87,22 +103,31 @@ func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
 		copy(layerCopy, layer)
 		layersCopy[i] = layerCopy
 	}
-	return &LayeredBitSet{layers: layersCopy, size: s.size}
+	return &LayeredBitSet{layers: layersCopy, size: s.size, firstUnset: s.firstUnset, lastUnset: s.lastUnset}
 }
 
 func (s *LayeredBitSet) Reset() {
 	for _, layer := range s.layers {
 		clear(layer)
 	}
+	s.firstUnset = 0
+	s.lastUnset = s.size - 1
 }
 
 // ResetFrom resets bits with index greater or equal to idx
 func (s *LayeredBitSet) ResetFrom(idx int) {
+	origIdx := idx
 	for _, layer := range s.layers {
 		elementIdx := idx >> intDiv64
 		layer[elementIdx] &= (uint64(1) << (idx & reminder64)) - 1
 		clear(layer[elementIdx+1:])
 		idx >>= intDiv64
+	}
+	if origIdx < s.size {
+		if s.firstUnset < 0 || origIdx < s.firstUnset {
+			s.firstUnset = origIdx
+		}
+		s.lastUnset = s.size - 1
 	}
 }
 
@@ -186,11 +211,19 @@ func (s *LayeredBitSet) FindNextUnsetBit(idx int) int {
 }
 
 func (s *LayeredBitSet) FindFirstUnsetBit() int {
+	return s.firstUnset
+}
+
+func (s *LayeredBitSet) FindLastUnsetBit() int {
+	return s.lastUnset
+}
+
+func (s *LayeredBitSet) findFirstUnsetBit() int {
 	// Use top-bottom approach, optimized for tail deletions:
 	elemIdx := 0
 	for l := len(s.layers) - 1; l >= 0; l-- {
 		if elemIdx >= len(s.layers[l]) {
-			return -1 // phantom bit in summary layer — beyond actual data
+			return -1 // summary layer points beyond actual data
 		}
 		bitIndex := findFirstUnsetBit(s.layers[l][elemIdx])
 		if bitIndex >= bitsNum {
@@ -204,7 +237,7 @@ func (s *LayeredBitSet) FindFirstUnsetBit() int {
 	return elemIdx
 }
 
-func (s *LayeredBitSet) FindLastUnsetBit() int {
+func (s *LayeredBitSet) findLastUnsetBit() int {
 	last := s.size - 1
 	if !s.Get(last) {
 		return last
