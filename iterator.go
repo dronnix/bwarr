@@ -175,7 +175,7 @@ func createDescIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint
 	return iter
 }
 
-func createDescIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] {
+func createDescIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint:dupl
 	iter := iterator[T]{
 		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
 		cmp:      bwa.cmp,
@@ -190,7 +190,7 @@ func createDescIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] {
 		if idx < 0 {
 			continue
 		}
-		end := bwa.whiteSegments[i].minNonDeletedIdx
+		end := bwa.whiteSegments[i].minNonDeletedIndex()
 		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
 		iter.segIters = append(iter.segIters, &si[i])
 	}

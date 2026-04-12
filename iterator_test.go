@@ -16,8 +16,8 @@ func TestCreateDescIteratorEnd(t *testing.T) {
 	}
 
 	// Mark some elements as deleted
-	bwa.whiteSegments[2].deleted[0] = true // Delete first element of third segment
-	bwa.whiteSegments[2].deleted[3] = true // Delete last element of third segment
+	bwa.whiteSegments[2].deleted.Set(0) // Delete first element of third segment
+	bwa.whiteSegments[2].deleted.Set(3) // Delete last element of third segment
 	bwa.whiteSegments[2].deletedNum += 2
 
 	iter := createDescIteratorEnd(bwa)
@@ -43,8 +43,8 @@ func TestCreateAscIteratorBegin(t *testing.T) {
 	}
 
 	// Mark some elements as deleted
-	bwa.whiteSegments[2].deleted[0] = true // Delete first element of third segment
-	bwa.whiteSegments[2].deleted[3] = true // Delete last element of third segment
+	bwa.whiteSegments[2].deleted.Set(0) // Delete first element of third segment
+	bwa.whiteSegments[2].deleted.Set(3) // Delete last element of third segment
 	bwa.whiteSegments[2].deletedNum += 2
 
 	iter := createAscIteratorBegin(bwa)

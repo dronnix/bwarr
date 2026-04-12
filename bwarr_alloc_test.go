@@ -32,7 +32,7 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 		{
 			name:         "New(testAllocsSize)",
 			bwarr:        New[int64](int64Cmp, testAllocsSize),
-			expectedSize: 471,
+			expectedSize: 360,
 		},
 	}
 
@@ -46,9 +46,9 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 
 func TestBWArr_Allocs_New(t *testing.T) {
 	// Slice of segments - 1, BWArr struct - 1 --> 2;
-	// 4 segments, each contains two slices: elements and deleted flags --> 8;
-	// Total: 2 + 8 = 10;
-	const expectedAllocs = 10
+	// 4 segments, each: elements slice (1) + LayeredBitSet struct (1) + layers slice (1) + layer backing (1) --> 16;
+	// Total: 2 + 16 = 18;
+	const expectedAllocs = 18
 
 	allocs := testing.AllocsPerRun(100, func() {
 		bwarr := New[int64](int64Cmp, testAllocsSize)
@@ -59,10 +59,10 @@ func TestBWArr_Allocs_New(t *testing.T) {
 }
 
 func TestBWArr_Allocs_NewFromSlice(t *testing.T) {
-	const expectedAllocs = 8
+	const expectedAllocs = 14
 	// Slice of segments - 1, BWArr struct - 1 --> 2;
-	// Allocated only occupied segments: 42 = 32 + 8 + 2 --> 3 segments, 6 allocs;
-	// Total: 2 + 6 = 8;
+	// Allocated only occupied segments: 11 = 8 + 2 + 1 --> 3 segments, each 4 allocs --> 12;
+	// Total: 2 + 12 = 14;
 	testSlice := make([]int64, testAllocsSize)
 	for i := range testSlice {
 		testSlice[i] = int64(i)
@@ -278,7 +278,7 @@ func TestBWArr_Allocs_Clone(t *testing.T) {
 		c.Len() // Use the clone to prevent compiler optimizations
 	})
 
-	assert.Equal(t, 8.0, allocs, "Expected 8 memory allocations during Clone") // nolint:testifylint
+	assert.Equal(t, 14.0, allocs, "Expected 14 memory allocations during Clone") // nolint:testifylint
 }
 
 func TestBWArr_Allocs_Len(t *testing.T) {
@@ -517,9 +517,11 @@ func calculateSegmentSize[T any](seg *segment[T]) (size int) {
 	if len(seg.elements) > 0 {
 		size += len(seg.elements) * int(unsafe.Sizeof(seg.elements[0]))
 	}
-	// Add size of deleted slice
-	if len(seg.deleted) > 0 {
-		size += len(seg.deleted) * int(unsafe.Sizeof(seg.deleted[0]))
+	// Add size of deleted LayeredBitSet
+	if seg.deleted != nil {
+		for _, layer := range seg.deleted.layers {
+			size += len(layer) * int(unsafe.Sizeof(uint64(0)))
+		}
 	}
 	return size
 }

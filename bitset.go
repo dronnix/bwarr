@@ -11,6 +11,7 @@ import (
 // This way, we can quickly skip over large blocks of deleted elements.
 type LayeredBitSet struct {
 	layers [][]uint64
+	size   int // logical number of bits; Find methods constrain results to [0, size)
 }
 
 const bitsNum = 64
@@ -30,7 +31,7 @@ func NewLayeredBitSet(size int) *LayeredBitSet {
 		bitsPerElement *= bitsNum
 	}
 
-	return &LayeredBitSet{layers: layers}
+	return &LayeredBitSet{layers: layers, size: size}
 }
 
 func (s *LayeredBitSet) Set(idx int) {
@@ -86,7 +87,7 @@ func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
 		copy(layerCopy, layer)
 		layersCopy[i] = layerCopy
 	}
-	return &LayeredBitSet{layers: layersCopy}
+	return &LayeredBitSet{layers: layersCopy, size: s.size}
 }
 
 func (s *LayeredBitSet) Reset() {
@@ -177,7 +178,11 @@ func (s *LayeredBitSet) FindNextUnsetBit(idx int) int {
 		bitIdx = findFirstUnsetBit(s.layers[l-1][idx])
 	}
 
-	return idx<<intDiv64 + bitIdx
+	result := idx<<intDiv64 + bitIdx
+	if result >= s.size {
+		return -1
+	}
+	return result
 }
 
 func (s *LayeredBitSet) FindFirstUnsetBit() int {
@@ -193,31 +198,18 @@ func (s *LayeredBitSet) FindFirstUnsetBit() int {
 		}
 		elemIdx = elemIdx<<intDiv64 + bitIndex
 	}
+	if elemIdx >= s.size {
+		return -1
+	}
 	return elemIdx
 }
 
 func (s *LayeredBitSet) FindLastUnsetBit() int {
-	elemIdx := 0
-	for l := len(s.layers) - 1; l >= 0; l-- {
-		if elemIdx >= len(s.layers[l]) {
-			return -1
-		}
-		// Constrain search to valid bits: upper layers may have phantom zeros
-		// beyond the actual number of elements in the layer below.
-		lastValidBit := bitsNum
-		if l > 0 {
-			remaining := len(s.layers[l-1]) - elemIdx<<intDiv64
-			if remaining < bitsNum {
-				lastValidBit = remaining
-			}
-		}
-		bitIndex := findPrevUnsetBit(s.layers[l][elemIdx], lastValidBit)
-		if bitIndex < 0 {
-			return -1
-		}
-		elemIdx = elemIdx<<intDiv64 + bitIndex
+	last := s.size - 1
+	if !s.Get(last) {
+		return last
 	}
-	return elemIdx
+	return s.FindPrevUnsetBit(last)
 }
 
 // findFirstUnsetBit returns position of the lowest unset bit in the given element,

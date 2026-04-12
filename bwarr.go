@@ -394,7 +394,7 @@ func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
 		}
 		seg := &bwa.whiteSegments[i]
 		for j := range seg.elements {
-			if seg.deleted[j] {
+			if seg.deleted.Get(j) {
 				continue
 			}
 			if !iterator(seg.elements[j]) {
@@ -419,15 +419,8 @@ func (bwa *BWArr[T]) Compact() {
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	seg := &bwa.whiteSegments[segNum]
 	deleted = seg.elements[index]
-	seg.deleted[index] = true
+	seg.deleted.Set(index)
 	seg.deletedNum++
-
-	if index == seg.minNonDeletedIdx {
-		seg.minNonDeletedIdx++
-	}
-	if index == seg.maxNonDeletedIdx {
-		seg.maxNonDeletedIdx--
-	}
 
 	segmentCapacity := 1 << segNum
 	halfSegmentCapacity := segmentCapacity >> 1
@@ -436,8 +429,8 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	}
 	if segNum == 0 {
 		bwa.total--
-		seg.deletedNum, seg.minNonDeletedIdx, seg.maxNonDeletedIdx = 0, 0, len(seg.elements)-1
-		seg.deleted[0] = false
+		seg.deletedNum = 0
+		seg.deleted.Reset()
 		return deleted
 	}
 	if halfSegmentCapacity&bwa.total == 0 {

@@ -1279,7 +1279,7 @@ func TestBWArr_DeleteAutoCompact(t *testing.T) {
 	assert.Len(t, testArray.whiteSegments[0].elements, 1)
 	// Segment with rank 1 is deleted
 	assert.Empty(t, testArray.whiteSegments[1].elements)
-	assert.Empty(t, testArray.whiteSegments[1].deleted)
+	assert.Nil(t, testArray.whiteSegments[1].deleted)
 }
 
 func TestBWArr_DeleteAutoCompactNoEffect(t *testing.T) {
@@ -1294,7 +1294,7 @@ func TestBWArr_DeleteAutoCompactNoEffect(t *testing.T) {
 	assert.Len(t, testArray.whiteSegments[0].elements, 1)
 	// Segment with rank 1 is preserved
 	assert.Len(t, testArray.whiteSegments[1].elements, 2)
-	assert.Len(t, testArray.whiteSegments[1].deleted, 2)
+	assert.NotNil(t, testArray.whiteSegments[1].deleted)
 }
 
 func int64Cmp(a, b int64) int {
@@ -1396,7 +1396,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 	}
 	for i, seg := range segs {
 		l := len(seg)
-		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), maxNonDeletedIdx: l - 1}
+		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: NewLayeredBitSet(l)}
 	}
 	return &bwa
 }
@@ -1419,7 +1419,7 @@ type bwaIdx struct {
 
 func markDel[T any](bwa *BWArr[T], toDel ...bwaIdx) *BWArr[T] {
 	for i := range toDel {
-		bwa.whiteSegments[toDel[i].segNum].deleted[toDel[i].idx] = true
+		bwa.whiteSegments[toDel[i].segNum].deleted.Set(toDel[i].idx)
 		bwa.whiteSegments[toDel[i].segNum].deletedNum++
 	}
 	return bwa
