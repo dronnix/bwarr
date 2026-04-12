@@ -155,10 +155,7 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 }
 
 func demoteSegment[T any](from segment[T], to *segment[T]) {
-	for r, w := 0, 0; r < len(from.elements); r++ {
-		if from.deleted.Get(r) {
-			continue
-		}
+	for r, w := from.deleted.FindFirstUnsetBit(), 0; r >= 0; r = from.deleted.FindNextUnsetBit(r) {
 		to.elements[w] = from.elements[r]
 		w++
 	}
