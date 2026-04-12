@@ -359,9 +359,13 @@ func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
 			continue
 		}
 		seg := &bwa.whiteSegments[i]
-		for j := range seg.elements {
+		l := len(seg.elements)
+		for j := seg.deleted.FindFirstUnsetBit(); j >= 0 && j < l; j++ {
 			if seg.deleted.Get(j) {
-				continue
+				j = seg.deleted.FindNextUnsetBit(j)
+				if j < 0 {
+					break
+				}
 			}
 			if !iterator(seg.elements[j]) {
 				return
