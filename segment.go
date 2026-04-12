@@ -219,8 +219,12 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 		case cmpRes > 0:
 			b = m + 1
 		default: // elements are equal - follow invariant: deleted elements are to the right (higher index) of non-deleted ones.
-			if s.deleted.Get(m) { // TODO: use FindPrevUnsetBit here
+			if s.deleted.Get(m) {
 				e = m
+				b = s.deleted.FindPrevUnsetBit(m)
+				if b < 0 {
+					return -1
+				}
 			} else {
 				b = m + 1
 			}
@@ -243,10 +247,12 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 
 // returns minimum element index with respect to FIFO constraint: if we have
 // several equal minimum elements, returns the rightmost one.
-func (s *segment[T]) min(cmp CmpFunc[T]) int { // TODO: review and rewrite
-	minIdx := s.minNonDeletedIndex()
-	maxIdx := s.maxNonDeletedIndex()
-	for i := s.deleted.FindNextUnsetBit(minIdx); i >= 0 && i <= maxIdx; i = s.deleted.FindNextUnsetBit(i) {
+func (s *segment[T]) min(cmp CmpFunc[T]) int {
+	minIdx, maxIdx := s.minNonDeletedIndex(), s.maxNonDeletedIndex()
+	for i := minIdx + 1; i <= maxIdx; i++ {
+		if s.deleted.Get(i) { // deleted elements can appear only after non-deleted equal ones;
+			return minIdx
+		}
 		if cmp(s.elements[i], s.elements[minIdx]) != 0 {
 			return minIdx
 		}
@@ -309,20 +315,20 @@ func (s *segment[T]) maxNonDeletedIndex() int {
 	return s.deleted.FindLastUnsetBit()
 }
 
-func (s *segment[T]) nextNonDeletedAfter(index int) int { // TODO: replace with FindLastUnsetBit
-	var idx int
+func (s *segment[T]) nextNonDeletedAfter(index int) int {
+	var r int
 	if index < 0 {
-		idx = s.deleted.FindFirstUnsetBit()
+		r = s.deleted.FindFirstUnsetBit()
 	} else {
-		idx = s.deleted.FindNextUnsetBit(index)
+		r = s.deleted.FindNextUnsetBit(index)
 	}
-	if idx < 0 {
+	if r < 0 {
 		return len(s.elements)
 	}
-	return idx
+	return r
 }
 
-func (s *segment[T]) prevNonDeletedBefore(index int) int { // TODO: replace with FindNextUnsetBit
+func (s *segment[T]) prevNonDeletedBefore(index int) int {
 	if index >= len(s.elements) {
 		return s.deleted.FindLastUnsetBit()
 	}
