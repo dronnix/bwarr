@@ -578,16 +578,40 @@ func TestLayeredBitSet_FindFirstUnsetBit(t *testing.T) {
 			want: 4095,
 		},
 		{
-			name: "non-power-of-2 size, all set — returns first phantom bit",
+			name: "non-power-of-2 size, all set — respects logical size",
 			size: 100,
 			set:  seq(0, 100),
-			want: 100, // caller must bound-check against logical size
+			want: -1, // bits beyond size are excluded from results
 		},
 		{
 			name: "non-power-of-2 size, partial",
 			size: 100,
 			set:  seq(0, 50),
 			want: 50,
+		},
+		{
+			name: "size 1, no bits set — must not return index beyond size",
+			size: 1,
+			set:  nil,
+			want: 0,
+		},
+		{
+			name: "size 1, all set — must return -1, not phantom index",
+			size: 1,
+			set:  []int{0},
+			want: -1,
+		},
+		{
+			name: "size 3, all set — must return -1",
+			size: 3,
+			set:  seq(0, 3),
+			want: -1,
+		},
+		{
+			name: "size 65, all set — crosses element boundary",
+			size: 65,
+			set:  seq(0, 65),
+			want: -1,
 		},
 	}
 
@@ -679,10 +703,34 @@ func TestLayeredBitSet_FindLastUnsetBit(t *testing.T) {
 			want: 262143,
 		},
 		{
-			name: "non-power-of-2 size, partial — returns layer 0 phantom bit",
+			name: "non-power-of-2 size, partial — respects logical size",
 			size: 100,
 			set:  seq(50, 100),
-			want: 127, // caller must bound-check against logical size
+			want: 49, // bits beyond size are excluded from results
+		},
+		{
+			name: "size 1, no bits set — must return 0, not phantom index 63",
+			size: 1,
+			set:  nil,
+			want: 0,
+		},
+		{
+			name: "size 1, all set — must return -1",
+			size: 1,
+			set:  []int{0},
+			want: -1,
+		},
+		{
+			name: "size 3, all set — must return -1",
+			size: 3,
+			set:  seq(0, 3),
+			want: -1,
+		},
+		{
+			name: "size 65, all set — crosses element boundary",
+			size: 65,
+			set:  seq(0, 65),
+			want: -1,
 		},
 	}
 
@@ -972,6 +1020,27 @@ func TestLayeredBitSet_FindPrevUnsetBit(t *testing.T) {
 			idx:  4999,
 			want: 0,
 		},
+		{
+			name: "size 1, bit 0 set, idx 0 — must return -1",
+			size: 1,
+			set:  []int{0},
+			idx:  0,
+			want: -1,
+		},
+		{
+			name: "size 3, all set, idx 2 — must return -1",
+			size: 3,
+			set:  seq(0, 3),
+			idx:  2,
+			want: -1,
+		},
+		{
+			name: "size 100, bits 0-49 set, idx 99 — must return 98, not phantom index",
+			size: 100,
+			set:  seq(0, 50),
+			idx:  99,
+			want: 98,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1174,6 +1243,34 @@ func TestLayeredBitSet_FindNextUnsetBit(t *testing.T) {
 			idx:  0,
 			want: 4999,
 		},
+		{
+			name: "size 1, bit 0 set — must return -1, not phantom index 1",
+			size: 1,
+			set:  []int{0},
+			idx:  0,
+			want: -1,
+		},
+		{
+			name: "size 3, all set — must return -1",
+			size: 3,
+			set:  seq(0, 3),
+			idx:  0,
+			want: -1,
+		},
+		{
+			name: "size 100, all set — must return -1, not phantom index 100",
+			size: 100,
+			set:  seq(0, 100),
+			idx:  0,
+			want: -1,
+		},
+		{
+			name: "size 65, bits 1-64 set — must return -1",
+			size: 65,
+			set:  seq(1, 65),
+			idx:  0,
+			want: -1,
+		},
 	}
 
 	for _, tt := range tests {
@@ -1192,6 +1289,36 @@ func TestLayeredBitSet_FindNextUnsetBit(t *testing.T) {
 			assert.Equal(t, tt.want, got)
 		})
 	}
+}
+
+func TestLayeredBitSet_BoundsAfterReset(t *testing.T) {
+	t.Parallel()
+
+	bs := NewLayeredBitSet(3)
+	bs.Set(0)
+	bs.Set(1)
+	bs.Set(2)
+	assert.Equal(t, -1, bs.FindFirstUnsetBit())
+	assert.Equal(t, -1, bs.FindLastUnsetBit())
+
+	bs.Reset()
+	assert.Equal(t, 0, bs.FindFirstUnsetBit())
+	assert.Equal(t, 2, bs.FindLastUnsetBit())
+	assert.Equal(t, -1, bs.FindNextUnsetBit(2), "must not return index beyond size")
+}
+
+func TestLayeredBitSet_BoundsAfterResetFrom(t *testing.T) {
+	t.Parallel()
+
+	bs := NewLayeredBitSet(3)
+	bs.Set(0)
+	bs.Set(1)
+	bs.Set(2)
+
+	bs.ResetFrom(1)
+	assert.Equal(t, 1, bs.FindFirstUnsetBit())
+	assert.Equal(t, 2, bs.FindLastUnsetBit())
+	assert.Equal(t, -1, bs.FindNextUnsetBit(2), "must not return index beyond size")
 }
 
 // seq returns a slice of ints [from, to).
