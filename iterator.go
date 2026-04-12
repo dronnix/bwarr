@@ -310,6 +310,12 @@ func (iter *iterator[T]) prev() (*T, bool) { //nolint:dupl
 }
 
 func (t *segmentIterator[T]) next() bool {
+	// Fast path: next element is not deleted (common case during iteration).
+	next := t.index + 1
+	if next <= t.end && !t.seg.deleted.Get(next) {
+		t.index = next
+		return true
+	}
 	idx := t.seg.nextNonDeletedAfter(t.index)
 	if idx > t.end {
 		return false
@@ -319,6 +325,12 @@ func (t *segmentIterator[T]) next() bool {
 }
 
 func (t *segmentIterator[T]) prev() bool {
+	// Fast path: previous element is not deleted (common case during iteration).
+	prev := t.index - 1
+	if prev >= t.end && !t.seg.deleted.Get(prev) {
+		t.index = prev
+		return true
+	}
 	idx := t.seg.prevNonDeletedBefore(t.index)
 	if idx < t.end {
 		return false
