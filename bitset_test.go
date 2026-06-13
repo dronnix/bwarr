@@ -1321,6 +1321,201 @@ func TestLayeredBitSet_BoundsAfterResetFrom(t *testing.T) {
 	assert.Equal(t, -1, bs.FindNextUnsetBit(2), "must not return index beyond size")
 }
 
+// bitModel is a brute-force reference bitset used to validate LayeredBitSet operations.
+type bitModel []bool
+
+func (m bitModel) firstUnset() int {
+	for i, set := range m {
+		if !set {
+			return i
+		}
+	}
+	return -1
+}
+
+func (m bitModel) lastUnset() int {
+	for i := len(m) - 1; i >= 0; i-- {
+		if !m[i] {
+			return i
+		}
+	}
+	return -1
+}
+
+// assertMatchesModel checks every bit and every cache/find query against the brute-force model.
+func assertMatchesModel(t *testing.T, bs *LayeredBitSet, m bitModel) {
+	t.Helper()
+	for i := range m {
+		require.Equal(t, m[i], bs.Get(i), "Get(%d)", i)
+	}
+	assert.Equal(t, m.firstUnset(), bs.FindFirstUnsetBit(), "FindFirstUnsetBit")
+	assert.Equal(t, m.lastUnset(), bs.FindLastUnsetBit(), "FindLastUnsetBit")
+	// Spot-check the navigation methods, which depend on the summary layers being correct.
+	for _, idx := range []int{0, len(m) / 3, len(m) / 2, len(m) - 1} {
+		wantNext := -1
+		for j := idx + 1; j < len(m); j++ {
+			if !m[j] {
+				wantNext = j
+				break
+			}
+		}
+		assert.Equal(t, wantNext, bs.FindNextUnsetBit(idx), "FindNextUnsetBit(%d)", idx)
+
+		wantPrev := -1
+		for j := idx - 1; j >= 0; j-- {
+			if !m[j] {
+				wantPrev = j
+				break
+			}
+		}
+		assert.Equal(t, wantPrev, bs.FindPrevUnsetBit(idx), "FindPrevUnsetBit(%d)", idx)
+	}
+}
+
+func TestLayeredBitSet_CopyTailFrom(t *testing.T) {
+	t.Parallel()
+
+	t.Run("word-aligned shift, aligned start", func(t *testing.T) {
+		t.Parallel()
+		// high segment (256) <- low segment (128) relocated to the tail [128, 256).
+		dst := NewLayeredBitSet(256)
+		src := NewLayeredBitSet(128)
+		for i := range 128 { // arbitrary deleted pattern in the low segment
+			if i%5 == 0 || i%7 == 0 {
+				src.Set(i)
+			}
+		}
+		for i := range 256 { // pre-existing dst bits, including in the soon-overwritten tail
+			if i%3 == 0 {
+				dst.Set(i)
+			}
+		}
+		want := make(bitModel, 256)
+		for i := range 256 {
+			if i < 128 {
+				want[i] = i%3 == 0 // preserved
+			} else {
+				want[i] = src.Get(i - 128) // relocated from low[0:128]
+			}
+		}
+		dst.CopyTailFrom(128, src, 0) // srcStart 0, dstStart 128, shift 128 (word aligned)
+		assertMatchesModel(t, dst, want)
+	})
+
+	t.Run("word-aligned shift, mid-word start", func(t *testing.T) {
+		t.Parallel()
+		// Emulates a partially consumed low run: srcStart and dstStart share intra-word offset.
+		dst := NewLayeredBitSet(256)
+		src := NewLayeredBitSet(128)
+		for i := range 128 {
+			if i%2 == 0 {
+				src.Set(i)
+			}
+		}
+		for i := range 256 {
+			dst.Set(i) // start fully set to prove the tail gets correctly cleared/copied
+		}
+		const srcStart, dstStart = 70, 198 // 70&63 == 198&63 == 6, shift 128
+		count := 256 - dstStart
+		require.Equal(t, 128-srcStart, count)
+		want := make(bitModel, 256)
+		for i := range 256 {
+			if i < dstStart {
+				want[i] = true
+			} else {
+				want[i] = src.Get(srcStart + (i - dstStart))
+			}
+		}
+		dst.CopyTailFrom(dstStart, src, srcStart)
+		assertMatchesModel(t, dst, want)
+	})
+
+	t.Run("unaligned shift falls back correctly", func(t *testing.T) {
+		t.Parallel()
+		// shift = 96 is not a multiple of 64 -> per-bit fallback path.
+		dst := NewLayeredBitSet(192)
+		src := NewLayeredBitSet(128)
+		for i := range 128 {
+			if i%4 == 0 {
+				src.Set(i)
+			}
+		}
+		for i := range 192 {
+			dst.Set(i)
+		}
+		const srcStart, dstStart = 32, 128 // shift 96, not word aligned
+		want := make(bitModel, 192)
+		for i := range 192 {
+			if i < dstStart {
+				want[i] = true
+			} else {
+				want[i] = src.Get(srcStart + (i - dstStart))
+			}
+		}
+		dst.CopyTailFrom(dstStart, src, srcStart)
+		assertMatchesModel(t, dst, want)
+	})
+
+	t.Run("three layers, propagates allSet", func(t *testing.T) {
+		t.Parallel()
+		// 3-layer sizes: dst 524288 (2^19), src 262144 (2^18); shift 262144 word aligned.
+		dst := NewLayeredBitSet(1 << 19)
+		src := NewLayeredBitSet(1 << 18)
+		for i := range 1 << 18 {
+			src.Set(i) // entire low segment deleted -> tail must become fully set
+		}
+		dst.CopyTailFrom(1<<18, src, 0)
+		for i := 1 << 18; i < 1<<19; i++ {
+			require.True(t, dst.Get(i), "bit %d", i)
+		}
+		assert.Equal(t, 0, dst.FindFirstUnsetBit())
+		assert.Equal(t, (1<<18)-1, dst.FindLastUnsetBit(), "last unset is just below the all-set tail")
+	})
+
+	t.Run("randomized against brute-force model", func(t *testing.T) {
+		t.Parallel()
+		rng := rand.New(rand.NewSource(42)) //nolint:gosec
+		// rank pairs (lowRank, highRank=lowRank+1) covering 2- and 3-layer sizes.
+		for _, lowRank := range []int{7, 8, 10, 13, 18} {
+			lowSize := 1 << lowRank
+			highSize := 1 << (lowRank + 1)
+			for density := 0; density < 100; density += 23 {
+				src := NewLayeredBitSet(lowSize)
+				srcModel := make(bitModel, lowSize)
+				for i := range lowSize {
+					if rng.Intn(100) < density {
+						src.Set(i)
+						srcModel[i] = true
+					}
+				}
+				// Pick srcStart, then dstStart so the two suffixes have equal length and a
+				// word-aligned relocation shift (the invariant the segment merge guarantees).
+				srcStart := rng.Intn(lowSize)
+				count := lowSize - srcStart
+				dstStart := highSize - count
+				if (dstStart-srcStart)&reminder64 != 0 {
+					continue // keep only word-aligned shifts for the fast-path scenario
+				}
+
+				dst := NewLayeredBitSet(highSize)
+				want := make(bitModel, highSize)
+				for i := range highSize {
+					if rng.Intn(2) == 0 {
+						dst.Set(i)
+						want[i] = true
+					}
+				}
+				for k := range count { // expected result after the relocation
+					want[dstStart+k] = srcModel[srcStart+k]
+				}
+
+				dst.CopyTailFrom(dstStart, src, srcStart)
+				assertMatchesModel(t, dst, want)
+			}
+		}
+	})
+}
+
 // seq returns a slice of ints [from, to).
 func seq(from, to int) []int {
 	s := make([]int, 0, to-from)

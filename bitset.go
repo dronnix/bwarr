@@ -154,6 +154,42 @@ func (s *LayeredBitSet) CopyFrom(from *LayeredBitSet, idx int) {
 	}
 }
 
+// CopyTailFrom overwrites s's suffix [dstStart, s.size) with src's suffix [srcStart, src.size),
+// preserving s's bits below dstStart. The two suffixes must have equal length
+// (s.size-dstStart == src.size-srcStart). Unlike CopyFrom, the bits are relocated: src bit
+// srcStart+k lands at s bit dstStart+k, so a nonzero shift dstStart-srcStart is supported.
+// Summary layers and the firstUnset/lastUnset cache are updated.
+//
+// The fast path is a word-level layer-0 copy and runs when the two starts share the same
+// intra-word offset and both sizes are whole words; this is the common segment-merge case
+// (the relocation distance is a power of two >= 64). Otherwise it falls back to a per-bit copy.
+func (s *LayeredBitSet) CopyTailFrom(dstStart int, src *LayeredBitSet, srcStart int) {
+	wordAligned := dstStart&reminder64 == srcStart&reminder64 &&
+		s.size&reminder64 == 0 && src.size&reminder64 == 0
+	if !wordAligned {
+		for d, srcIdx := dstStart, srcStart; d < s.size; d, srcIdx = d+1, srcIdx+1 {
+			if src.Get(srcIdx) {
+				s.Set(d)
+			} else {
+				s.Unset(d)
+			}
+		}
+		return
+	}
+
+	sw, dw := srcStart>>intDiv64, dstStart>>intDiv64
+	if so := srcStart & reminder64; so == 0 {
+		copy(s.layers[0][dw:], src.layers[0][sw:])
+	} else {
+		highMask := ^((uint64(1) << so) - 1) // bits [so, 64)
+		s.layers[0][dw] = (s.layers[0][dw] &^ highMask) | (src.layers[0][sw] & highMask)
+		copy(s.layers[0][dw+1:], src.layers[0][sw+1:])
+	}
+	s.rebuildSummaryFrom(dstStart)
+	s.firstUnset = s.findFirstUnsetBit()
+	s.lastUnset = s.findLastUnsetBit()
+}
+
 // FindPrevUnsetBit returns the index of the closest unset bit with lower index  or -1 if all bits are set.
 func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
 	// The algorithm is optimized to work faster with small series of unset bits, which is the common case for BWArr deleted elements.
@@ -243,6 +279,24 @@ func (s *LayeredBitSet) findLastUnsetBit() int {
 		return last
 	}
 	return s.FindPrevUnsetBit(last)
+}
+
+// rebuildSummaryFrom recomputes summary-layer bits for every layer-0 word at or above the word
+// containing idx, propagating the result upward through all layers. Layer 0 must already hold the
+// final bits. Summary bits covering words below idx's word are left untouched.
+func (s *LayeredBitSet) rebuildSummaryFrom(idx int) {
+	for l := 1; l < len(s.layers); l++ {
+		lower, cur := s.layers[l-1], s.layers[l]
+		for w := idx >> intDiv64; w < len(lower); w++ {
+			cw, bit := w>>intDiv64, w&reminder64
+			if lower[w] == allSet {
+				cur[cw] |= 1 << bit
+			} else {
+				cur[cw] &^= 1 << bit
+			}
+		}
+		idx >>= intDiv64
+	}
 }
 
 // findFirstUnsetBit returns position of the lowest unset bit in the given element,

@@ -65,7 +65,7 @@ func mergeSegmentsClean[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], high
 }
 
 // mergeSegmentsDirty is the slow path for merging segments that have deleted elements.
-func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) {
+func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) { //nolint:dupl
 	lowSegEnd := len(lowSeg.elements)
 	highSegWriteIdx := highSegReadIdx - lowSegEnd
 	highSegEnd := highSegReadIdx + lowSegEnd
@@ -92,18 +92,15 @@ func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], high
 		highSegWriteIdx++
 	}
 
-	// TODO: Use copy and CopyFrom here.
-	for highSegReadIdx < highSegEnd {
-		highElems[highSegWriteIdx] = highElems[highSegReadIdx]
-		setOrUnset(highSeg.deleted, highSegWriteIdx, highSeg.deleted.Get(highSegReadIdx))
-		highSegWriteIdx++
-		highSegReadIdx++
-	}
-	for lowSegReadIdx < lowSegEnd {
-		highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
-		setOrUnset(highSeg.deleted, highSegWriteIdx, lowSeg.deleted.Get(lowSegReadIdx))
-		highSegWriteIdx++
-		lowSegReadIdx++
+	// Copy the leftover run with copy() (memmove). Exactly one remainder is non-empty.
+	// When the low run is exhausted, write == read, so the high remainder is a self-copy and
+	// its deleted bits are already correct in place — nothing to do for the bitset.
+	// When the high run is exhausted, the low remainder is relocated to the segment tail; its
+	// deleted bits are bulk-copied (with the relocation shift) by CopyTailFrom.
+	copy(highElems[highSegWriteIdx:], highElems[highSegReadIdx:highSegEnd])
+	copy(highElems[highSegWriteIdx:], lowElems[lowSegReadIdx:lowSegEnd])
+	if lowSegReadIdx < lowSegEnd {
+		highSeg.deleted.CopyTailFrom(highSegWriteIdx, lowSeg.deleted, lowSegReadIdx)
 	}
 
 	highSeg.deletedNum += lowSeg.deletedNum
@@ -111,7 +108,7 @@ func mergeSegmentsDirty[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], high
 
 // Merge lowSeg and highSeg into highSeg using highSeg free space at the beginning.
 // Preserve FIFO order for deleting.
-func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) {
+func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], highSegReadIdx int) { //nolint:dupl
 	lowSegEnd := len(lowSeg.elements)
 	highSegWriteIdx := highSegReadIdx - lowSegEnd
 	highSegEnd := highSegReadIdx + lowSegEnd
@@ -138,17 +135,12 @@ func mergeSegmentsForDel[T any](lowSeg, highSeg *segment[T], cmp CmpFunc[T], hig
 		highSegWriteIdx++
 	}
 
-	for highSegReadIdx < len(highElems) {
-		highElems[highSegWriteIdx] = highElems[highSegReadIdx]
-		setOrUnset(highSeg.deleted, highSegWriteIdx, highSeg.deleted.Get(highSegReadIdx))
-		highSegWriteIdx++
-		highSegReadIdx++
-	}
-	for lowSegReadIdx < len(lowElems) {
-		highElems[highSegWriteIdx] = lowElems[lowSegReadIdx]
-		setOrUnset(highSeg.deleted, highSegWriteIdx, lowSeg.deleted.Get(lowSegReadIdx))
-		highSegWriteIdx++
-		lowSegReadIdx++
+	// Copy the leftover run with copy() (memmove); see mergeSegmentsDirty for why only the
+	// relocated low remainder needs its deleted bits rewritten.
+	copy(highElems[highSegWriteIdx:], highElems[highSegReadIdx:highSegEnd])
+	copy(highElems[highSegWriteIdx:], lowElems[lowSegReadIdx:lowSegEnd])
+	if lowSegReadIdx < lowSegEnd {
+		highSeg.deleted.CopyTailFrom(highSegWriteIdx, lowSeg.deleted, lowSegReadIdx)
 	}
 
 	highSeg.deletedNum += lowSeg.deletedNum
