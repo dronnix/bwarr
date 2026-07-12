@@ -28,6 +28,9 @@ Dynamic Data Sets](https://arxiv.org/abs/2004.09051). This repository contains t
 - When deleting long series of elements, a `Max()/Min()` operation can take $O(N/4)$. Amortized complexity for series of calls remains $O(\log N)$.
 - When deleting long series of elements, iteration step can take $O(N/4)$. Amortized complexity for iteration over the whole collection remains $O(\log N)$ per element.
 
+### Use-case
+In-memory collections with read-write ratio 1:1 < r:w < 10:1. BWArr is optimized for heavy insertions and deletions (with low allocations and fragmentation), while still providing fast search and iteration.
+
 ###  Benchmarks
 
 Benchmarks in comparison with [Google BTree](https://github.com/google/btree).
@@ -80,6 +83,7 @@ import "github.com/dronnix/bwarr"
 package main
 
 import (
+    "cmp"
     "fmt"
 
     "github.com/dronnix/bwarr"
@@ -89,7 +93,7 @@ func main() {
     // Create a BWArr with an integer comparison function
     // The second parameter (10) is the initial capacity hint
     bwa := bwarr.New(func(a, b int64) int {
-        return int(a - b)
+        return cmp.Compare(a, b)
     }, 10)
 
     // Insert elements

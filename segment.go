@@ -182,6 +182,14 @@ func demoteSegment[T any](from segment[T], to *segment[T]) {
 	to.minNonDeletedIdx, to.maxNonDeletedIdx = 0, len(to.elements)-1
 }
 
+// resetDeleted drops all deleted marks, making every element count as live.
+func (s *segment[T]) resetDeleted() {
+	clear(s.deleted)
+	s.deletedNum = 0
+	s.minNonDeletedIdx = 0
+	s.maxNonDeletedIdx = len(s.elements) - 1
+}
+
 // moveNonDeletedValuesToSegmentEnd moves all non-deleted values to the end of the segment, preserving their order.
 // It is used when a half of the elements in the segment deleted, as preparation for merging with lower segment.
 func moveNonDeletedValuesToSegmentEnd[T any](seg segment[T]) {
