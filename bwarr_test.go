@@ -952,6 +952,24 @@ func TestBWArr_AscendRangeOutOfBounds(t *testing.T) {
 	bwa.AscendRange(from, to, iter)
 }
 
+// The range falls in a gap between a segment's elements: no element of the segment is in [from, to).
+func TestBWArr_AscendRangeInSegmentGap(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	bwa.Insert(3)
+	bwa.Insert(7) // rank1={3,7} straddles [4, 6)
+	bwa.Insert(1) // rank0={1}
+
+	var got []int64
+	iter := func(v int64) bool { got = append(got, v); return true }
+	bwa.AscendRange(4, 6, iter)
+	assert.Empty(t, got, "no elements fall in [4, 6)")
+
+	// Boundary: a single element of the straddling segment in range must still be emitted.
+	bwa.AscendRange(5, 8, iter)
+	assert.Equal(t, []int64{7}, got)
+}
+
 func TestBWArr_Descend(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -1130,6 +1148,24 @@ func TestBWArr_DescendRangeOutOfBounds(t *testing.T) {
 		return true
 	}
 	bwa.DescendRange(from, to, iter)
+}
+
+// The range falls in a gap between a segment's elements: no element of the segment is in [from, to).
+func TestBWArr_DescendRangeInSegmentGap(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	bwa.Insert(3)
+	bwa.Insert(7) // rank1={3,7} straddles [4, 6)
+	bwa.Insert(1) // rank0={1}
+
+	var got []int64
+	iter := func(v int64) bool { got = append(got, v); return true }
+	bwa.DescendRange(4, 6, iter)
+	assert.Empty(t, got, "no elements fall in [4, 6)")
+
+	// Boundary: a single element of the straddling segment in range must still be emitted.
+	bwa.DescendRange(5, 8, iter)
+	assert.Equal(t, []int64{7}, got)
 }
 
 func TestBWArr_AscIteratorsShouldStop(t *testing.T) {
