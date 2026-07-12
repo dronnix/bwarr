@@ -113,6 +113,54 @@ func TestBWArr_Insert(t *testing.T) {
 	}
 }
 
+// A segment deactivated with deleted elements (merged upward, demoted, or retained by Clear)
+// must not leak its stale deleted state when reused as an insert destination.
+func TestBWArr_InsertIntoReactivatedSegment(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	for i := int64(1); i <= 7; i++ {
+		bwa.Insert(i) // total=7: rank2={1,2,3,4}, rank1={5,6}, rank0={7}
+	}
+	// Mark the last element of the rank-2 segment deleted (segment stays active).
+	_, found := bwa.Delete(4)
+	require.True(t, found)
+	// Merge the dirty rank-2 segment upward, deactivating it...
+	bwa.Insert(8)
+	// ...and grow until it is reactivated as the insert destination.
+	for i := int64(9); i <= 12; i++ {
+		bwa.Insert(i)
+	}
+	validateBWArr(t, bwa)
+
+	assert.True(t, bwa.Has(12), "freshly inserted element must be findable")
+	assert.Equal(t, 11, bwa.Len(), "12 inserted, 1 deleted")
+	visited := 0
+	bwa.Ascend(func(int64) bool { visited++; return true })
+	assert.Equal(t, 11, visited, "Ascend must visit all live elements")
+}
+
+func TestBWArr_InsertAfterClearKeepingSegments(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	for i := int64(1); i <= 4; i++ {
+		bwa.Insert(i) // rank2={1,2,3,4}
+	}
+	// The retained rank-2 segment keeps a deleted flag over Clear(false).
+	_, found := bwa.Delete(4)
+	require.True(t, found)
+	bwa.Clear(false)
+
+	for i := int64(101); i <= 104; i++ {
+		bwa.Insert(i) // the 4th insert reuses the retained rank-2 segment
+	}
+	validateBWArr(t, bwa)
+
+	assert.Equal(t, 4, bwa.Len())
+	for i := int64(101); i <= 104; i++ {
+		assert.Truef(t, bwa.Has(i), "element %d must be findable after Clear(false) and reinsert", i)
+	}
+}
+
 //nolint:exhaustruct
 func TestBWArr_ReplaceOrInsert(t *testing.T) {
 	t.Parallel()

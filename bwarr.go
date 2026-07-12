@@ -119,6 +119,11 @@ func (bwa *BWArr[T]) Insert(element T) {
 	bwa.ensureSeg(destSegRank)
 	destSeg := &bwa.whiteSegments[destSegRank]
 
+	// Segments deactivate without cleanup, so a reused segment may carry stale deleted state - drop it.
+	if destSeg.deletedNum != 0 {
+		destSeg.resetDeleted()
+	}
+
 	// Put the new element at the end of the destination segment
 	destSeg.elements[destSegSize-1] = element
 
