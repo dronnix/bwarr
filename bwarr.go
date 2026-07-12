@@ -411,7 +411,8 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		}
 	} else {
 		moveNonDeletedValuesToSegmentEnd(*seg)
-		mergeSegmentsForDel(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity)
+		// The lower-rank segment holds the newer elements (FIFO invariant), so lowSegIsNewer=true.
+		mergeSegmentsDirty(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity, true)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
 	}
 	bwa.total -= halfSegmentCapacity

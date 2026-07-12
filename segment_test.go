@@ -206,7 +206,7 @@ func Test_mergeSegmentsForDel(t *testing.T) {
 			}
 			tt.result.deletedNum = tt.seg2.deletedNum
 			// Merge seg1 into result starting at position seg2Len
-			mergeSegmentsForDel(&tt.seg1, tt.result, int64Cmp, seg2Len)
+			mergeSegmentsDirty(&tt.seg1, tt.result, int64Cmp, seg2Len, true)
 			segmentsEqual(t, tt.expected, *tt.result)
 		})
 	}
