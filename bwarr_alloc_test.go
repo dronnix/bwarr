@@ -5,7 +5,6 @@ import (
 	"unsafe"
 
 	"github.com/stretchr/testify/assert"
-	"github.com/stretchr/testify/require"
 )
 
 const testAllocsSize = 11 // 4 segments to fit;
@@ -56,24 +55,6 @@ func TestBWArr_Allocs_New(t *testing.T) {
 	})
 
 	assert.Equal(t, expectedAllocs, int(allocs), "Expected allocation count does not match actual count")
-}
-
-func TestBWArr_Allocs_NewFromSlice(t *testing.T) {
-	const expectedAllocs = 8
-	// Slice of segments - 1, BWArr struct - 1 --> 2;
-	// Allocated only occupied segments: 42 = 32 + 8 + 2 --> 3 segments, 6 allocs;
-	// Total: 2 + 6 = 8;
-	testSlice := make([]int64, testAllocsSize)
-	for i := range testSlice {
-		testSlice[i] = int64(i)
-	}
-
-	allocs := testing.AllocsPerRun(100, func() {
-		bwarr := NewFromSlice[int64](int64Cmp, testSlice)
-		_ = bwarr
-	})
-
-	require.Equal(t, expectedAllocs, int(allocs), "Expected allocation count does not match actual count")
 }
 
 func TestBWArr_Allocs_Insert(t *testing.T) {

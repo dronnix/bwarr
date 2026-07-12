@@ -80,6 +80,7 @@ import "github.com/dronnix/bwarr"
 package main
 
 import (
+    "cmp"
     "fmt"
 
     "github.com/dronnix/bwarr"
@@ -89,7 +90,7 @@ func main() {
     // Create a BWArr with an integer comparison function
     // The second parameter (10) is the initial capacity hint
     bwa := bwarr.New(func(a, b int64) int {
-        return int(a - b)
+        return cmp.Compare(a, b)
     }, 10)
 
     // Insert elements

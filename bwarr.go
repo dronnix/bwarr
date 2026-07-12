@@ -6,7 +6,6 @@ package bwarr
 
 import (
 	"math/bits"
-	"slices"
 )
 
 const defaultMaxSegmentRank = 2
@@ -46,44 +45,6 @@ type IteratorFunc[T any] func(item T) bool
 // capacity is unknown.
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
 	return NewWithOptions[T](cmp, capacity, Options{1 << defaultMaxSegmentRank})
-}
-
-// NewFromSlice creates a new BWArr from an existing slice of elements and a comparison
-// function CmpFunc.
-// This constructor is more efficient than creating an empty BWArr and inserting elements one by one.
-// The original slice is not modified.
-func NewFromSlice[T any](cmp CmpFunc[T], slice []T) *BWArr[T] {
-	l := len(slice)
-	if l == 0 {
-		return New[T](cmp, 0)
-	}
-
-	copyFrom := 0
-	wSegNum := calculateWhiteSegmentsQuantity(l)
-	segs := make([]segment[T], wSegNum)
-	rank := 0
-	for l > 0 {
-		mask := 1 << rank
-		if mask&l == 0 {
-			rank++
-			continue
-		}
-		seg := makeSegment[T](rank)
-		copyTo := copyFrom + mask
-		copy(seg.elements, slice[copyFrom:copyTo])
-		slices.SortFunc(seg.elements, cmp)
-		copyFrom += mask
-
-		segs[rank] = seg
-		l -= mask
-		rank++
-	}
-	return &BWArr[T]{
-		whiteSegments:        segs,
-		total:                len(slice),
-		cmp:                  cmp,
-		maxSegmentRankToKeep: defaultMaxSegmentRank,
-	}
 }
 
 type Options struct {
