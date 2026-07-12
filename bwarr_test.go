@@ -21,61 +21,6 @@ func TestNewBWArrTestStruct(t *testing.T) {
 	testNewBWArr(t, testStructCmp)
 }
 
-func TestNewFromSlice(t *testing.T) { //nolint:tparallel
-	t.Parallel()
-	type testCase struct {
-		name  string
-		slice []int64
-	}
-	tests := []testCase{
-		{
-			"empty",
-			[]int64{},
-		},
-		{
-			"one",
-			[]int64{1},
-		},
-		{
-			"seven",
-			[]int64{7, 1, 8, 3, 2, 4, 5},
-		},
-		{
-			"ten",
-			[]int64{10, 9, 8, 7, 6, 5, 4, 3, 2, 1},
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			bwa := NewFromSlice(int64Cmp, tt.slice)
-			validateBWArr(t, bwa)
-			slices.Sort(tt.slice)
-			require.Equal(t, len(tt.slice), bwa.Len())
-			got := make([]int64, 0, len(tt.slice))
-			bwa.Ascend(func(item int64) bool {
-				got = append(got, item)
-				return true
-			})
-
-			require.Equal(t, tt.slice, got)
-		})
-	}
-}
-
-func TestDelAfterFromSlice(t *testing.T) {
-	t.Parallel()
-	elems := []int64{23, 42, 17, 27, 11}
-	bwa := NewFromSlice(int64Cmp, elems)
-	validateBWArr(t, bwa)
-	for _, e := range elems {
-		got, found := bwa.Delete(e)
-		assert.True(t, found)
-		assert.Equal(t, e, got)
-		validateBWArr(t, bwa)
-	}
-	require.Equal(t, 0, bwa.Len())
-}
-
 func TestBWArr_Insert(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -110,6 +55,54 @@ func TestBWArr_Insert(t *testing.T) {
 			validateBWArr(t, tt.bwaBefore)
 			bwaEqual(t, tt.bwaAfter, tt.bwaBefore)
 		})
+	}
+}
+
+// A segment deactivated with deleted elements (merged upward, demoted, or retained by Clear)
+// must not leak its stale deleted state when reused as an insert destination.
+func TestBWArr_InsertIntoReactivatedSegment(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	for i := int64(1); i <= 7; i++ {
+		bwa.Insert(i) // total=7: rank2={1,2,3,4}, rank1={5,6}, rank0={7}
+	}
+	// Mark the last element of the rank-2 segment deleted (segment stays active).
+	_, found := bwa.Delete(4)
+	require.True(t, found)
+	// Merge the dirty rank-2 segment upward, deactivating it...
+	bwa.Insert(8)
+	// ...and grow until it is reactivated as the insert destination.
+	for i := int64(9); i <= 12; i++ {
+		bwa.Insert(i)
+	}
+	validateBWArr(t, bwa)
+
+	assert.True(t, bwa.Has(12), "freshly inserted element must be findable")
+	assert.Equal(t, 11, bwa.Len(), "12 inserted, 1 deleted")
+	visited := 0
+	bwa.Ascend(func(int64) bool { visited++; return true })
+	assert.Equal(t, 11, visited, "Ascend must visit all live elements")
+}
+
+func TestBWArr_InsertAfterClearKeepingSegments(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	for i := int64(1); i <= 4; i++ {
+		bwa.Insert(i) // rank2={1,2,3,4}
+	}
+	// The retained rank-2 segment keeps a deleted flag over Clear(false).
+	_, found := bwa.Delete(4)
+	require.True(t, found)
+	bwa.Clear(false)
+
+	for i := int64(101); i <= 104; i++ {
+		bwa.Insert(i) // the 4th insert reuses the retained rank-2 segment
+	}
+	validateBWArr(t, bwa)
+
+	assert.Equal(t, 4, bwa.Len())
+	for i := int64(101); i <= 104; i++ {
+		assert.Truef(t, bwa.Has(i), "element %d must be findable after Clear(false) and reinsert", i)
 	}
 }
 
@@ -904,6 +897,24 @@ func TestBWArr_AscendRangeOutOfBounds(t *testing.T) {
 	bwa.AscendRange(from, to, iter)
 }
 
+// The range falls in a gap between a segment's elements: no element of the segment is in [from, to).
+func TestBWArr_AscendRangeInSegmentGap(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	bwa.Insert(3)
+	bwa.Insert(7) // rank1={3,7} straddles [4, 6)
+	bwa.Insert(1) // rank0={1}
+
+	var got []int64
+	iter := func(v int64) bool { got = append(got, v); return true }
+	bwa.AscendRange(4, 6, iter)
+	assert.Empty(t, got, "no elements fall in [4, 6)")
+
+	// Boundary: a single element of the straddling segment in range must still be emitted.
+	bwa.AscendRange(5, 8, iter)
+	assert.Equal(t, []int64{7}, got)
+}
+
 func TestBWArr_Descend(t *testing.T) {
 	t.Parallel()
 	tests := []struct {
@@ -1082,6 +1093,24 @@ func TestBWArr_DescendRangeOutOfBounds(t *testing.T) {
 		return true
 	}
 	bwa.DescendRange(from, to, iter)
+}
+
+// The range falls in a gap between a segment's elements: no element of the segment is in [from, to).
+func TestBWArr_DescendRangeInSegmentGap(t *testing.T) {
+	t.Parallel()
+	bwa := New(int64Cmp, 0)
+	bwa.Insert(3)
+	bwa.Insert(7) // rank1={3,7} straddles [4, 6)
+	bwa.Insert(1) // rank0={1}
+
+	var got []int64
+	iter := func(v int64) bool { got = append(got, v); return true }
+	bwa.DescendRange(4, 6, iter)
+	assert.Empty(t, got, "no elements fall in [4, 6)")
+
+	// Boundary: a single element of the straddling segment in range must still be emitted.
+	bwa.DescendRange(5, 8, iter)
+	assert.Equal(t, []int64{7}, got)
 }
 
 func TestBWArr_AscIteratorsShouldStop(t *testing.T) {

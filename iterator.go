@@ -109,7 +109,8 @@ func createAscIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] { //n
 			continue
 		}
 		begin := bwa.whiteSegments[i].findGTOE(bwa.cmp, from)
-		if begin < 0 {
+		// begin > end means [from, to) falls in a gap between the segment's elements - nothing to iterate.
+		if begin < 0 || begin > end {
 			continue
 		}
 
@@ -218,7 +219,8 @@ func createDescIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] { //
 			continue
 		}
 		begin := bwa.whiteSegments[i].findLess(bwa.cmp, to)
-		if begin < 0 {
+		// begin < end means [from, to) falls in a gap between the segment's elements - nothing to iterate.
+		if begin < 0 || begin < end {
 			continue
 		}
 
