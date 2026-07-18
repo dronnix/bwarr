@@ -15,7 +15,11 @@ type segmentIterator[T any] struct {
 	end   int
 }
 
-func createAscIteratorBegin[T any](bwa *BWArr[T]) iterator[T] { //nolint:dupl
+// newIterator collects a segmentIterator for every active segment using the bounds
+// resolver, which returns the first and last index of the segment's sub-range in
+// iteration order (for descending iterators first >= last), or ok=false when the
+// segment has nothing to iterate. Segment iterators are sorted by their first element.
+func newIterator[T any](bwa *BWArr[T], desc bool, bounds func(s *segment[T]) (first, last int, ok bool)) iterator[T] {
 	iter := iterator[T]{
 		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
 		cmp:      bwa.cmp,
@@ -26,215 +30,83 @@ func createAscIteratorBegin[T any](bwa *BWArr[T]) iterator[T] { //nolint:dupl
 		if !bwa.active(i) {
 			continue
 		}
-		idx := bwa.whiteSegments[i].minNonDeletedIndex()
-		end := bwa.whiteSegments[i].maxNonDeletedIndex()
-		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
+		first, last, ok := bounds(&bwa.whiteSegments[i])
+		if !ok {
+			continue
+		}
+		si[i] = segmentIterator[T]{index: first, seg: bwa.whiteSegments[i], end: last}
 		iter.segIters = append(iter.segIters, &si[i])
 	}
 
 	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
+		if desc {
+			s1, s2 = s2, s1
+		}
 		return iter.cmp(s1.seg.elements[s1.index], s2.seg.elements[s2.index])
 	})
 
 	return iter
 }
 
-func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint:dupl
-	iter := iterator[T]{
-		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
-		cmp:      bwa.cmp,
-	}
-
-	si := make([]segmentIterator[T], len(bwa.whiteSegments))
-	for i := range bwa.whiteSegments {
-		if !bwa.active(i) {
-			continue
-		}
-		idx := bwa.whiteSegments[i].findGTOE(bwa.cmp, elem)
-		if idx < 0 {
-			continue
-		}
-		end := bwa.whiteSegments[i].maxNonDeletedIndex()
-		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
-		iter.segIters = append(iter.segIters, &si[i])
-	}
-
-	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
-		return iter.cmp(s1.seg.elements[s1.index], s2.seg.elements[s2.index])
+func createAscIteratorBegin[T any](bwa *BWArr[T]) iterator[T] {
+	return newIterator(bwa, false, func(s *segment[T]) (int, int, bool) {
+		return s.minNonDeletedIndex(), s.maxNonDeletedIndex(), true
 	})
-
-	return iter
 }
 
-func createAscIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint:dupl
-	iter := iterator[T]{
-		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
-		cmp:      bwa.cmp,
-	}
-
-	si := make([]segmentIterator[T], len(bwa.whiteSegments))
-	for i := range bwa.whiteSegments {
-		if !bwa.active(i) {
-			continue
-		}
-		end := bwa.whiteSegments[i].findLess(bwa.cmp, elem)
-		if end < 0 {
-			continue
-		}
-		idx := bwa.whiteSegments[i].minNonDeletedIndex()
-		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
-		iter.segIters = append(iter.segIters, &si[i])
-	}
-
-	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
-		return iter.cmp(s1.seg.elements[s1.index], s2.seg.elements[s2.index])
+func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] {
+	return newIterator(bwa, false, func(s *segment[T]) (int, int, bool) {
+		first := s.findGTOE(bwa.cmp, elem)
+		return first, s.maxNonDeletedIndex(), first >= 0
 	})
-
-	return iter
 }
 
-func createAscIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] { //nolint:dupl
-	iter := iterator[T]{
-		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
-		cmp:      bwa.cmp,
-	}
-
-	si := make([]segmentIterator[T], len(bwa.whiteSegments))
-	for i := range bwa.whiteSegments {
-		if !bwa.active(i) {
-			continue
-		}
-		end := bwa.whiteSegments[i].findLess(bwa.cmp, to)
-		if end < 0 {
-			continue
-		}
-		begin := bwa.whiteSegments[i].findGTOE(bwa.cmp, from)
-		// begin > end means [from, to) falls in a gap between the segment's elements - nothing to iterate.
-		if begin < 0 || begin > end {
-			continue
-		}
-
-		si[i] = segmentIterator[T]{index: begin, seg: bwa.whiteSegments[i], end: end}
-		iter.segIters = append(iter.segIters, &si[i])
-	}
-
-	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
-		return iter.cmp(s1.seg.elements[s1.index], s2.seg.elements[s2.index])
+func createAscIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] {
+	return newIterator(bwa, false, func(s *segment[T]) (int, int, bool) {
+		last := s.findLess(bwa.cmp, elem)
+		return s.minNonDeletedIndex(), last, last >= 0
 	})
-
-	return iter
 }
 
-func createDescIteratorEnd[T any](bwa *BWArr[T]) iterator[T] { //nolint:dupl
-	iter := iterator[T]{
-		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
-		cmp:      bwa.cmp,
-	}
-
-	si := make([]segmentIterator[T], len(bwa.whiteSegments))
-	for i := range bwa.whiteSegments {
-		if !bwa.active(i) {
-			continue
-		}
-		idx := bwa.whiteSegments[i].maxNonDeletedIndex()
-		end := bwa.whiteSegments[i].minNonDeletedIndex()
-		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
-		iter.segIters = append(iter.segIters, &si[i])
-	}
-
-	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
-		return iter.cmp(s2.seg.elements[s2.index], s1.seg.elements[s1.index])
+func createAscIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] {
+	return newIterator(bwa, false, func(s *segment[T]) (int, int, bool) {
+		first := s.findGTOE(bwa.cmp, from)
+		last := s.findLess(bwa.cmp, to)
+		// first > last means [from, to) falls in a gap between the segment's elements - nothing to iterate.
+		return first, last, first >= 0 && first <= last
 	})
-
-	return iter
 }
 
-func createDescIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint:dupl
-	iter := iterator[T]{
-		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
-		cmp:      bwa.cmp,
-	}
-
-	si := make([]segmentIterator[T], len(bwa.whiteSegments))
-	for i := range bwa.whiteSegments {
-		if !bwa.active(i) {
-			continue
-		}
-		end := bwa.whiteSegments[i].findGTOE(bwa.cmp, elem)
-		if end < 0 {
-			continue
-		}
-		idx := bwa.whiteSegments[i].maxNonDeletedIndex()
-		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
-		iter.segIters = append(iter.segIters, &si[i])
-	}
-
-	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
-		return iter.cmp(s2.seg.elements[s2.index], s1.seg.elements[s1.index])
+func createDescIteratorEnd[T any](bwa *BWArr[T]) iterator[T] {
+	return newIterator(bwa, true, func(s *segment[T]) (int, int, bool) {
+		return s.maxNonDeletedIndex(), s.minNonDeletedIndex(), true
 	})
-
-	return iter
 }
 
-func createDescIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint:dupl
-	iter := iterator[T]{
-		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
-		cmp:      bwa.cmp,
-	}
-
-	si := make([]segmentIterator[T], len(bwa.whiteSegments))
-	for i := range bwa.whiteSegments {
-		if !bwa.active(i) {
-			continue
-		}
-		idx := bwa.whiteSegments[i].findLess(bwa.cmp, elem)
-		if idx < 0 {
-			continue
-		}
-		end := bwa.whiteSegments[i].minNonDeletedIndex()
-		si[i] = segmentIterator[T]{index: idx, seg: bwa.whiteSegments[i], end: end}
-		iter.segIters = append(iter.segIters, &si[i])
-	}
-
-	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
-		return iter.cmp(s2.seg.elements[s2.index], s1.seg.elements[s1.index])
+func createDescIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] {
+	return newIterator(bwa, true, func(s *segment[T]) (int, int, bool) {
+		last := s.findGTOE(bwa.cmp, elem)
+		return s.maxNonDeletedIndex(), last, last >= 0
 	})
-
-	return iter
 }
 
-func createDescIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] { //nolint:dupl
-	iter := iterator[T]{
-		segIters: make([]*segmentIterator[T], 0, len(bwa.whiteSegments)),
-		cmp:      bwa.cmp,
-	}
-
-	si := make([]segmentIterator[T], len(bwa.whiteSegments))
-	for i := range bwa.whiteSegments {
-		if !bwa.active(i) {
-			continue
-		}
-		end := bwa.whiteSegments[i].findGTOE(bwa.cmp, from)
-		if end < 0 {
-			continue
-		}
-		begin := bwa.whiteSegments[i].findLess(bwa.cmp, to)
-		// begin < end means [from, to) falls in a gap between the segment's elements - nothing to iterate.
-		if begin < 0 || begin < end {
-			continue
-		}
-
-		si[i] = segmentIterator[T]{index: begin, seg: bwa.whiteSegments[i], end: end}
-		iter.segIters = append(iter.segIters, &si[i])
-	}
-
-	slices.SortFunc(iter.segIters, func(s1, s2 *segmentIterator[T]) int {
-		return iter.cmp(s2.seg.elements[s2.index], s1.seg.elements[s1.index])
+func createDescIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] {
+	return newIterator(bwa, true, func(s *segment[T]) (int, int, bool) {
+		first := s.findLess(bwa.cmp, elem)
+		return first, s.minNonDeletedIndex(), first >= 0
 	})
-
-	return iter
 }
 
+func createDescIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] {
+	return newIterator(bwa, true, func(s *segment[T]) (int, int, bool) {
+		first := s.findLess(bwa.cmp, to)
+		last := s.findGTOE(bwa.cmp, from)
+		// first < last means [from, to) falls in a gap between the segment's elements - nothing to iterate.
+		return first, last, last >= 0 && first >= last
+	})
+}
+
+// next and prev are mirror-image duplicates kept separate on purpose: they are per-element hot paths.
 func (iter *iterator[T]) next() (*T, bool) { //nolint:dupl
 	if len(iter.segIters) == 0 {
 		return nil, false
