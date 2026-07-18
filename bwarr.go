@@ -184,7 +184,7 @@ func (bwa *BWArr[T]) DeleteMin() (deleted T, found bool) {
 func (bwa *BWArr[T]) Len() int {
 	deleted := 0
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) != 0 {
+		if bwa.active(i) {
 			deleted += bwa.whiteSegments[i].deletedNum
 		}
 	}
@@ -239,7 +239,7 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	}
 
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) != 0 {
+		if bwa.active(i) {
 			newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
 		}
 	}
@@ -355,7 +355,7 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 // all elements in O(N) time.
 func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		seg := &bwa.whiteSegments[i]
@@ -380,7 +380,7 @@ func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
 // memory automatically, but can be useful after large numbers of deletions.
 func (bwa *BWArr[T]) Compact() {
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 { // Segment is not used
+		if !bwa.active(i) {
 			bwa.whiteSegments[i] = segment[T]{} //nolint:exhaustruct
 		}
 	}
@@ -403,7 +403,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		seg.deleted.Reset()
 		return deleted
 	}
-	if halfSegmentCapacity&bwa.total == 0 {
+	if !bwa.active(segNum - 1) { // Lower neighbor is free - demote into it; otherwise merge with it.
 		bwa.ensureSeg(segNum - 1)
 		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
 		if bwa.maxRank() == segNum && segNum > bwa.maxSegmentRankToKeep {
@@ -415,6 +415,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		mergeSegmentsDirty(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity, true)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
 	}
+	// Both consolidation paths remove exactly half a segment's worth of (deleted) elements from the accounting.
 	bwa.total -= halfSegmentCapacity
 	return deleted
 }
@@ -423,14 +424,14 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
 	// First, skip non-used segments:
 	for segNum = range bwa.whiteSegments {
-		if bwa.total&(1<<segNum) != 0 {
+		if bwa.active(segNum) {
 			break
 		}
 	}
 	index = bwa.whiteSegments[segNum].min(bwa.cmp)
 	// Then find the segment with the smallest element:
 	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
-		if bwa.total&(1<<seg) == 0 {
+		if !bwa.active(seg) {
 			continue
 		}
 		// Less or equal is used to provide stable behavior (return the oldest one).
@@ -446,14 +447,14 @@ func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
 func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
 	// First, skip non-used segments:
 	for segNum = range bwa.whiteSegments {
-		if bwa.total&(1<<segNum) != 0 {
+		if bwa.active(segNum) {
 			break
 		}
 	}
 	index = bwa.whiteSegments[segNum].maxNonDeletedIndex()
 	// Then find the segment with the smallest element:
 	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
-		if bwa.total&(1<<seg) == 0 {
+		if !bwa.active(seg) {
 			continue
 		}
 		// Greater or equal is used to provide stable behavior (return the oldest one).
@@ -467,7 +468,7 @@ func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
 
 func (bwa *BWArr[T]) search(element T) (segNum, index int) {
 	for segNum = len(bwa.whiteSegments) - 1; segNum >= 0; segNum-- {
-		if bwa.total&(1<<segNum) == 0 {
+		if !bwa.active(segNum) {
 			continue
 		}
 		if index = bwa.whiteSegments[segNum].findRightmostNotDeleted(bwa.cmp, element); index >= 0 {
@@ -486,6 +487,12 @@ func (bwa *BWArr[T]) ensureSeg(rank int) {
 	if len(bwa.whiteSegments[rank].elements) == 0 {
 		bwa.whiteSegments[rank] = makeSegment[T](rank)
 	}
+}
+
+// active reports whether the segment of the given rank currently holds data:
+// rank r is active iff bit r of total is set (the paper's active(i) predicate).
+func (bwa *BWArr[T]) active(rank int) bool {
+	return bwa.total&(1<<rank) != 0
 }
 
 func (bwa *BWArr[T]) maxRank() int {

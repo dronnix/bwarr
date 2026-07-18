@@ -23,7 +23,7 @@ func createAscIteratorBegin[T any](bwa *BWArr[T]) iterator[T] { //nolint:dupl
 
 	si := make([]segmentIterator[T], len(bwa.whiteSegments))
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		idx := bwa.whiteSegments[i].minNonDeletedIndex()
@@ -47,7 +47,7 @@ func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint:
 
 	si := make([]segmentIterator[T], len(bwa.whiteSegments))
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		idx := bwa.whiteSegments[i].findGTOE(bwa.cmp, elem)
@@ -74,7 +74,7 @@ func createAscIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint:
 
 	si := make([]segmentIterator[T], len(bwa.whiteSegments))
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		end := bwa.whiteSegments[i].findLess(bwa.cmp, elem)
@@ -101,7 +101,7 @@ func createAscIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] { //n
 
 	si := make([]segmentIterator[T], len(bwa.whiteSegments))
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		end := bwa.whiteSegments[i].findLess(bwa.cmp, to)
@@ -133,7 +133,7 @@ func createDescIteratorEnd[T any](bwa *BWArr[T]) iterator[T] { //nolint:dupl
 
 	si := make([]segmentIterator[T], len(bwa.whiteSegments))
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		idx := bwa.whiteSegments[i].maxNonDeletedIndex()
@@ -157,7 +157,7 @@ func createDescIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint
 
 	si := make([]segmentIterator[T], len(bwa.whiteSegments))
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		end := bwa.whiteSegments[i].findGTOE(bwa.cmp, elem)
@@ -184,7 +184,7 @@ func createDescIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] { //nolint
 
 	si := make([]segmentIterator[T], len(bwa.whiteSegments))
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		idx := bwa.whiteSegments[i].findLess(bwa.cmp, elem)
@@ -211,7 +211,7 @@ func createDescIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] { //
 
 	si := make([]segmentIterator[T], len(bwa.whiteSegments))
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		end := bwa.whiteSegments[i].findGTOE(bwa.cmp, from)
