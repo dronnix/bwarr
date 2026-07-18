@@ -58,14 +58,7 @@ func (s *LayeredBitSet) Set(idx int) {
 	}
 }
 
-// SetIfTrue Sets a bit if it's true. Useful for newly created or reset bitset, so we can skip Unset operation.
-func (s *LayeredBitSet) SetIfTrue(idx int, value bool) {
-	if value {
-		s.Set(idx)
-	}
-}
-
-// Unset given bit. Prefer to use Reset + SetIfTrue instead of Unset if possible
+// Unset clears the given bit.
 func (s *LayeredBitSet) Unset(idx int) {
 	if !s.Get(idx) {
 		return
@@ -112,46 +105,6 @@ func (s *LayeredBitSet) Reset() {
 	}
 	s.firstUnset = 0
 	s.lastUnset = s.size - 1
-}
-
-// ResetFrom resets bits with index greater or equal to idx
-func (s *LayeredBitSet) ResetFrom(idx int) {
-	origIdx := idx
-	for _, layer := range s.layers {
-		elementIdx := idx >> intDiv64
-		layer[elementIdx] &= (uint64(1) << (idx & reminder64)) - 1
-		clear(layer[elementIdx+1:])
-		idx >>= intDiv64
-	}
-	if origIdx < s.size {
-		if s.firstUnset < 0 || origIdx < s.firstUnset {
-			s.firstUnset = origIdx
-		}
-		s.lastUnset = s.size - 1
-	}
-}
-
-// CopyFrom copies bits with index >= idx from `from` into s, preserving bits below idx.
-func (s *LayeredBitSet) CopyFrom(from *LayeredBitSet, idx int) {
-	var prevBoundaryAllSet bool
-	for i, layer := range s.layers {
-		elementIdx := idx >> intDiv64
-		lowMask := (uint64(1) << (idx & reminder64)) - 1
-		layer[elementIdx] = (layer[elementIdx] & lowMask) | (from.layers[i][elementIdx] &^ lowMask)
-		copy(layer[elementIdx+1:], from.layers[i][elementIdx+1:])
-		// The merge mixed s and from in the boundary element, so the summary bit
-		// copied from `from` for this element may be wrong. Fix it.
-		if i > 0 {
-			bit := uint64(1) << (idx & reminder64)
-			if prevBoundaryAllSet {
-				layer[elementIdx] |= bit
-			} else {
-				layer[elementIdx] &^= bit
-			}
-		}
-		prevBoundaryAllSet = layer[elementIdx] == allSet
-		idx >>= intDiv64
-	}
 }
 
 // FindPrevUnsetBit returns the index of the closest unset bit with lower index  or -1 if all bits are set.

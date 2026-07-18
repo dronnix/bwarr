@@ -139,7 +139,9 @@ func Test_mergeSegments(t *testing.T) {
 			seg2Len := len(tt.seg2.elements)
 			copy(tt.result.elements[seg2Len:], tt.seg2.elements)
 			for i := range seg2Len {
-				tt.result.deleted.SetIfTrue(seg2Len+i, tt.seg2.deleted.Get(i))
+				if tt.seg2.deleted.Get(i) {
+					tt.result.deleted.Set(seg2Len + i)
+				}
 			}
 			tt.result.deletedNum = tt.seg2.deletedNum
 			// Merge seg1 into result starting at position seg2Len
@@ -202,7 +204,9 @@ func Test_mergeSegmentsForDel(t *testing.T) {
 			seg2Len := len(tt.seg2.elements)
 			copy(tt.result.elements[seg2Len:], tt.seg2.elements)
 			for i := range seg2Len {
-				tt.result.deleted.SetIfTrue(seg2Len+i, tt.seg2.deleted.Get(i))
+				if tt.seg2.deleted.Get(i) {
+					tt.result.deleted.Set(seg2Len + i)
+				}
 			}
 			tt.result.deletedNum = tt.seg2.deletedNum
 			// Merge seg1 into result starting at position seg2Len
