@@ -106,6 +106,24 @@ func createDescIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] {
 	})
 }
 
+// walkAsc feeds fn with the iterator's elements in ascending order until fn returns false.
+func walkAsc[T any](iter iterator[T], fn IteratorFunc[T]) {
+	for val, ok := iter.next(); ok; val, ok = iter.next() {
+		if !fn(*val) {
+			break
+		}
+	}
+}
+
+// walkDesc feeds fn with the iterator's elements in descending order until fn returns false.
+func walkDesc[T any](iter iterator[T], fn IteratorFunc[T]) {
+	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
+		if !fn(*val) {
+			break
+		}
+	}
+}
+
 // next and prev are mirror-image duplicates kept separate on purpose: they are per-element hot paths.
 func (iter *iterator[T]) next() (*T, bool) { //nolint:dupl
 	if len(iter.segIters) == 0 {

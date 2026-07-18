@@ -250,12 +250,7 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 // ascending order. Iteration stops early if the iterator returns false.
 // The operation visits all elements in O(N*Log(N)) time.
 func (bwa *BWArr[T]) Ascend(iterator IteratorFunc[T]) {
-	iter := createAscIteratorBegin(bwa)
-	for val, ok := iter.next(); ok; val, ok = iter.next() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkAsc(createAscIteratorBegin(bwa), iterator)
 }
 
 // AscendGreaterOrEqual calls the iterator function for each element in the
@@ -263,12 +258,7 @@ func (bwa *BWArr[T]) Ascend(iterator IteratorFunc[T]) {
 // Iteration stops early if the iterator returns false. The operation has O(N*Log(N)
 // time complexity in the worst case.
 func (bwa *BWArr[T]) AscendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
-	iter := createAscIteratorGTOE(bwa, elem)
-	for val, ok := iter.next(); ok; val, ok = iter.next() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkAsc(createAscIteratorGTOE(bwa, elem), iterator)
 }
 
 // AscendLessThan calls the iterator function for each element in the BWArr
@@ -276,12 +266,7 @@ func (bwa *BWArr[T]) AscendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
 // early if the iterator returns false. The operation has O(N*Log(N)) time complexity
 // in the worst case.
 func (bwa *BWArr[T]) AscendLessThan(elem T, iterator IteratorFunc[T]) {
-	iter := createAscIteratorLess(bwa, elem)
-	for val, ok := iter.next(); ok; val, ok = iter.next() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkAsc(createAscIteratorLess(bwa, elem), iterator)
 }
 
 // AscendRange calls the iterator function for each element in the BWArr
@@ -289,24 +274,14 @@ func (bwa *BWArr[T]) AscendLessThan(elem T, iterator IteratorFunc[T]) {
 // in ascending order. Iteration stops early if the iterator returns false.
 // The operation has O(N*Log(N)) time complexity in the worst case.
 func (bwa *BWArr[T]) AscendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
-	iter := createAscIteratorFromTo(bwa, greaterOrEqual, lessThan)
-	for val, ok := iter.next(); ok; val, ok = iter.next() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkAsc(createAscIteratorFromTo(bwa, greaterOrEqual, lessThan), iterator)
 }
 
 // Descend calls the iterator function for each element in the BWArr in
 // descending order. Iteration stops early if the iterator returns false.
 // The operation visits all elements in O(N*Log(N)) time.
 func (bwa *BWArr[T]) Descend(iterator IteratorFunc[T]) {
-	iter := createDescIteratorEnd(bwa)
-	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkDesc(createDescIteratorEnd(bwa), iterator)
 }
 
 // DescendGreaterOrEqual calls the iterator function for each element in the
@@ -314,12 +289,7 @@ func (bwa *BWArr[T]) Descend(iterator IteratorFunc[T]) {
 // Iteration stops early if the iterator returns false. The operation has O(N*Log(N))
 // time complexity in the worst case.
 func (bwa *BWArr[T]) DescendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
-	iter := createDescIteratorGTOE(bwa, elem)
-	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkDesc(createDescIteratorGTOE(bwa, elem), iterator)
 }
 
 // DescendLessThan calls the iterator function for each element in the BWArr
@@ -327,12 +297,7 @@ func (bwa *BWArr[T]) DescendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
 // early if the iterator returns false. The operation has O(N*Log(N)) time complexity
 // in the worst case.
 func (bwa *BWArr[T]) DescendLessThan(elem T, iterator IteratorFunc[T]) {
-	iter := createDescIteratorLess(bwa, elem)
-	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkDesc(createDescIteratorLess(bwa, elem), iterator)
 }
 
 // DescendRange calls the iterator function for each element in the BWArr
@@ -340,12 +305,7 @@ func (bwa *BWArr[T]) DescendLessThan(elem T, iterator IteratorFunc[T]) {
 // in descending order. Iteration stops early if the iterator returns false.
 // The operation has O(N*Log(N)) time complexity in the worst case.
 func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
-	iter := createDescIteratorFromTo(bwa, greaterOrEqual, lessThan)
-	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkDesc(createDescIteratorFromTo(bwa, greaterOrEqual, lessThan), iterator)
 }
 
 // UnorderedWalk calls the iterator function for each element in the BWArr
