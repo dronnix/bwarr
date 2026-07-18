@@ -118,7 +118,7 @@ func copyTailWithBits[T any](dst *segment[T], writeIdx int, src *segment[T], rea
 	}
 }
 
-func demoteSegment[T any](from segment[T], to *segment[T]) {
+func demoteSegment[T any](from, to *segment[T]) {
 	for r, w := from.deleted.FindFirstUnsetBit(), 0; r >= 0; r = from.deleted.FindNextUnsetBit(r) {
 		to.elements[w] = from.elements[r]
 		w++
@@ -135,7 +135,7 @@ func (s *segment[T]) resetDeleted() {
 
 // moveNonDeletedValuesToSegmentEnd moves all non-deleted values to the end of the segment, preserving their order.
 // It is used when a half of the elements in the segment deleted, as preparation for merging with lower segment.
-func moveNonDeletedValuesToSegmentEnd[T any](seg segment[T]) {
+func moveNonDeletedValuesToSegmentEnd[T any](seg *segment[T]) {
 	length := len(seg.elements)
 	halfLen := length >> 1
 	// Write pointer >= read pointer always, so reads see original bits.
@@ -222,7 +222,7 @@ func (s *segment[T]) min(cmp CmpFunc[T]) int {
 	return minIdx
 }
 
-// returns index of the first element that is greater or equal to val and is not deleted.
+// returns index of the leftmost element that is greater or equal to val and is not deleted.
 // If all elements are less than val, returns -1.
 func (s *segment[T]) findGTOE(cmp CmpFunc[T], val T) int {
 	maxNonDel := s.maxNonDeletedIndex()
@@ -247,7 +247,7 @@ func (s *segment[T]) findGTOE(cmp CmpFunc[T], val T) int {
 	return s.nextNonDeletedAfter(b - 1)
 }
 
-// returns index of the first element that is less than val and is not deleted.
+// returns index of the rightmost element that is less than val and is not deleted.
 // If all elements are greater or equal to val, returns -1.
 func (s *segment[T]) findLess(cmp CmpFunc[T], val T) int {
 	maxNonDel := s.maxNonDeletedIndex()

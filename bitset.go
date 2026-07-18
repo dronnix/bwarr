@@ -15,9 +15,9 @@ type LayeredBitSet struct {
 	lastUnset  int
 }
 
-const bitsNum = 64
-const intDiv64 = 6 // log2(bitsNum)
-const reminder64 = bitsNum - 1
+const wordBits = 64
+const wordShift = 6 // log2(wordBits)
+const wordMask = wordBits - 1
 const allSet = ^uint64(0)
 
 // typicalMaxLayers is a capacity hint: 4 layers cover 64^4 = 16M bits without reallocation.
@@ -26,7 +26,7 @@ const typicalMaxLayers = 4
 func NewLayeredBitSet(size int) *LayeredBitSet {
 	// Each layer summarizes the 64-bit words of the layer below; add layers until one word covers everything.
 	layers := make([][]uint64, 0, typicalMaxLayers)
-	for words := (size + reminder64) >> intDiv64; ; words = (words + reminder64) >> intDiv64 {
+	for words := (size + wordMask) >> wordShift; ; words = (words + wordMask) >> wordShift {
 		layers = append(layers, make([]uint64, words))
 		if words == 1 {
 			break
@@ -41,8 +41,8 @@ func (s *LayeredBitSet) Set(idx int) {
 	}
 	origIdx := idx
 	for _, layer := range s.layers {
-		elementIdx := idx >> intDiv64
-		bitIdx := idx & reminder64
+		elementIdx := idx >> wordShift
+		bitIdx := idx & wordMask
 		layer[elementIdx] |= 1 << bitIdx
 		if layer[elementIdx] != allSet {
 			break
@@ -64,9 +64,9 @@ func (s *LayeredBitSet) Unset(idx int) {
 	}
 	origIdx := idx
 	for _, layer := range s.layers {
-		elementIdx := idx >> intDiv64
+		elementIdx := idx >> wordShift
 		wasAllSet := layer[elementIdx] == allSet
-		layer[elementIdx] &^= 1 << (idx & reminder64)
+		layer[elementIdx] &^= 1 << (idx & wordMask)
 		if !wasAllSet {
 			break
 		}
@@ -81,11 +81,11 @@ func (s *LayeredBitSet) Unset(idx int) {
 }
 
 func (s *LayeredBitSet) Get(idx int) bool {
-	element := s.layers[0][idx>>intDiv64]
+	element := s.layers[0][idx>>wordShift]
 	if element == 0 {
 		return false
 	}
-	return (element & (1 << (idx & reminder64))) != 0
+	return (element & (1 << (idx & wordMask))) != 0
 }
 
 func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
@@ -113,8 +113,8 @@ func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
 	// then we go down to find the exact index of that bit.
 	l, bitIdx := 0, 0
 	for ; l < len(s.layers); l++ {
-		bitIdx = idx & reminder64
-		idx = idx >> intDiv64 // nolint:gocritic
+		bitIdx = idx & wordMask
+		idx = idx >> wordShift // nolint:gocritic
 		bitIdx = findPrevUnsetBit(s.layers[l][idx], bitIdx)
 		if bitIdx >= 0 {
 			break
@@ -125,37 +125,37 @@ func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
 	}
 
 	for ; l > 0; l-- {
-		idx = idx<<intDiv64 + bitIdx
+		idx = idx<<wordShift + bitIdx
 		bitIdx = findLastUnsetBit(s.layers[l-1][idx])
 	}
 
-	return idx<<intDiv64 + bitIdx
+	return idx<<wordShift + bitIdx
 }
 
 // FindNextUnsetBit returns the index of the closest unset bit with higher index or -1 if all bits are set.
 func (s *LayeredBitSet) FindNextUnsetBit(idx int) int {
 	l, bitIdx := 0, 0
 	for ; l < len(s.layers); l++ {
-		bitIdx = idx & reminder64
-		idx >>= intDiv64
+		bitIdx = idx & wordMask
+		idx >>= wordShift
 		bitIdx = findNextUnsetBit(s.layers[l][idx], bitIdx)
-		if bitIdx < bitsNum {
+		if bitIdx < wordBits {
 			break
 		}
 	}
-	if bitIdx >= bitsNum {
+	if bitIdx >= wordBits {
 		return -1
 	}
 
 	for ; l > 0; l-- {
-		idx = idx<<intDiv64 + bitIdx
+		idx = idx<<wordShift + bitIdx
 		if idx >= len(s.layers[l-1]) {
 			return -1 // phantom bit in summary layer — beyond actual data
 		}
 		bitIdx = findFirstUnsetBit(s.layers[l-1][idx])
 	}
 
-	result := idx<<intDiv64 + bitIdx
+	result := idx<<wordShift + bitIdx
 	if result >= s.size {
 		return -1
 	}
@@ -178,10 +178,10 @@ func (s *LayeredBitSet) findFirstUnsetBit() int {
 			return -1 // summary layer points beyond actual data
 		}
 		bitIndex := findFirstUnsetBit(s.layers[l][elemIdx])
-		if bitIndex >= bitsNum {
+		if bitIndex >= wordBits {
 			return -1
 		}
-		elemIdx = elemIdx<<intDiv64 + bitIndex
+		elemIdx = elemIdx<<wordShift + bitIndex
 	}
 	if elemIdx >= s.size {
 		return -1
@@ -198,7 +198,7 @@ func (s *LayeredBitSet) findLastUnsetBit() int {
 }
 
 // findFirstUnsetBit returns position of the lowest unset bit in the given element,
-// or bitsNum if all bits are set.
+// or wordBits if all bits are set.
 func findFirstUnsetBit(element uint64) int {
 	return bits.TrailingZeros64(^element)
 }
@@ -206,15 +206,15 @@ func findFirstUnsetBit(element uint64) int {
 // findLastUnsetBit returns position of the highest unset bit in the given element,
 // or -1 if all bits are set.
 func findLastUnsetBit(element uint64) int {
-	return bitsNum - 1 - bits.LeadingZeros64(^element)
+	return wordBits - 1 - bits.LeadingZeros64(^element)
 }
 
 // findNextUnsetBit returns position of the closest unset bit with higher index than pos in the given element,
-// or bitsNum if all bits with higher index are set.
+// or wordBits if all bits with higher index are set.
 func findNextUnsetBit(element uint64, pos int) int {
 	skipBits := pos + 1
-	if skipBits >= bitsNum {
-		return bitsNum
+	if skipBits >= wordBits {
+		return wordBits
 	}
 	return skipBits + bits.TrailingZeros64(^(element >> skipBits))
 }
@@ -222,7 +222,7 @@ func findNextUnsetBit(element uint64, pos int) int {
 // findPrevUnsetBit returns position of the closest unset bit with lower index than pos in the given element,
 // or negative if all bits with lower index are set.
 func findPrevUnsetBit(element uint64, pos int) int {
-	skipBits := bitsNum - pos     // skip bits with higher index than pos, including pos itself
+	skipBits := wordBits - pos    // skip bits with higher index than pos, including pos itself
 	element = element << skipBits // nolint:gocritic
 	// Invert bits to be able to use LeadingZeros to skip ones
 	// -1 because 0 leading zeros means next bit to pos, according to the skipBits:

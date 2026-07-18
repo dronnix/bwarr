@@ -98,7 +98,7 @@ func TestLayeredBitSet_Set(t *testing.T) {
 	assert.Equal(t, uint64(1<<3), bs.layers[0][0])
 
 	// Fill all 64 bits in element 0 of layer 0 — should propagate to layer 1.
-	for i := range bitsNum {
+	for i := range wordBits {
 		bs.Set(i)
 	}
 	assert.Equal(t, ^uint64(0), bs.layers[0][0])
@@ -137,7 +137,7 @@ func TestLayeredBitSet_Unset(t *testing.T) {
 		// 3 layers: [4096][64][1]
 		bs := NewLayeredBitSet(262144)
 		// Fill element 0 of layer 0 fully — propagates to layer 1.
-		for i := range bitsNum {
+		for i := range wordBits {
 			bs.Set(i)
 		}
 		require.Equal(t, allSet, bs.layers[0][0])
@@ -190,11 +190,11 @@ func TestLayeredBitSet_Unset(t *testing.T) {
 		t.Parallel()
 		bs := NewLayeredBitSet(256)
 		// Set all 64 bits then unset one.
-		for i := range bitsNum {
+		for i := range wordBits {
 			bs.Set(i)
 		}
 		bs.Unset(31)
-		for i := range bitsNum {
+		for i := range wordBits {
 			if i == 31 {
 				assert.False(t, bs.Get(i), "bit 31 should be unset")
 			} else {
@@ -643,7 +643,7 @@ func Test_findPrevUnsetBit(t *testing.T) {
 		{
 			name:    "full element search",
 			element: allSet - 2,
-			pos:     bitsNum,
+			pos:     wordBits,
 			want:    1,
 		},
 	}
@@ -861,13 +861,13 @@ func Test_findNextUnsetBit(t *testing.T) {
 			name:    "all set, pos 0 — nothing after",
 			element: ^uint64(0),
 			pos:     0,
-			want:    bitsNum,
+			want:    wordBits,
 		},
 		{
 			name:    "all set, pos -1",
 			element: ^uint64(0),
 			pos:     -1,
-			want:    bitsNum,
+			want:    wordBits,
 		},
 		{
 			name:    "bits 0-3 set, pos 0",
@@ -891,7 +891,7 @@ func Test_findNextUnsetBit(t *testing.T) {
 			name:    "pos 63 — nothing after last bit",
 			element: 0,
 			pos:     63,
-			want:    bitsNum,
+			want:    wordBits,
 		},
 		{
 			name:    "alternating 0b...01010101, pos 0",
@@ -1128,7 +1128,7 @@ func Benchmark_FindFirstUnsetBit(b *testing.B) {
 	b.Run("first_element_full", func(b *testing.B) {
 		// First 64 bits set — descends to element 1.
 		bs := NewLayeredBitSet(size)
-		for i := range bitsNum {
+		for i := range wordBits {
 			bs.Set(i)
 		}
 
@@ -1179,7 +1179,7 @@ func Benchmark_FindLastUnsetBit(b *testing.B) {
 	b.Run("last_element_full", func(b *testing.B) {
 		// Last 64 bits set — descends to second-to-last element.
 		bs := NewLayeredBitSet(size)
-		for i := size - bitsNum; i < size; i++ {
+		for i := size - wordBits; i < size; i++ {
 			bs.Set(i)
 		}
 
@@ -1301,7 +1301,7 @@ func Benchmark_Set(b *testing.B) {
 
 		b.ResetTimer()
 		for i := range b.N {
-			bs.Set((i * bitsNum) % size)
+			bs.Set((i * wordBits) % size)
 		}
 	})
 
@@ -1357,7 +1357,7 @@ func Benchmark_Unset(b *testing.B) {
 		for i := range b.N {
 			idx := indices[i%(size/2)]
 			bs.Unset(idx)
-			bs.layers[0][idx>>intDiv64] |= 1 << (idx & reminder64) // restore for next iteration
+			bs.layers[0][idx>>wordShift] |= 1 << (idx & wordMask) // restore for next iteration
 		}
 	})
 
@@ -1370,7 +1370,7 @@ func Benchmark_Unset(b *testing.B) {
 
 		b.ResetTimer()
 		for i := range b.N {
-			idx := (i * bitsNum) & reminderSize // bit 0 of each element
+			idx := (i * wordBits) & reminderSize // bit 0 of each element
 			bs.Unset(idx)
 			// Restore: re-set the bit and fix propagation.
 			bs.Set(idx)

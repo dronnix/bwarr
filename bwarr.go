@@ -44,12 +44,12 @@ type IteratorFunc[T any] func(item T) bool
 // number of elements to optimize initial memory allocation. Use 0 if the
 // capacity is unknown.
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
-	return NewWithOptions[T](cmp, capacity, Options{1 << defaultMaxSegmentRank})
+	return NewWithOptions[T](cmp, capacity, Options{ElementsKeepAllocated: 1 << defaultMaxSegmentRank})
 }
 
 type Options struct {
 	// Number of elements to keep allocated in segments after deletion to prevent allocations on smaller sizes.
-	// Will be rounded up to the nearest power of 2. For example, if set to 10, 16 elements will be kept allocated.
+	// Rounded down to a power of two: for example, if set to 10, segments of up to 8 elements stay allocated.
 	ElementsKeepAllocated uint64
 }
 
@@ -224,7 +224,7 @@ func (bwa *BWArr[T]) Min() (minElem T, found bool) {
 func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	bwa.total = 0
 	if dropSegments {
-		bwa.whiteSegments = bwa.whiteSegments[:0]
+		bwa.whiteSegments = nil
 	}
 }
 
@@ -405,12 +405,12 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	}
 	if !bwa.active(segNum - 1) { // Lower neighbor is free - demote into it; otherwise merge with it.
 		bwa.ensureSeg(segNum - 1)
-		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
+		demoteSegment(seg, &bwa.whiteSegments[segNum-1])
 		if bwa.maxRank() == segNum && segNum > bwa.maxSegmentRankToKeep {
 			bwa.whiteSegments[segNum] = segment[T]{} //nolint:exhaustruct
 		}
 	} else {
-		moveNonDeletedValuesToSegmentEnd(*seg)
+		moveNonDeletedValuesToSegmentEnd(seg)
 		// The lower-rank segment holds the newer elements (FIFO invariant), so lowSegIsNewer=true.
 		mergeSegmentsDirty(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity, true)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
@@ -452,7 +452,7 @@ func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
 		}
 	}
 	index = bwa.whiteSegments[segNum].maxNonDeletedIndex()
-	// Then find the segment with the smallest element:
+	// Then find the segment with the largest element:
 	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
 		if !bwa.active(seg) {
 			continue
