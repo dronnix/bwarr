@@ -315,16 +315,18 @@ func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
 			continue
 		}
 		seg := &bwa.whiteSegments[i]
-		l := len(seg.elements)
-		for j := seg.deleted.FindFirstUnsetBit(); j >= 0 && j < l; j++ {
-			if seg.deleted.Get(j) {
-				j = seg.deleted.FindNextUnsetBit(j)
-				if j < 0 {
+		elems := seg.elements
+		for w, word := range seg.deleted.layers[0] {
+			base := w << wordShift
+			// Zero bits are live elements; bits beyond len(elems) in the last word are phantom zeros.
+			for live := ^word; live != 0; live &= live - 1 {
+				j := base + bits.TrailingZeros64(live)
+				if j >= len(elems) {
 					break
 				}
-			}
-			if !iterator(seg.elements[j]) {
-				return
+				if !iterator(elems[j]) {
+					return
+				}
 			}
 		}
 	}
