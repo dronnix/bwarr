@@ -22,6 +22,7 @@ type BWArr[T any] struct {
 
 	whiteSegments        []segment[T]
 	total                int // Total number of elements in the array, including deleted ones.
+	deletedTotal         int // Number of lazily-deleted elements among the active segments (subset of total).
 	cmp                  CmpFunc[T]
 	maxSegmentRankToKeep int // Always keep segments with rank <= maxSegmentRankToKeep
 	// If maxSegmentRankToKeep is 10 the structure will never shrink below 2047 elements.
@@ -179,16 +180,9 @@ func (bwa *BWArr[T]) DeleteMin() (deleted T, found bool) {
 }
 
 // Len returns the number of elements currently stored in the BWArr,
-// excluding deleted elements. The operation has O(log N) time complexity
-// as it counts non-deleted elements across all segments.
+// excluding deleted elements. The operation has O(1) time complexity.
 func (bwa *BWArr[T]) Len() int {
-	deleted := 0
-	for i := range bwa.whiteSegments {
-		if bwa.active(i) {
-			deleted += bwa.whiteSegments[i].deletedNum
-		}
-	}
-	return bwa.total - deleted
+	return bwa.total - bwa.deletedTotal
 }
 
 // Max returns the maximum element in the BWArr and true, or the zero value
@@ -223,6 +217,7 @@ func (bwa *BWArr[T]) Min() (minElem T, found bool) {
 // for reuse, which is more efficient if the BWArr will be repopulated.
 func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	bwa.total = 0
+	bwa.deletedTotal = 0
 	if dropSegments {
 		bwa.whiteSegments = nil
 	}
@@ -235,6 +230,7 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	newBWA := &BWArr[T]{
 		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
 		total:         bwa.total,
+		deletedTotal:  bwa.deletedTotal,
 		cmp:           bwa.cmp,
 	}
 
@@ -351,6 +347,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	deleted = seg.elements[index]
 	seg.deleted.Set(index)
 	seg.deletedNum++
+	bwa.deletedTotal++
 
 	segmentCapacity := 1 << segNum
 	halfSegmentCapacity := segmentCapacity >> 1
@@ -359,6 +356,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	}
 	if segNum == 0 {
 		bwa.total--
+		bwa.deletedTotal--
 		seg.deletedNum = 0
 		seg.deleted.Reset()
 		return deleted
@@ -375,8 +373,9 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		mergeSegmentsDirty(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity, true)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
 	}
-	// Both consolidation paths remove exactly half a segment's worth of (deleted) elements from the accounting.
+	// Both consolidation paths remove exactly half a segment's worth of deleted elements from the accounting.
 	bwa.total -= halfSegmentCapacity
+	bwa.deletedTotal -= halfSegmentCapacity
 	return deleted
 }
 

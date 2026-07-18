@@ -1403,6 +1403,14 @@ func testNewBWArr[T any](t *testing.T, cmp CmpFunc[T]) {
 }
 
 func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
+	deleted := 0
+	for i := range bwa.whiteSegments {
+		if bwa.active(i) {
+			deleted += bwa.whiteSegments[i].deletedNum
+		}
+	}
+	require.Equal(t, deleted, bwa.deletedTotal, "deletedTotal must equal the sum of active segments' deletedNum")
+
 	if len(bwa.whiteSegments) == 0 || bwa.total == 0 {
 		return
 	}
@@ -1433,6 +1441,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 func bwaEqual[T any](t *testing.T, expected, actual *BWArr[T]) {
 	require.GreaterOrEqual(t, len(expected.whiteSegments), len(actual.whiteSegments))
 	require.Equal(t, expected.total, actual.total)
+	require.Equal(t, expected.deletedTotal, actual.deletedTotal)
 	for seg := range expected.whiteSegments {
 		if expected.total&(1<<seg) == 0 {
 			continue
@@ -1450,6 +1459,9 @@ func markDel[T any](bwa *BWArr[T], toDel ...bwaIdx) *BWArr[T] {
 	for i := range toDel {
 		bwa.whiteSegments[toDel[i].segNum].deleted.Set(toDel[i].idx)
 		bwa.whiteSegments[toDel[i].segNum].deletedNum++
+		if bwa.active(toDel[i].segNum) {
+			bwa.deletedTotal++
+		}
 	}
 	return bwa
 }
