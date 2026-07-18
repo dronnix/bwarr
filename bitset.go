@@ -1,7 +1,6 @@
 package bwarr
 
 import (
-	"math"
 	"math/bits"
 )
 
@@ -21,18 +20,18 @@ const intDiv64 = 6 // log2(bitsNum)
 const reminder64 = bitsNum - 1
 const allSet = ^uint64(0)
 
+// typicalMaxLayers is a capacity hint: 4 layers cover 64^4 = 16M bits without reallocation.
+const typicalMaxLayers = 4
+
 func NewLayeredBitSet(size int) *LayeredBitSet {
-	layersNum := int(math.Ceil(math.Log(float64(size)) / math.Log(bitsNum)))
-	layersNum = max(layersNum, 1)
-	layers := make([][]uint64, layersNum)
-
-	bitsPerElement := bitsNum
-	for i := range layersNum {
-		layerSize := int(math.Ceil(float64(size) / float64(bitsPerElement)))
-		layers[i] = make([]uint64, layerSize)
-		bitsPerElement *= bitsNum
+	// Each layer summarizes the 64-bit words of the layer below; add layers until one word covers everything.
+	layers := make([][]uint64, 0, typicalMaxLayers)
+	for words := (size + reminder64) >> intDiv64; ; words = (words + reminder64) >> intDiv64 {
+		layers = append(layers, make([]uint64, words))
+		if words == 1 {
+			break
+		}
 	}
-
 	return &LayeredBitSet{layers: layers, size: size, firstUnset: 0, lastUnset: size - 1}
 }
 

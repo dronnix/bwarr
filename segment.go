@@ -1,7 +1,6 @@
 package bwarr
 
 import (
-	"math"
 	"math/bits"
 )
 
@@ -311,10 +310,7 @@ func calculateWhiteSegmentsQuantity(capacity int) int {
 	if capacity < 0 {
 		panic("negative capacity")
 	}
-	if capacity == 0 {
-		return 0
-	}
-	return int(math.Log2(float64(capacity)) + 1) // Maybe: rewrite without using math (bit operations)?
+	return bits.Len(uint(capacity)) // Rank of the highest segment needed for `capacity` elements, plus one.
 }
 
 func rightmostTrueBitPosition(x int) int {
