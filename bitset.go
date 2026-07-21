@@ -24,6 +24,9 @@ const allSet = ^uint64(0)
 const typicalMaxLayers = 4
 
 func NewLayeredBitSet(size int) *LayeredBitSet {
+	if size <= 0 {
+		panic("bwarr: LayeredBitSet size must be positive")
+	}
 	// Each layer summarizes the 64-bit words of the layer below; add layers until one word covers everything.
 	layers := make([][]uint64, 0, typicalMaxLayers)
 	for words := (size + wordMask) >> wordShift; ; words = (words + wordMask) >> wordShift {

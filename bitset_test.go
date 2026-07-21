@@ -82,6 +82,13 @@ func TestNewLayeredBitSet(t *testing.T) {
 	}
 }
 
+func TestNewLayeredBitSet_NonPositiveSize(t *testing.T) {
+	t.Parallel()
+
+	assert.Panics(t, func() { NewLayeredBitSet(0) })
+	assert.Panics(t, func() { NewLayeredBitSet(-1) })
+}
+
 func TestLayeredBitSet_Set(t *testing.T) {
 	t.Parallel()
 
