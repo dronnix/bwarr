@@ -216,7 +216,27 @@ func Test_mergeSegmentsForDel(t *testing.T) {
 	}
 }
 
+// Fully deleted segments cannot be active in a BWArr (occupancy invariant), but the
+// find methods guard against them so they stay safe for any segment state.
+//
 //nolint:exhaustruct
+func Test_findsOnFullyDeletedSegment(t *testing.T) {
+	t.Parallel()
+	seg := segment[int64]{elements: []int64{23, 42}, deleted: boolsToLayeredBitSet([]bool{true, true}), deletedNum: 2} //nolint:exhaustruct
+	assert.Equal(t, -1, seg.findRightmostNotDeleted(int64Cmp, 23))
+	assert.Equal(t, -1, seg.findGTOE(int64Cmp, 23))
+	assert.Equal(t, -1, seg.findLess(int64Cmp, 43))
+}
+
+// Exercises the defensive guard in the duplicate-handling branch of the binary search:
+// reachable only when the bitset's firstUnset cache understates the first live element.
+func Test_findRightmostNotDeletedCorruptedCache(t *testing.T) {
+	t.Parallel()
+	seg := segment[int64]{elements: []int64{7, 7, 7, 7}, deleted: boolsToLayeredBitSet([]bool{true, true, true, false}), deletedNum: 3} //nolint:exhaustruct
+	seg.deleted.firstUnset = 0                                                                                                          // Below the real first live element (3).
+	assert.Equal(t, -1, seg.findRightmostNotDeleted(int64Cmp, 7))
+}
+
 func Test_findRightmostNotDeleted(t *testing.T) {
 	t.Parallel()
 	tests := []struct {

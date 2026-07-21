@@ -56,7 +56,9 @@ func (s *LayeredBitSet) Set(idx int) {
 		s.firstUnset = s.findFirstUnsetBit()
 	}
 	if s.lastUnset == origIdx {
-		s.lastUnset = s.findLastUnsetBit()
+		// Bits above lastUnset are all set by definition and origIdx was just set,
+		// so the new last unset bit is strictly below origIdx.
+		s.lastUnset = s.FindPrevUnsetBit(origIdx)
 	}
 }
 
@@ -190,14 +192,6 @@ func (s *LayeredBitSet) findFirstUnsetBit() int {
 		return -1
 	}
 	return elemIdx
-}
-
-func (s *LayeredBitSet) findLastUnsetBit() int {
-	last := s.size - 1
-	if !s.Get(last) {
-		return last
-	}
-	return s.FindPrevUnsetBit(last)
 }
 
 // findFirstUnsetBit returns position of the lowest unset bit in the given element,
