@@ -1420,6 +1420,10 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 			continue
 		}
 		require.Len(t, bwa.whiteSegments[i].elements, 1<<i)
+		// Occupancy invariant: an active segment is always more than half live
+		// (consolidation fires at 50%), so it always has live elements to iterate.
+		require.LessOrEqual(t, bwa.whiteSegments[i].deletedNum, (1<<i-1)/2,
+			"active segment %d violates the occupancy invariant", i)
 		validateSegment(t, bwa.whiteSegments[i], bwa.cmp)
 	}
 }
