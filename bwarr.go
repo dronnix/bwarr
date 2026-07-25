@@ -234,10 +234,8 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 		cmp:           bwa.cmp,
 	}
 
-	for i := range bwa.whiteSegments {
-		if bwa.active(i) {
-			newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
-		}
+	for i := range bwa.activeSegments {
+		newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
 	}
 	return newBWA
 }
@@ -310,26 +308,33 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 // Iteration stops early if the iterator returns false. The operation visits
 // all elements in O(N) time.
 func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
-	for i := range bwa.whiteSegments {
-		if !bwa.active(i) {
-			continue
+	for i := range bwa.activeSegments {
+		if !bwa.walkSegment(i, iterator) {
+			return
 		}
-		seg := &bwa.whiteSegments[i]
-		elems := seg.elements
-		for w, word := range seg.deleted.layers[0] {
-			base := w << wordShift
-			// Zero bits are live elements; bits beyond len(elems) in the last word are phantom zeros.
-			for live := ^word; live != 0; live &= live - 1 {
-				j := base + bits.TrailingZeros64(live)
-				if j >= len(elems) {
-					break
-				}
-				if !iterator(elems[j]) {
-					return
-				}
+	}
+}
+
+// walkSegment feeds the live elements of one segment to iterator in index order, and reports whether
+// the iterator wants more. The per-element loop lives here, not inside the range-over-func body of
+// UnorderedWalk: a body closure around it costs ~20% on a full walk.
+func (bwa *BWArr[T]) walkSegment(rank int, iterator IteratorFunc[T]) bool {
+	seg := &bwa.whiteSegments[rank]
+	elems := seg.elements
+	for w, word := range seg.deleted.layers[0] {
+		base := w << wordShift
+		// Zero bits are live elements; bits beyond len(elems) in the last word are phantom zeros.
+		for live := ^word; live != 0; live &= live - 1 {
+			j := base + bits.TrailingZeros64(live)
+			if j >= len(elems) {
+				break
+			}
+			if !iterator(elems[j]) {
+				return false
 			}
 		}
 	}
+	return true
 }
 
 // Compact releases memory used by inactive segments and lazy-deleted elements.
@@ -383,21 +388,13 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 
 // min assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
-	// First, skip non-used segments:
-	for segNum = range bwa.whiteSegments {
-		if bwa.active(segNum) {
-			break
-		}
-	}
-	index = bwa.whiteSegments[segNum].min(bwa.cmp)
-	// Then find the segment with the smallest element:
-	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
-		if !bwa.active(seg) {
-			continue
-		}
-		// Less or equal is used to provide stable behavior (return the oldest one).
+	segNum, index = -1, -1
+	// Find the segment with the smallest element:
+	for seg := range bwa.activeSegments {
+		// Less or equal is used to provide stable behavior (return the oldest one):
+		// the ranks come in increasing order and the higher the rank, the older the elements.
 		ind := bwa.whiteSegments[seg].min(bwa.cmp)
-		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) <= 0 {
+		if segNum < 0 || bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) <= 0 {
 			segNum, index = seg, ind
 		}
 	}
@@ -406,21 +403,13 @@ func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
 
 // max assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
-	// First, skip non-used segments:
-	for segNum = range bwa.whiteSegments {
-		if bwa.active(segNum) {
-			break
-		}
-	}
-	index = bwa.whiteSegments[segNum].maxNonDeletedIndex()
-	// Then find the segment with the largest element:
-	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
-		if !bwa.active(seg) {
-			continue
-		}
-		// Greater or equal is used to provide stable behavior (return the oldest one).
+	segNum, index = -1, -1
+	// Find the segment with the largest element:
+	for seg := range bwa.activeSegments {
+		// Greater or equal is used to provide stable behavior (return the oldest one):
+		// the ranks come in increasing order and the higher the rank, the older the elements.
 		ind := bwa.whiteSegments[seg].maxNonDeletedIndex()
-		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) >= 0 {
+		if segNum < 0 || bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) >= 0 {
 			segNum, index = seg, ind
 		}
 	}
@@ -428,12 +417,10 @@ func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
 }
 
 func (bwa *BWArr[T]) search(element T) (segNum, index int) {
-	for segNum = len(bwa.whiteSegments) - 1; segNum >= 0; segNum-- {
-		if !bwa.active(segNum) {
-			continue
-		}
-		if index = bwa.whiteSegments[segNum].findRightmostNotDeleted(bwa.cmp, element); index >= 0 {
-			return segNum, index
+	// The oldest match wins (FIFO), and the higher the rank, the older the elements.
+	for seg := range bwa.activeSegmentsDesc {
+		if index = bwa.whiteSegments[seg].findRightmostNotDeleted(bwa.cmp, element); index >= 0 {
+			return seg, index
 		}
 	}
 	return -1, -1
@@ -454,6 +441,32 @@ func (bwa *BWArr[T]) ensureSeg(rank int) {
 // rank r is active iff bit r of total is set (the paper's active(i) predicate).
 func (bwa *BWArr[T]) active(rank int) bool {
 	return bwa.total&(1<<rank) != 0
+}
+
+// activeSegments yields the ranks of the segments that currently hold data, from the lowest rank
+// (the newest elements) to the highest (the oldest). Rank r is active iff bit r of total is set, so
+// the ranks to visit are the set bits of the element count: the walk takes one step per segment that
+// holds data, not one per allocated segment.
+//
+//	for rank := range bwa.activeSegments { ... }
+func (bwa *BWArr[T]) activeSegments(yield func(rank int) bool) {
+	for m := uint64(bwa.total); m != 0; m &= m - 1 { //nolint: gosec // total is always non-negative.
+		if !yield(bits.TrailingZeros64(m)) {
+			return
+		}
+	}
+}
+
+// activeSegmentsDesc is activeSegments in the opposite direction: highest rank, holding the oldest
+// elements, first.
+func (bwa *BWArr[T]) activeSegmentsDesc(yield func(rank int) bool) {
+	for m := uint64(bwa.total); m != 0; { //nolint: gosec // total is always non-negative.
+		rank := bits.Len64(m) - 1
+		m &= 1<<rank - 1 // Visited: only the lower ranks are left.
+		if !yield(rank) {
+			return
+		}
+	}
 }
 
 func (bwa *BWArr[T]) maxRank() int {

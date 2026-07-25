@@ -1,5 +1,523 @@
 [
   {
+    "Date": 1784999683,
+    "Suites": [
+      {
+        "Goos": "darwin",
+        "Goarch": "arm64",
+        "Pkg": "github.com/dronnix/bwarr",
+        "Benchmarks": [
+          {
+            "Name": "BenchmarkQA_Insert-10",
+            "Runs": 1000000,
+            "NsPerOp": 140.9,
+            "Mem": {
+              "BytesPerOp": 34,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_ReplaceOrInsertNotFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 1323,
+            "Mem": {
+              "BytesPerOp": 34,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_ReplaceOrInsertFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 263.6,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 30.35
+            }
+          },
+          {
+            "Name": "BenchmarkQA_HasFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 262.3,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 30.5
+            }
+          },
+          {
+            "Name": "BenchmarkQA_HasNotFoundWorst-10",
+            "Runs": 1000000,
+            "NsPerOp": 2402,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 3.33
+            }
+          },
+          {
+            "Name": "BenchmarkQA_Min-10",
+            "Runs": 1000000,
+            "NsPerOp": 114.6,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_Max-10",
+            "Runs": 1000000,
+            "NsPerOp": 48.67,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_Delete-10",
+            "Runs": 1000000,
+            "NsPerOp": 789.2,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_DeleteMin-10",
+            "Runs": 1000000,
+            "NsPerOp": 54.68,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_DeleteMax-10",
+            "Runs": 1000000,
+            "NsPerOp": 28.5,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          }
+        ]
+      },
+      {
+        "Goos": "darwin",
+        "Goarch": "arm64",
+        "Pkg": "github.com/dronnix/bwarr",
+        "Benchmarks": [
+          {
+            "Name": "BenchmarkLongQA_InsertRandom-10",
+            "Runs": 223,
+            "NsPerOp": 10662815,
+            "Mem": {
+              "BytesPerOp": 1069888,
+              "AllocsPerOp": 104,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendRandom-10",
+            "Runs": 877,
+            "NsPerOp": 2752907,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendInc-10",
+            "Runs": 3710,
+            "NsPerOp": 648469,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendDec-10",
+            "Runs": 4648,
+            "NsPerOp": 514861,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendRange-10",
+            "Runs": 3744,
+            "NsPerOp": 633410,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendWithDelSeries-10",
+            "Runs": 3760,
+            "NsPerOp": 636144,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_DescendRandom-10",
+            "Runs": 901,
+            "NsPerOp": 2666546,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_DescendRangeWithDelSeries-10",
+            "Runs": 4665,
+            "NsPerOp": 513119,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_UnorderedWalkRandom-10",
+            "Runs": 8908,
+            "NsPerOp": 268437,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_UnorderedWalkWithDelSeries-10",
+            "Runs": 9057,
+            "NsPerOp": 266229,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_SearchGTOEInDelSeries-10",
+            "Runs": 7770267,
+            "NsPerOp": 308,
+            "Mem": {
+              "BytesPerOp": 1552,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendRangeAcrossDelSeries-10",
+            "Runs": 5802441,
+            "NsPerOp": 411.9,
+            "Mem": {
+              "BytesPerOp": 1552,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendAcrossDelSeries-10",
+            "Runs": 12362,
+            "NsPerOp": 194123,
+            "Mem": {
+              "BytesPerOp": 1552,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_UnorderedWalkAcrossDelSeries-10",
+            "Runs": 17817,
+            "NsPerOp": 134842,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
+    "Date": 1784992351,
+    "Suites": [
+      {
+        "Goos": "darwin",
+        "Goarch": "arm64",
+        "Pkg": "github.com/dronnix/bwarr",
+        "Benchmarks": [
+          {
+            "Name": "BenchmarkQA_Insert-10",
+            "Runs": 1000000,
+            "NsPerOp": 140.6,
+            "Mem": {
+              "BytesPerOp": 34,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_ReplaceOrInsertNotFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 1388,
+            "Mem": {
+              "BytesPerOp": 34,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_ReplaceOrInsertFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 285.1,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 28.06
+            }
+          },
+          {
+            "Name": "BenchmarkQA_HasFound-10",
+            "Runs": 1000000,
+            "NsPerOp": 283,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 28.27
+            }
+          },
+          {
+            "Name": "BenchmarkQA_HasNotFoundWorst-10",
+            "Runs": 1000000,
+            "NsPerOp": 2362,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 3.39
+            }
+          },
+          {
+            "Name": "BenchmarkQA_Min-10",
+            "Runs": 1000000,
+            "NsPerOp": 126.5,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_Max-10",
+            "Runs": 1000000,
+            "NsPerOp": 51.02,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_Delete-10",
+            "Runs": 1000000,
+            "NsPerOp": 841.2,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_DeleteMin-10",
+            "Runs": 1000000,
+            "NsPerOp": 64.31,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkQA_DeleteMax-10",
+            "Runs": 1000000,
+            "NsPerOp": 38.97,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          }
+        ]
+      },
+      {
+        "Goos": "darwin",
+        "Goarch": "arm64",
+        "Pkg": "github.com/dronnix/bwarr",
+        "Benchmarks": [
+          {
+            "Name": "BenchmarkLongQA_InsertRandom-10",
+            "Runs": 223,
+            "NsPerOp": 10703371,
+            "Mem": {
+              "BytesPerOp": 1069888,
+              "AllocsPerOp": 104,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendRandom-10",
+            "Runs": 885,
+            "NsPerOp": 2712437,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendInc-10",
+            "Runs": 3704,
+            "NsPerOp": 642216,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendDec-10",
+            "Runs": 4621,
+            "NsPerOp": 518009,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendRange-10",
+            "Runs": 3770,
+            "NsPerOp": 632106,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendWithDelSeries-10",
+            "Runs": 3768,
+            "NsPerOp": 636149,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_DescendRandom-10",
+            "Runs": 902,
+            "NsPerOp": 2665835,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_DescendRangeWithDelSeries-10",
+            "Runs": 4662,
+            "NsPerOp": 510839,
+            "Mem": {
+              "BytesPerOp": 1424,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_UnorderedWalkRandom-10",
+            "Runs": 8938,
+            "NsPerOp": 267748,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_UnorderedWalkWithDelSeries-10",
+            "Runs": 9086,
+            "NsPerOp": 264772,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_SearchGTOEInDelSeries-10",
+            "Runs": 7606464,
+            "NsPerOp": 307.7,
+            "Mem": {
+              "BytesPerOp": 1552,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendRangeAcrossDelSeries-10",
+            "Runs": 5739554,
+            "NsPerOp": 419.3,
+            "Mem": {
+              "BytesPerOp": 1552,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_AscendAcrossDelSeries-10",
+            "Runs": 12355,
+            "NsPerOp": 194446,
+            "Mem": {
+              "BytesPerOp": 1552,
+              "AllocsPerOp": 2,
+              "MBPerSec": 0
+            }
+          },
+          {
+            "Name": "BenchmarkLongQA_UnorderedWalkAcrossDelSeries-10",
+            "Runs": 17858,
+            "NsPerOp": 134600,
+            "Mem": {
+              "BytesPerOp": 0,
+              "AllocsPerOp": 0,
+              "MBPerSec": 0
+            }
+          }
+        ]
+      }
+    ]
+  },
+  {
     "Date": 1784395090,
     "Suites": [
       {

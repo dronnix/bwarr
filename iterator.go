@@ -31,10 +31,7 @@ func newIterator[T any](bwa *BWArr[T], desc bool, bounds func(s *segment[T]) (fi
 	}
 
 	si := make([]segmentIterator[T], len(bwa.whiteSegments))
-	for i := range bwa.whiteSegments {
-		if !bwa.active(i) {
-			continue
-		}
+	for i := range bwa.activeSegments {
 		first, last, ok := bounds(&bwa.whiteSegments[i])
 		if !ok {
 			continue

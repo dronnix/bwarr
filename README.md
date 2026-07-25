@@ -63,7 +63,7 @@ More methods will be added, also expect separate benchmarks for AMD64 and ARM64 
 
 ## Installation
 
-Requires Go 1.22 or higher.
+Requires Go 1.23 or higher.
 
 ```bash
 go get github.com/dronnix/bwarr
