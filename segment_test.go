@@ -7,8 +7,8 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func boolsToLayeredBitSet(bools []bool) *LayeredBitSet {
-	bs := NewLayeredBitSet(len(bools))
+func boolsToLayeredBitSet(bools []bool) *layeredBitSet {
+	bs := newLayeredBitSet(len(bools))
 	for i, b := range bools {
 		if b {
 			bs.Set(i)
@@ -30,7 +30,7 @@ func Test_demoteSegment(t *testing.T) {
 			name:     "demote 4 to 2",
 			from:     segment[int64]{elements: []int64{23, 0, 0, 42}, deleted: boolsToLayeredBitSet([]bool{false, true, true, false}), deletedNum: 2},
 			to:       &segment[int64]{elements: []int64{16, 32}, deleted: boolsToLayeredBitSet([]bool{true, true}), deletedNum: 2},
-			expected: &segment[int64]{elements: []int64{23, 42}, deleted: NewLayeredBitSet(2), deletedNum: 0},
+			expected: &segment[int64]{elements: []int64{23, 42}, deleted: newLayeredBitSet(2), deletedNum: 0},
 		},
 	}
 	for _, tt := range tests { //nolint:paralleltest
@@ -98,37 +98,37 @@ func Test_mergeSegments(t *testing.T) {
 	}{
 		{
 			name:     "two elements",
-			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: NewLayeredBitSet(2)},
-			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: NewLayeredBitSet(2)},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
-			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: newLayeredBitSet(2)},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: newLayeredBitSet(2)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 		},
 		{
 			name:     "rewind from first",
-			seg1:     segment[int64]{elements: []int64{3, 4}, deleted: NewLayeredBitSet(2)},
-			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: NewLayeredBitSet(2)},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
-			expected: segment[int64]{elements: []int64{3, 4, 17, 37}, deleted: NewLayeredBitSet(4)},
+			seg1:     segment[int64]{elements: []int64{3, 4}, deleted: newLayeredBitSet(2)},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: newLayeredBitSet(2)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
+			expected: segment[int64]{elements: []int64{3, 4, 17, 37}, deleted: newLayeredBitSet(4)},
 		},
 		{
 			name:     "two with one deleted element",
-			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: NewLayeredBitSet(2)},
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: newLayeredBitSet(2)},
 			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: boolsToLayeredBitSet([]bool{false, true}), deletedNum: 1},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
 			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: boolsToLayeredBitSet([]bool{false, false, true, false}), deletedNum: 1},
 		},
 		{
 			name:     "two with two deleted elements",
 			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: boolsToLayeredBitSet([]bool{true, false}), deletedNum: 1},
 			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: boolsToLayeredBitSet([]bool{false, true}), deletedNum: 1},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
 			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: boolsToLayeredBitSet([]bool{false, true, true, false}), deletedNum: 2},
 		},
 		{
 			name:     "if elements are equal, non-deleted must be first",
 			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: boolsToLayeredBitSet([]bool{true, false}), deletedNum: 1},
 			seg2:     segment[int64]{elements: []int64{23, 42}, deleted: boolsToLayeredBitSet([]bool{false, true}), deletedNum: 1},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
 			expected: segment[int64]{elements: []int64{23, 23, 42, 42}, deleted: boolsToLayeredBitSet([]bool{false, true, false, true}), deletedNum: 2},
 		},
 	}
@@ -163,37 +163,37 @@ func Test_mergeSegmentsForDel(t *testing.T) {
 	}{
 		{
 			name:     "two elements",
-			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: NewLayeredBitSet(2)},
-			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: NewLayeredBitSet(2)},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
-			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: newLayeredBitSet(2)},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: newLayeredBitSet(2)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
+			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 		},
 		{
 			name:     "rewind from first",
-			seg1:     segment[int64]{elements: []int64{3, 4}, deleted: NewLayeredBitSet(2)},
-			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: NewLayeredBitSet(2)},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
-			expected: segment[int64]{elements: []int64{3, 4, 17, 37}, deleted: NewLayeredBitSet(4)},
+			seg1:     segment[int64]{elements: []int64{3, 4}, deleted: newLayeredBitSet(2)},
+			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: newLayeredBitSet(2)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
+			expected: segment[int64]{elements: []int64{3, 4, 17, 37}, deleted: newLayeredBitSet(4)},
 		},
 		{
 			name:     "two with one deleted element",
-			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: NewLayeredBitSet(2)},
+			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: newLayeredBitSet(2)},
 			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: boolsToLayeredBitSet([]bool{false, true}), deletedNum: 1},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
 			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: boolsToLayeredBitSet([]bool{false, false, true, false}), deletedNum: 1},
 		},
 		{
 			name:     "two with two deleted elements",
 			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: boolsToLayeredBitSet([]bool{true, false}), deletedNum: 1},
 			seg2:     segment[int64]{elements: []int64{17, 37}, deleted: boolsToLayeredBitSet([]bool{false, true}), deletedNum: 1},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
 			expected: segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: boolsToLayeredBitSet([]bool{false, true, true, false}), deletedNum: 2},
 		},
 		{
 			name:     "if elements are equal, non-deleted must be first",
 			seg1:     segment[int64]{elements: []int64{23, 42}, deleted: boolsToLayeredBitSet([]bool{true, false}), deletedNum: 1},
 			seg2:     segment[int64]{elements: []int64{23, 42}, deleted: boolsToLayeredBitSet([]bool{false, true}), deletedNum: 1},
-			result:   &segment[int64]{elements: make([]int64, 4), deleted: NewLayeredBitSet(4)},
+			result:   &segment[int64]{elements: make([]int64, 4), deleted: newLayeredBitSet(4)},
 			expected: segment[int64]{elements: []int64{23, 23, 42, 42}, deleted: boolsToLayeredBitSet([]bool{false, true, false, true}), deletedNum: 2},
 		},
 	}
@@ -247,13 +247,13 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 	}{
 		{
 			name: "one match",
-			seg:  segment[int64]{elements: []int64{23}, deleted: NewLayeredBitSet(1)},
+			seg:  segment[int64]{elements: []int64{23}, deleted: newLayeredBitSet(1)},
 			val:  23,
 			want: 0,
 		},
 		{
 			name: "one not match",
-			seg:  segment[int64]{elements: []int64{23}, deleted: NewLayeredBitSet(1)},
+			seg:  segment[int64]{elements: []int64{23}, deleted: newLayeredBitSet(1)},
 			val:  42,
 			want: -1,
 		},
@@ -261,7 +261,7 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 			name: "in the middle",
 			seg: segment[int64]{
 				elements: []int64{17, 23, 37, 42},
-				deleted:  NewLayeredBitSet(4),
+				deleted:  newLayeredBitSet(4),
 			},
 			val:  23,
 			want: 1,
@@ -270,7 +270,7 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 			name: "in the beginning",
 			seg: segment[int64]{
 				elements: []int64{17, 23, 37, 42},
-				deleted:  NewLayeredBitSet(4),
+				deleted:  newLayeredBitSet(4),
 			},
 			val:  17,
 			want: 0,
@@ -279,7 +279,7 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 			name: "in the end",
 			seg: segment[int64]{
 				elements: []int64{17, 23, 37, 42},
-				deleted:  NewLayeredBitSet(4),
+				deleted:  newLayeredBitSet(4),
 			},
 			val:  42,
 			want: 3,
@@ -315,7 +315,7 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 			name: "should find rightmost",
 			seg: segment[int64]{
 				elements: []int64{17, 23, 23, 23, 37, 42, 49, 51},
-				deleted:  NewLayeredBitSet(8),
+				deleted:  newLayeredBitSet(8),
 			},
 			val:  23,
 			want: 3,
@@ -402,31 +402,31 @@ func Test_segment_findGTOE(t *testing.T) {
 	}{
 		{
 			name: "one match",
-			seg:  segment[int64]{elements: []int64{23}, deleted: NewLayeredBitSet(1)},
+			seg:  segment[int64]{elements: []int64{23}, deleted: newLayeredBitSet(1)},
 			val:  23,
 			want: 0,
 		},
 		{
 			name: "one greater",
-			seg:  segment[int64]{elements: []int64{23}, deleted: NewLayeredBitSet(1)},
+			seg:  segment[int64]{elements: []int64{23}, deleted: newLayeredBitSet(1)},
 			val:  11,
 			want: 0,
 		},
 		{
 			name: "first",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 			val:  11,
 			want: 0,
 		},
 		{
 			name: "last",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 			val:  42,
 			want: 3,
 		},
 		{
 			name: "in the middle",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 			val:  30,
 			want: 2,
 		},
@@ -438,7 +438,7 @@ func Test_segment_findGTOE(t *testing.T) {
 		},
 		{
 			name: "all less",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 			val:  101,
 			want: -1,
 		},
@@ -463,43 +463,43 @@ func Test_segment_findLess(t *testing.T) {
 	}{
 		{
 			name: "one equal",
-			seg:  segment[int64]{elements: []int64{23}, deleted: NewLayeredBitSet(1)},
+			seg:  segment[int64]{elements: []int64{23}, deleted: newLayeredBitSet(1)},
 			val:  23,
 			want: -1,
 		},
 		{
 			name: "one less",
-			seg:  segment[int64]{elements: []int64{23}, deleted: NewLayeredBitSet(1)},
+			seg:  segment[int64]{elements: []int64{23}, deleted: newLayeredBitSet(1)},
 			val:  42,
 			want: 0,
 		},
 		{
 			name: "one greater",
-			seg:  segment[int64]{elements: []int64{23}, deleted: NewLayeredBitSet(1)},
+			seg:  segment[int64]{elements: []int64{23}, deleted: newLayeredBitSet(1)},
 			val:  11,
 			want: -1,
 		},
 		{
 			name: "last",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 			val:  77,
 			want: 3,
 		},
 		{
 			name: "first",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 			val:  11,
 			want: -1,
 		},
 		{
 			name: "last2",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 			val:  77,
 			want: 3,
 		},
 		{
 			name: "in the middle",
-			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: NewLayeredBitSet(4)},
+			seg:  segment[int64]{elements: []int64{17, 23, 37, 42}, deleted: newLayeredBitSet(4)},
 			val:  30,
 			want: 1,
 		},
@@ -602,7 +602,7 @@ func Test_segment_min(t *testing.T) {
 			name: "single element",
 			seg: segment[int64]{
 				elements: []int64{42},
-				deleted:  NewLayeredBitSet(1),
+				deleted:  newLayeredBitSet(1),
 			},
 			want: 0,
 		},
@@ -610,7 +610,7 @@ func Test_segment_min(t *testing.T) {
 			name: "two elements - first is min",
 			seg: segment[int64]{
 				elements: []int64{17, 42},
-				deleted:  NewLayeredBitSet(2),
+				deleted:  newLayeredBitSet(2),
 			},
 			want: 0,
 		},
@@ -618,7 +618,7 @@ func Test_segment_min(t *testing.T) {
 			name: "two equal elements - should return rightmost (FIFO)",
 			seg: segment[int64]{
 				elements: []int64{23, 23},
-				deleted:  NewLayeredBitSet(2),
+				deleted:  newLayeredBitSet(2),
 			},
 			want: 1,
 		},
@@ -626,7 +626,7 @@ func Test_segment_min(t *testing.T) {
 			name: "three equal elements - should return rightmost",
 			seg: segment[int64]{
 				elements: []int64{23, 23, 23},
-				deleted:  NewLayeredBitSet(3),
+				deleted:  newLayeredBitSet(3),
 			},
 			want: 2,
 		},
@@ -650,7 +650,7 @@ func Test_segment_min(t *testing.T) {
 			name: "sorted array - minimum is first",
 			seg: segment[int64]{
 				elements: []int64{17, 23, 37, 42},
-				deleted:  NewLayeredBitSet(4),
+				deleted:  newLayeredBitSet(4),
 			},
 			want: 0,
 		},
@@ -658,7 +658,7 @@ func Test_segment_min(t *testing.T) {
 			name: "sorted array with equal minimums",
 			seg: segment[int64]{
 				elements: []int64{17, 17, 23, 37, 42},
-				deleted:  NewLayeredBitSet(5),
+				deleted:  newLayeredBitSet(5),
 			},
 			want: 1,
 		},
@@ -674,7 +674,7 @@ func Test_segment_min(t *testing.T) {
 			name: "sorted array with larger elements after equal mins",
 			seg: segment[int64]{
 				elements: []int64{5, 5, 5, 10, 20, 30},
-				deleted:  NewLayeredBitSet(6),
+				deleted:  newLayeredBitSet(6),
 			},
 			want: 2,
 		},
@@ -722,7 +722,7 @@ func Test_segment_min(t *testing.T) {
 			name: "equal elements at start with larger after",
 			seg: segment[int64]{
 				elements: []int64{1, 1, 2, 3, 4},
-				deleted:  NewLayeredBitSet(5),
+				deleted:  newLayeredBitSet(5),
 			},
 			want: 1,
 		},

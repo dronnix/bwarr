@@ -1458,7 +1458,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 	}
 	for i, seg := range segs {
 		l := len(seg)
-		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: NewLayeredBitSet(l)}
+		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: newLayeredBitSet(l)}
 	}
 	return &bwa
 }

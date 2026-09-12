@@ -6,7 +6,7 @@ import (
 
 type segment[T any] struct {
 	elements   []T            // Stores user's data.
-	deleted    *LayeredBitSet // Stores whether i-th element is deleted.
+	deleted    *layeredBitSet // Stores whether i-th element is deleted.
 	deletedNum int            // Number of deleted elements in the segment.
 }
 
@@ -22,7 +22,7 @@ func makeSegment[T any](rank int) segment[T] {
 	l := 1 << rank
 	return segment[T]{
 		elements:   make([]T, l),
-		deleted:    NewLayeredBitSet(l),
+		deleted:    newLayeredBitSet(l),
 		deletedNum: 0,
 	}
 }
@@ -153,7 +153,7 @@ func moveNonDeletedValuesToSegmentEnd[T any](seg *segment[T]) {
 	seg.deletedNum = halfLen
 }
 
-func setOrUnset(bs *LayeredBitSet, idx int, value bool) {
+func setOrUnset(bs *layeredBitSet, idx int, value bool) {
 	if value {
 		bs.Set(idx)
 	} else {

@@ -4,11 +4,11 @@ import (
 	"math/bits"
 )
 
-// LayeredBitSet is a special version of bitset, optimized for storing BWArr deleted elements.
+// layeredBitSet is a special version of bitset, optimized for storing BWArr deleted elements.
 // Layer 0 is the original bitset, where each bit represents whether the corresponding element is deleted.
 // Layer I is a bitset where each bit represents whether the corresponding 64 bits in layer I-1 are all set.
 // This way, we can quickly skip over large blocks of deleted elements.
-type LayeredBitSet struct {
+type layeredBitSet struct {
 	layers     [][]uint64
 	size       int // logical number of bits; Find methods constrain results to [0, size)
 	firstUnset int
@@ -23,9 +23,9 @@ const allSet = ^uint64(0)
 // typicalMaxLayers is a capacity hint: 4 layers cover 64^4 = 16M bits without reallocation.
 const typicalMaxLayers = 4
 
-func NewLayeredBitSet(size int) *LayeredBitSet {
+func newLayeredBitSet(size int) *layeredBitSet {
 	if size <= 0 {
-		panic("bwarr: LayeredBitSet size must be positive")
+		panic("bwarr: layeredBitSet size must be positive")
 	}
 	// Each layer summarizes the 64-bit words of the layer below; add layers until one word covers everything.
 	layers := make([][]uint64, 0, typicalMaxLayers)
@@ -35,10 +35,10 @@ func NewLayeredBitSet(size int) *LayeredBitSet {
 			break
 		}
 	}
-	return &LayeredBitSet{layers: layers, size: size, firstUnset: 0, lastUnset: size - 1}
+	return &layeredBitSet{layers: layers, size: size, firstUnset: 0, lastUnset: size - 1}
 }
 
-func (s *LayeredBitSet) Set(idx int) {
+func (s *layeredBitSet) Set(idx int) {
 	if s.Get(idx) {
 		return
 	}
@@ -63,7 +63,7 @@ func (s *LayeredBitSet) Set(idx int) {
 }
 
 // Unset clears the given bit.
-func (s *LayeredBitSet) Unset(idx int) {
+func (s *layeredBitSet) Unset(idx int) {
 	if !s.Get(idx) {
 		return
 	}
@@ -85,7 +85,7 @@ func (s *LayeredBitSet) Unset(idx int) {
 	}
 }
 
-func (s *LayeredBitSet) Get(idx int) bool {
+func (s *layeredBitSet) Get(idx int) bool {
 	element := s.layers[0][idx>>wordShift]
 	if element == 0 {
 		return false
@@ -93,17 +93,17 @@ func (s *LayeredBitSet) Get(idx int) bool {
 	return (element & (1 << (idx & wordMask))) != 0
 }
 
-func (s *LayeredBitSet) DeepCopy() *LayeredBitSet {
+func (s *layeredBitSet) DeepCopy() *layeredBitSet {
 	layersCopy := make([][]uint64, len(s.layers))
 	for i, layer := range s.layers {
 		layerCopy := make([]uint64, len(layer))
 		copy(layerCopy, layer)
 		layersCopy[i] = layerCopy
 	}
-	return &LayeredBitSet{layers: layersCopy, size: s.size, firstUnset: s.firstUnset, lastUnset: s.lastUnset}
+	return &layeredBitSet{layers: layersCopy, size: s.size, firstUnset: s.firstUnset, lastUnset: s.lastUnset}
 }
 
-func (s *LayeredBitSet) Reset() {
+func (s *layeredBitSet) Reset() {
 	for _, layer := range s.layers {
 		clear(layer)
 	}
@@ -112,7 +112,7 @@ func (s *LayeredBitSet) Reset() {
 }
 
 // FindPrevUnsetBit returns the index of the closest unset bit with lower index  or -1 if all bits are set.
-func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
+func (s *layeredBitSet) FindPrevUnsetBit(idx int) int {
 	// The algorithm is optimized to work faster with small series of unset bits, which is the common case for BWArr deleted elements.
 	// So, it is bottom-up-bottom: we start from the lowest layer and go up until we find a layer with an unset bit,
 	// then we go down to find the exact index of that bit.
@@ -138,7 +138,7 @@ func (s *LayeredBitSet) FindPrevUnsetBit(idx int) int {
 }
 
 // FindNextUnsetBit returns the index of the closest unset bit with higher index or -1 if all bits are set.
-func (s *LayeredBitSet) FindNextUnsetBit(idx int) int {
+func (s *layeredBitSet) FindNextUnsetBit(idx int) int {
 	l, bitIdx := 0, 0
 	for ; l < len(s.layers); l++ {
 		bitIdx = idx & wordMask
@@ -167,15 +167,15 @@ func (s *LayeredBitSet) FindNextUnsetBit(idx int) int {
 	return result
 }
 
-func (s *LayeredBitSet) FindFirstUnsetBit() int {
+func (s *layeredBitSet) FindFirstUnsetBit() int {
 	return s.firstUnset
 }
 
-func (s *LayeredBitSet) FindLastUnsetBit() int {
+func (s *layeredBitSet) FindLastUnsetBit() int {
 	return s.lastUnset
 }
 
-func (s *LayeredBitSet) findFirstUnsetBit() int {
+func (s *layeredBitSet) findFirstUnsetBit() int {
 	// Use top-bottom approach, optimized for tail deletions:
 	elemIdx := 0
 	for l := len(s.layers) - 1; l >= 0; l-- {

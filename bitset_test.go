@@ -68,7 +68,7 @@ func TestNewLayeredBitSet(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			bs := NewLayeredBitSet(tt.size)
+			bs := newLayeredBitSet(tt.size)
 
 			require.NotNil(t, bs)
 			assert.Len(t, bs.layers, tt.wantLayersNum)
@@ -85,15 +85,15 @@ func TestNewLayeredBitSet(t *testing.T) {
 func TestNewLayeredBitSet_NonPositiveSize(t *testing.T) {
 	t.Parallel()
 
-	assert.Panics(t, func() { NewLayeredBitSet(0) })
-	assert.Panics(t, func() { NewLayeredBitSet(-1) })
+	assert.Panics(t, func() { newLayeredBitSet(0) })
+	assert.Panics(t, func() { newLayeredBitSet(-1) })
 }
 
 func TestLayeredBitSet_Set(t *testing.T) {
 	t.Parallel()
 
 	// 64^3 = 262144, gives 3 layers: [4096][64][1]
-	bs := NewLayeredBitSet(262144)
+	bs := newLayeredBitSet(262144)
 
 	// Single bit — no propagation.
 	bs.Set(3)
@@ -124,14 +124,14 @@ func TestLayeredBitSet_Unset(t *testing.T) {
 
 	t.Run("unset already unset bit is no-op", func(t *testing.T) {
 		t.Parallel()
-		bs := NewLayeredBitSet(256)
+		bs := newLayeredBitSet(256)
 		bs.Unset(42)
 		assert.False(t, bs.Get(42))
 	})
 
 	t.Run("unset single bit no propagation", func(t *testing.T) {
 		t.Parallel()
-		bs := NewLayeredBitSet(256)
+		bs := newLayeredBitSet(256)
 		bs.Set(3)
 		bs.Set(10)
 		bs.Unset(3)
@@ -142,7 +142,7 @@ func TestLayeredBitSet_Unset(t *testing.T) {
 	t.Run("unset propagates to layer 1", func(t *testing.T) {
 		t.Parallel()
 		// 3 layers: [4096][64][1]
-		bs := NewLayeredBitSet(262144)
+		bs := newLayeredBitSet(262144)
 		// Fill element 0 of layer 0 fully — propagates to layer 1.
 		for i := range wordBits {
 			bs.Set(i)
@@ -160,7 +160,7 @@ func TestLayeredBitSet_Unset(t *testing.T) {
 	t.Run("unset propagates through all layers", func(t *testing.T) {
 		t.Parallel()
 		// 3 layers: [4096][64][1]
-		bs := NewLayeredBitSet(262144)
+		bs := newLayeredBitSet(262144)
 		// Fill all bits 0..4095 — full propagation to layer 2.
 		for i := range 4096 {
 			bs.Set(i)
@@ -176,7 +176,7 @@ func TestLayeredBitSet_Unset(t *testing.T) {
 
 	t.Run("set after unset restores bit", func(t *testing.T) {
 		t.Parallel()
-		bs := NewLayeredBitSet(256)
+		bs := newLayeredBitSet(256)
 		bs.Set(50)
 		bs.Unset(50)
 		assert.False(t, bs.Get(50))
@@ -186,7 +186,7 @@ func TestLayeredBitSet_Unset(t *testing.T) {
 
 	t.Run("unset is idempotent", func(t *testing.T) {
 		t.Parallel()
-		bs := NewLayeredBitSet(256)
+		bs := newLayeredBitSet(256)
 		bs.Set(7)
 		bs.Unset(7)
 		bs.Unset(7)
@@ -195,7 +195,7 @@ func TestLayeredBitSet_Unset(t *testing.T) {
 
 	t.Run("unset only affects target bit in element", func(t *testing.T) {
 		t.Parallel()
-		bs := NewLayeredBitSet(256)
+		bs := newLayeredBitSet(256)
 		// Set all 64 bits then unset one.
 		for i := range wordBits {
 			bs.Set(i)
@@ -214,7 +214,7 @@ func TestLayeredBitSet_Unset(t *testing.T) {
 func TestLayeredBitSet_Get(t *testing.T) {
 	t.Parallel()
 
-	bs := NewLayeredBitSet(256)
+	bs := newLayeredBitSet(256)
 
 	// Unset bits return false.
 	assert.False(t, bs.Get(0))
@@ -241,7 +241,7 @@ func TestLayeredBitSet_Get(t *testing.T) {
 func TestLayeredBitSet_DeepCopy(t *testing.T) {
 	t.Parallel()
 
-	bs := NewLayeredBitSet(256)
+	bs := newLayeredBitSet(256)
 	bs.Set(5)
 	bs.Set(100)
 
@@ -266,7 +266,7 @@ func TestLayeredBitSet_DeepCopy(t *testing.T) {
 func TestLayeredBitSet_Reset(t *testing.T) {
 	t.Parallel()
 
-	bs := NewLayeredBitSet(256)
+	bs := newLayeredBitSet(256)
 	bs.Set(0)
 	bs.Set(63)
 	bs.Set(100)
@@ -401,7 +401,7 @@ func TestLayeredBitSet_FindFirstUnsetBit(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			bs := NewLayeredBitSet(tt.size)
+			bs := newLayeredBitSet(tt.size)
 			for _, i := range tt.set {
 				bs.Set(i)
 			}
@@ -520,7 +520,7 @@ func TestLayeredBitSet_FindLastUnsetBit(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			bs := NewLayeredBitSet(tt.size)
+			bs := newLayeredBitSet(tt.size)
 			for _, i := range tt.set {
 				bs.Set(i)
 			}
@@ -829,7 +829,7 @@ func TestLayeredBitSet_FindPrevUnsetBit(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			bs := NewLayeredBitSet(tt.size)
+			bs := newLayeredBitSet(tt.size)
 			for _, i := range tt.set {
 				bs.Set(i)
 			}
@@ -1059,7 +1059,7 @@ func TestLayeredBitSet_FindNextUnsetBit(t *testing.T) {
 		t.Run(tt.name, func(t *testing.T) {
 			t.Parallel()
 
-			bs := NewLayeredBitSet(tt.size)
+			bs := newLayeredBitSet(tt.size)
 			for _, i := range tt.set {
 				bs.Set(i)
 			}
@@ -1076,7 +1076,7 @@ func TestLayeredBitSet_FindNextUnsetBit(t *testing.T) {
 func TestLayeredBitSet_BoundsAfterReset(t *testing.T) {
 	t.Parallel()
 
-	bs := NewLayeredBitSet(3)
+	bs := newLayeredBitSet(3)
 	bs.Set(0)
 	bs.Set(1)
 	bs.Set(2)
@@ -1124,7 +1124,7 @@ func Benchmark_findPrevUnsetBit(b *testing.B) {
 func Benchmark_FindFirstUnsetBit(b *testing.B) {
 	b.Run("first_bit_unset", func(b *testing.B) {
 		// Bit 0 unset — found immediately at every layer.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 
 		b.ResetTimer()
 		for range b.N {
@@ -1134,7 +1134,7 @@ func Benchmark_FindFirstUnsetBit(b *testing.B) {
 
 	b.Run("first_element_full", func(b *testing.B) {
 		// First 64 bits set — descends to element 1.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := range wordBits {
 			bs.Set(i)
 		}
@@ -1147,7 +1147,7 @@ func Benchmark_FindFirstUnsetBit(b *testing.B) {
 
 	b.Run("worst_case_4M", func(b *testing.B) {
 		// All set except last bit — full descent through all layers.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := range size - 1 {
 			bs.Set(i)
 		}
@@ -1160,7 +1160,7 @@ func Benchmark_FindFirstUnsetBit(b *testing.B) {
 
 	b.Run("not_found_4M", func(b *testing.B) {
 		// All set — returns -1.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := range size {
 			bs.Set(i)
 		}
@@ -1175,7 +1175,7 @@ func Benchmark_FindFirstUnsetBit(b *testing.B) {
 func Benchmark_FindLastUnsetBit(b *testing.B) {
 	b.Run("last_bit_unset", func(b *testing.B) {
 		// Last bit unset — found immediately at every layer.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 
 		b.ResetTimer()
 		for range b.N {
@@ -1185,7 +1185,7 @@ func Benchmark_FindLastUnsetBit(b *testing.B) {
 
 	b.Run("last_element_full", func(b *testing.B) {
 		// Last 64 bits set — descends to second-to-last element.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := size - wordBits; i < size; i++ {
 			bs.Set(i)
 		}
@@ -1198,7 +1198,7 @@ func Benchmark_FindLastUnsetBit(b *testing.B) {
 
 	b.Run("worst_case_4M", func(b *testing.B) {
 		// All set except first bit — full descent through all layers.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := 1; i < size; i++ {
 			bs.Set(i)
 		}
@@ -1211,7 +1211,7 @@ func Benchmark_FindLastUnsetBit(b *testing.B) {
 
 	b.Run("not_found_4M", func(b *testing.B) {
 		// All set — returns -1.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := range size {
 			bs.Set(i)
 		}
@@ -1226,7 +1226,7 @@ func Benchmark_FindLastUnsetBit(b *testing.B) {
 func Benchmark_FindPrevUnsetBit(b *testing.B) {
 	b.Run("best_case_prev_bit_unset", func(b *testing.B) {
 		// Bit right before idx is unset — found in layer 0, no ascend.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		bs.Set(size - 1)
 
 		b.ResetTimer()
@@ -1237,7 +1237,7 @@ func Benchmark_FindPrevUnsetBit(b *testing.B) {
 
 	b.Run("same_element", func(b *testing.B) {
 		// All bits in the element set except bit 0 — found in layer 0, same element.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := 1; i < 64; i++ {
 			bs.Set(i)
 		}
@@ -1250,7 +1250,7 @@ func Benchmark_FindPrevUnsetBit(b *testing.B) {
 
 	b.Run("prev_element", func(b *testing.B) {
 		// Current element fully set — falls back to previous element in layer 0.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := 64; i < 128; i++ {
 			bs.Set(i)
 		}
@@ -1263,7 +1263,7 @@ func Benchmark_FindPrevUnsetBit(b *testing.B) {
 
 	b.Run("cross_64_elements", func(b *testing.B) {
 		// 64 elements (4096 bits) fully set — ascend to layer 1, descend back.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := 1; i < 4096; i++ {
 			bs.Set(i)
 		}
@@ -1276,7 +1276,7 @@ func Benchmark_FindPrevUnsetBit(b *testing.B) {
 
 	b.Run("worst_case_4M", func(b *testing.B) {
 		// All bits set except bit 0 — must traverse all layers up and back down.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := 1; i < size; i++ {
 			bs.Set(i)
 		}
@@ -1289,7 +1289,7 @@ func Benchmark_FindPrevUnsetBit(b *testing.B) {
 
 	b.Run("not_found_4M", func(b *testing.B) {
 		// All bits set — must go all the way up and return -1.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := range size {
 			bs.Set(i)
 		}
@@ -1304,7 +1304,7 @@ func Benchmark_FindPrevUnsetBit(b *testing.B) {
 func Benchmark_Set(b *testing.B) {
 	b.Run("no_propagation", func(b *testing.B) {
 		// One bit per element — no element ever becomes fully set, no propagation.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 
 		b.ResetTimer()
 		for i := range b.N {
@@ -1313,7 +1313,7 @@ func Benchmark_Set(b *testing.B) {
 	})
 
 	b.Run("full_propagation", func(b *testing.B) {
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := range size {
 			bs.Set(i)
 		}
@@ -1325,7 +1325,7 @@ func Benchmark_Set(b *testing.B) {
 	})
 
 	b.Run("random_access", func(b *testing.B) {
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		indices := make([]int, size)
 		for i := range indices {
 			indices[i] = rand.Intn(size)
@@ -1341,7 +1341,7 @@ func Benchmark_Set(b *testing.B) {
 func Benchmark_Unset(b *testing.B) {
 	b.Run("already_unset", func(b *testing.B) {
 		// Bit is not set — early return via Get.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 
 		b.ResetTimer()
 		for i := range b.N {
@@ -1351,7 +1351,7 @@ func Benchmark_Unset(b *testing.B) {
 
 	b.Run("no_propagation", func(b *testing.B) {
 		// Element is partially set — unset exits after layer 0.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := 0; i < size; i += 2 {
 			bs.Set(i) // set even bits only, no element is fully set
 		}
@@ -1370,7 +1370,7 @@ func Benchmark_Unset(b *testing.B) {
 
 	b.Run("propagation", func(b *testing.B) {
 		// Element fully set — unset must propagate to clear summary bits.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := range size {
 			bs.Set(i)
 		}
@@ -1386,7 +1386,7 @@ func Benchmark_Unset(b *testing.B) {
 
 	b.Run("random_access", func(b *testing.B) {
 		// Random unset/restore on a sparse bitset.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		indices := make([]int, size)
 		for i := range indices {
 			indices[i] = rand.Intn(size)
@@ -1404,7 +1404,7 @@ func Benchmark_Unset(b *testing.B) {
 
 func Benchmark_Reset(b *testing.B) {
 	b.Run("basic", func(b *testing.B) {
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 
 		b.ResetTimer()
 		for range b.N {
@@ -1418,7 +1418,7 @@ var benchBoolResult bool //nolint:gochecknoglobals // prevent compiler optimizat
 func Benchmark_Get(b *testing.B) {
 	b.Run("hit_sparse", func(b *testing.B) {
 		// Only a few bits set — tests the bit-check path.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		bs.Set(size / 2)
 
 		b.ResetTimer()
@@ -1429,7 +1429,7 @@ func Benchmark_Get(b *testing.B) {
 
 	b.Run("miss_zero_element", func(b *testing.B) {
 		// Element is all zeros — tests the fast path (element == 0).
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 
 		b.ResetTimer()
 		for range b.N {
@@ -1439,7 +1439,7 @@ func Benchmark_Get(b *testing.B) {
 
 	b.Run("miss_nonzero_element", func(b *testing.B) {
 		// Element has bits set but not the one we query.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		bs.Set(size/2 + 1)
 
 		b.ResetTimer()
@@ -1450,7 +1450,7 @@ func Benchmark_Get(b *testing.B) {
 
 	b.Run("random_access_hit", func(b *testing.B) {
 		// Set every other bit, query random set bits — stresses cache.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		for i := 0; i < size; i += 2 {
 			bs.Set(i)
 		}
@@ -1468,7 +1468,7 @@ func Benchmark_Get(b *testing.B) {
 
 	b.Run("random_access_miss", func(b *testing.B) {
 		// All bits unset, query random indices — stresses cache on zero elements.
-		bs := NewLayeredBitSet(size)
+		bs := newLayeredBitSet(size)
 		indices := make([]int, 1024)
 		for i := range indices {
 			indices[i] = rand.Intn(size)
