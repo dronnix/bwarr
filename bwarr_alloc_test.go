@@ -29,9 +29,12 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 			expectedSize: 56,
 		},
 		{
+			// BWArr 56 + 4 segments * 40 (elements slice 24, bitset pointer 8, deletedNum 8) = 216;
+			// elements (1+2+4+8) * 8 = 120; per segment a bitset struct 48, a layers slice backing
+			// with capacity 4 * 24 = 96, and one 8-byte word: 4 * 152 = 608; total 944.
 			name:         "New(testAllocsSize)",
 			bwarr:        New[int64](int64Cmp, testAllocsSize),
-			expectedSize: 368,
+			expectedSize: 944,
 		},
 	}
 
@@ -498,8 +501,11 @@ func calculateSegmentSize[T any](seg *segment[T]) (size int) {
 	if len(seg.elements) > 0 {
 		size += len(seg.elements) * int(unsafe.Sizeof(seg.elements[0]))
 	}
-	// Add size of deleted LayeredBitSet
+	// Add size of the deleted bitset: the separately allocated struct, the backing array of the
+	// layers slice (its capacity, since that is what is allocated), and the words of every layer.
 	if seg.deleted != nil {
+		size += int(unsafe.Sizeof(*seg.deleted))
+		size += cap(seg.deleted.layers) * int(unsafe.Sizeof([]uint64(nil)))
 		for _, layer := range seg.deleted.layers {
 			size += len(layer) * int(unsafe.Sizeof(uint64(0)))
 		}
