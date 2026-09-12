@@ -338,6 +338,50 @@ func Test_findRightmostNotDeleted(t *testing.T) {
 			val:  23,
 			want: 2,
 		},
+		{
+			name: "live equal before a long deleted equal run",
+			seg: segment[int64]{
+				elements: []int64{1, 2, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 9, 9},
+				deleted: boolsToLayeredBitSet([]bool{
+					false, false, false, false, true, true, true, true, true, true, true, true, true, true, false, false,
+				}),
+				deletedNum: 10,
+			},
+			val:  5,
+			want: 3,
+		},
+		{
+			name: "only smaller live before a deleted equal run",
+			seg: segment[int64]{
+				elements: []int64{1, 2, 5, 5, 5, 5, 5, 5, 9, 9},
+				deleted: boolsToLayeredBitSet([]bool{
+					false, false, true, true, true, true, true, true, false, false,
+				}),
+				deletedNum: 6,
+			},
+			val:  5,
+			want: -1,
+		},
+		{
+			name: "deleted equal run at the very beginning",
+			seg: segment[int64]{
+				elements:   []int64{5, 5, 5, 5, 9, 9, 9, 9},
+				deleted:    boolsToLayeredBitSet([]bool{true, true, true, true, false, false, false, false}),
+				deletedNum: 4,
+			},
+			val:  5,
+			want: -1,
+		},
+		{
+			name: "live equal, deleted smaller, then deleted equal run",
+			seg: segment[int64]{
+				elements:   []int64{4, 5, 5, 5, 5, 5, 5, 8},
+				deleted:    boolsToLayeredBitSet([]bool{true, false, true, true, true, true, true, false}),
+				deletedNum: 6,
+			},
+			val:  5,
+			want: 1,
+		},
 	}
 	for _, tt := range tests { //nolint:paralleltest
 		t.Run(tt.name, func(t *testing.T) {

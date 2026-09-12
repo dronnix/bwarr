@@ -180,15 +180,18 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 		case cmpRes > 0:
 			b = m + 1
 		default: // elements are equal - follow invariant: deleted elements are to the right (higher index) of non-deleted ones.
-			if s.deleted.Get(m) {
-				e = m
-				b = s.deleted.FindPrevUnsetBit(m)
-				if b < 0 {
-					return -1
-				}
-			} else {
+			if !s.deleted.Get(m) {
 				b = m + 1
+				continue
 			}
+			// m is a deleted equal element. Equal elements are contiguous and the live ones sit left of the
+			// deleted ones, so the rightmost live equal element, if it exists, is the closest live element
+			// below m. If that element is not equal to val, no live equal element exists.
+			idx := s.deleted.FindPrevUnsetBit(m)
+			if idx < 0 || cmp(elems[idx], val) != 0 {
+				return -1
+			}
+			return idx
 		}
 	}
 
