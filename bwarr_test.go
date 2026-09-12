@@ -707,6 +707,27 @@ func TestBWArr_Clone(t *testing.T) {
 	validateBWArr(t, newBwa)
 }
 
+func TestBWArr_CloneKeepsOptions(t *testing.T) {
+	t.Parallel()
+	const keep = 1 << 10
+	bwa := NewWithOptions(int64Cmp, 0, Options{ElementsKeepAllocated: keep})
+	for i := range int64(keep) {
+		bwa.Insert(i)
+	}
+
+	clone := bwa.Clone()
+	assert.Equal(t, bwa.maxSegmentRankToKeep, clone.maxSegmentRankToKeep)
+
+	// Shrinking the clone must retain segments exactly like the original does.
+	for i := range int64(keep) {
+		bwa.Delete(i)
+		clone.Delete(i)
+	}
+	for rank := range bwa.whiteSegments {
+		assert.Len(t, clone.whiteSegments[rank].elements, len(bwa.whiteSegments[rank].elements), "rank %d", rank)
+	}
+}
+
 func TestBWArr_Ascend(t *testing.T) {
 	t.Parallel()
 	type testCase struct {

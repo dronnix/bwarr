@@ -228,10 +228,11 @@ func (bwa *BWArr[T]) Clear(dropSegments bool) {
 // The operation has O(N) time and space complexity.
 func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	newBWA := &BWArr[T]{
-		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
-		total:         bwa.total,
-		deletedTotal:  bwa.deletedTotal,
-		cmp:           bwa.cmp,
+		whiteSegments:        make([]segment[T], len(bwa.whiteSegments)),
+		total:                bwa.total,
+		deletedTotal:         bwa.deletedTotal,
+		cmp:                  bwa.cmp,
+		maxSegmentRankToKeep: bwa.maxSegmentRankToKeep,
 	}
 
 	for i := range bwa.activeSegments {
