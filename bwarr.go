@@ -22,6 +22,7 @@ type BWArr[T any] struct {
 
 	whiteSegments        []segment[T]
 	total                int // Total number of elements in the array, including deleted ones.
+	deletedTotal         int // Number of lazily-deleted elements among the active segments (subset of total).
 	cmp                  CmpFunc[T]
 	maxSegmentRankToKeep int // Always keep segments with rank <= maxSegmentRankToKeep
 	// If maxSegmentRankToKeep is 10 the structure will never shrink below 2047 elements.
@@ -44,12 +45,12 @@ type IteratorFunc[T any] func(item T) bool
 // number of elements to optimize initial memory allocation. Use 0 if the
 // capacity is unknown.
 func New[T any](cmp CmpFunc[T], capacity int) *BWArr[T] {
-	return NewWithOptions[T](cmp, capacity, Options{1 << defaultMaxSegmentRank})
+	return NewWithOptions[T](cmp, capacity, Options{ElementsKeepAllocated: 1 << defaultMaxSegmentRank})
 }
 
 type Options struct {
 	// Number of elements to keep allocated in segments after deletion to prevent allocations on smaller sizes.
-	// Will be rounded up to the nearest power of 2. For example, if set to 10, 16 elements will be kept allocated.
+	// Rounded down to a power of two: for example, if set to 10, segments of up to 8 elements stay allocated.
 	ElementsKeepAllocated uint64
 }
 
@@ -179,16 +180,9 @@ func (bwa *BWArr[T]) DeleteMin() (deleted T, found bool) {
 }
 
 // Len returns the number of elements currently stored in the BWArr,
-// excluding deleted elements. The operation has O(log N) time complexity
-// as it counts non-deleted elements across all segments.
+// excluding deleted elements. The operation has O(1) time complexity.
 func (bwa *BWArr[T]) Len() int {
-	deleted := 0
-	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) != 0 {
-			deleted += bwa.whiteSegments[i].deletedNum
-		}
-	}
-	return bwa.total - deleted
+	return bwa.total - bwa.deletedTotal
 }
 
 // Max returns the maximum element in the BWArr and true, or the zero value
@@ -223,8 +217,9 @@ func (bwa *BWArr[T]) Min() (minElem T, found bool) {
 // for reuse, which is more efficient if the BWArr will be repopulated.
 func (bwa *BWArr[T]) Clear(dropSegments bool) {
 	bwa.total = 0
+	bwa.deletedTotal = 0
 	if dropSegments {
-		bwa.whiteSegments = bwa.whiteSegments[:0]
+		bwa.whiteSegments = nil
 	}
 }
 
@@ -233,15 +228,15 @@ func (bwa *BWArr[T]) Clear(dropSegments bool) {
 // The operation has O(N) time and space complexity.
 func (bwa *BWArr[T]) Clone() *BWArr[T] {
 	newBWA := &BWArr[T]{
-		whiteSegments: make([]segment[T], len(bwa.whiteSegments)),
-		total:         bwa.total,
-		cmp:           bwa.cmp,
+		whiteSegments:        make([]segment[T], len(bwa.whiteSegments)),
+		total:                bwa.total,
+		deletedTotal:         bwa.deletedTotal,
+		cmp:                  bwa.cmp,
+		maxSegmentRankToKeep: bwa.maxSegmentRankToKeep,
 	}
 
-	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) != 0 {
-			newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
-		}
+	for i := range bwa.activeSegments {
+		newBWA.whiteSegments[i] = bwa.whiteSegments[i].deepCopy()
 	}
 	return newBWA
 }
@@ -250,12 +245,7 @@ func (bwa *BWArr[T]) Clone() *BWArr[T] {
 // ascending order. Iteration stops early if the iterator returns false.
 // The operation visits all elements in O(N*Log(N)) time.
 func (bwa *BWArr[T]) Ascend(iterator IteratorFunc[T]) {
-	iter := createAscIteratorBegin(bwa)
-	for val, ok := iter.next(); ok; val, ok = iter.next() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkAsc(createAscIteratorBegin(bwa), iterator)
 }
 
 // AscendGreaterOrEqual calls the iterator function for each element in the
@@ -263,12 +253,7 @@ func (bwa *BWArr[T]) Ascend(iterator IteratorFunc[T]) {
 // Iteration stops early if the iterator returns false. The operation has O(N*Log(N)
 // time complexity in the worst case.
 func (bwa *BWArr[T]) AscendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
-	iter := createAscIteratorGTOE(bwa, elem)
-	for val, ok := iter.next(); ok; val, ok = iter.next() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkAsc(createAscIteratorGTOE(bwa, elem), iterator)
 }
 
 // AscendLessThan calls the iterator function for each element in the BWArr
@@ -276,12 +261,7 @@ func (bwa *BWArr[T]) AscendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
 // early if the iterator returns false. The operation has O(N*Log(N)) time complexity
 // in the worst case.
 func (bwa *BWArr[T]) AscendLessThan(elem T, iterator IteratorFunc[T]) {
-	iter := createAscIteratorLess(bwa, elem)
-	for val, ok := iter.next(); ok; val, ok = iter.next() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkAsc(createAscIteratorLess(bwa, elem), iterator)
 }
 
 // AscendRange calls the iterator function for each element in the BWArr
@@ -289,24 +269,14 @@ func (bwa *BWArr[T]) AscendLessThan(elem T, iterator IteratorFunc[T]) {
 // in ascending order. Iteration stops early if the iterator returns false.
 // The operation has O(N*Log(N)) time complexity in the worst case.
 func (bwa *BWArr[T]) AscendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
-	iter := createAscIteratorFromTo(bwa, greaterOrEqual, lessThan)
-	for val, ok := iter.next(); ok; val, ok = iter.next() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkAsc(createAscIteratorFromTo(bwa, greaterOrEqual, lessThan), iterator)
 }
 
 // Descend calls the iterator function for each element in the BWArr in
 // descending order. Iteration stops early if the iterator returns false.
 // The operation visits all elements in O(N*Log(N)) time.
 func (bwa *BWArr[T]) Descend(iterator IteratorFunc[T]) {
-	iter := createDescIteratorEnd(bwa)
-	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkDesc(createDescIteratorEnd(bwa), iterator)
 }
 
 // DescendGreaterOrEqual calls the iterator function for each element in the
@@ -314,12 +284,7 @@ func (bwa *BWArr[T]) Descend(iterator IteratorFunc[T]) {
 // Iteration stops early if the iterator returns false. The operation has O(N*Log(N))
 // time complexity in the worst case.
 func (bwa *BWArr[T]) DescendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
-	iter := createDescIteratorGTOE(bwa, elem)
-	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkDesc(createDescIteratorGTOE(bwa, elem), iterator)
 }
 
 // DescendLessThan calls the iterator function for each element in the BWArr
@@ -327,12 +292,7 @@ func (bwa *BWArr[T]) DescendGreaterOrEqual(elem T, iterator IteratorFunc[T]) {
 // early if the iterator returns false. The operation has O(N*Log(N)) time complexity
 // in the worst case.
 func (bwa *BWArr[T]) DescendLessThan(elem T, iterator IteratorFunc[T]) {
-	iter := createDescIteratorLess(bwa, elem)
-	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkDesc(createDescIteratorLess(bwa, elem), iterator)
 }
 
 // DescendRange calls the iterator function for each element in the BWArr
@@ -340,12 +300,7 @@ func (bwa *BWArr[T]) DescendLessThan(elem T, iterator IteratorFunc[T]) {
 // in descending order. Iteration stops early if the iterator returns false.
 // The operation has O(N*Log(N)) time complexity in the worst case.
 func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorFunc[T]) {
-	iter := createDescIteratorFromTo(bwa, greaterOrEqual, lessThan)
-	for val, ok := iter.prev(); ok; val, ok = iter.prev() {
-		if !iterator(*val) {
-			break
-		}
-	}
+	walkDesc(createDescIteratorFromTo(bwa, greaterOrEqual, lessThan), iterator)
 }
 
 // UnorderedWalk calls the iterator function for each element in the BWArr
@@ -354,20 +309,33 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 // Iteration stops early if the iterator returns false. The operation visits
 // all elements in O(N) time.
 func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
-	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
-			continue
+	for i := range bwa.activeSegments {
+		if !bwa.walkSegment(i, iterator) {
+			return
 		}
-		seg := &bwa.whiteSegments[i]
-		for j := range seg.elements {
-			if seg.deleted[j] {
-				continue
+	}
+}
+
+// walkSegment feeds the live elements of one segment to iterator in index order, and reports whether
+// the iterator wants more. The per-element loop lives here, not inside the range-over-func body of
+// UnorderedWalk: a body closure around it costs ~20% on a full walk.
+func (bwa *BWArr[T]) walkSegment(rank int, iterator IteratorFunc[T]) bool {
+	seg := &bwa.whiteSegments[rank]
+	elems := seg.elements
+	for w, word := range seg.deleted.layers[0] {
+		base := w << wordShift
+		// Zero bits are live elements; bits beyond len(elems) in the last word are phantom zeros.
+		for live := ^word; live != 0; live &= live - 1 {
+			j := base + bits.TrailingZeros64(live)
+			if j >= len(elems) {
+				break
 			}
-			if !iterator(seg.elements[j]) {
-				return
+			if !iterator(elems[j]) {
+				return false
 			}
 		}
 	}
+	return true
 }
 
 // Compact releases memory used by inactive segments and lazy-deleted elements.
@@ -376,7 +344,7 @@ func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
 // memory automatically, but can be useful after large numbers of deletions.
 func (bwa *BWArr[T]) Compact() {
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 { // Segment is not used
+		if !bwa.active(i) {
 			bwa.whiteSegments[i] = segment[T]{} //nolint:exhaustruct
 		}
 	}
@@ -385,15 +353,9 @@ func (bwa *BWArr[T]) Compact() {
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	seg := &bwa.whiteSegments[segNum]
 	deleted = seg.elements[index]
-	seg.deleted[index] = true
+	seg.deleted.Set(index)
 	seg.deletedNum++
-
-	if index == seg.minNonDeletedIdx {
-		seg.minNonDeletedIdx++
-	}
-	if index == seg.maxNonDeletedIdx {
-		seg.maxNonDeletedIdx--
-	}
+	bwa.deletedTotal++
 
 	segmentCapacity := 1 << segNum
 	halfSegmentCapacity := segmentCapacity >> 1
@@ -402,42 +364,38 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	}
 	if segNum == 0 {
 		bwa.total--
-		seg.deletedNum, seg.minNonDeletedIdx, seg.maxNonDeletedIdx = 0, 0, len(seg.elements)-1
-		seg.deleted[0] = false
+		bwa.deletedTotal--
+		seg.deletedNum = 0
+		seg.deleted.Reset()
 		return deleted
 	}
-	if halfSegmentCapacity&bwa.total == 0 {
+	if !bwa.active(segNum - 1) { // Lower neighbor is free - demote into it; otherwise merge with it.
 		bwa.ensureSeg(segNum - 1)
-		demoteSegment(*seg, &bwa.whiteSegments[segNum-1])
+		demoteSegment(seg, &bwa.whiteSegments[segNum-1])
 		if bwa.maxRank() == segNum && segNum > bwa.maxSegmentRankToKeep {
 			bwa.whiteSegments[segNum] = segment[T]{} //nolint:exhaustruct
 		}
 	} else {
-		moveNonDeletedValuesToSegmentEnd(*seg)
-		mergeSegmentsForDel(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity)
+		moveNonDeletedValuesToSegmentEnd(seg)
+		// The lower-rank segment holds the newer elements (FIFO invariant), so lowSegIsNewer=true.
+		mergeSegmentsDirty(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity, true)
 		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
 	}
+	// Both consolidation paths remove exactly half a segment's worth of deleted elements from the accounting.
 	bwa.total -= halfSegmentCapacity
+	bwa.deletedTotal -= halfSegmentCapacity
 	return deleted
 }
 
 // min assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
-	// First, skip non-used segments:
-	for segNum = range bwa.whiteSegments {
-		if bwa.total&(1<<segNum) != 0 {
-			break
-		}
-	}
-	index = bwa.whiteSegments[segNum].min(bwa.cmp)
-	// Then find the segment with the smallest element:
-	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
-		if bwa.total&(1<<seg) == 0 {
-			continue
-		}
-		// Less or equal is used to provide stable behavior (return the oldest one).
+	segNum, index = -1, -1
+	// Find the segment with the smallest element:
+	for seg := range bwa.activeSegments {
+		// Less or equal is used to provide stable behavior (return the oldest one):
+		// the ranks come in increasing order and the higher the rank, the older the elements.
 		ind := bwa.whiteSegments[seg].min(bwa.cmp)
-		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) <= 0 {
+		if segNum < 0 || bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) <= 0 {
 			segNum, index = seg, ind
 		}
 	}
@@ -446,21 +404,13 @@ func (bwa *BWArr[T]) min() (segNum, index int) { //nolint:dupl
 
 // max assumes that there is at least one segment with elements!
 func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
-	// First, skip non-used segments:
-	for segNum = range bwa.whiteSegments {
-		if bwa.total&(1<<segNum) != 0 {
-			break
-		}
-	}
-	index = bwa.whiteSegments[segNum].maxNonDeletedIndex()
-	// Then find the segment with the smallest element:
-	for seg := segNum + 1; seg < len(bwa.whiteSegments); seg++ {
-		if bwa.total&(1<<seg) == 0 {
-			continue
-		}
-		// Greater or equal is used to provide stable behavior (return the oldest one).
+	segNum, index = -1, -1
+	// Find the segment with the largest element:
+	for seg := range bwa.activeSegments {
+		// Greater or equal is used to provide stable behavior (return the oldest one):
+		// the ranks come in increasing order and the higher the rank, the older the elements.
 		ind := bwa.whiteSegments[seg].maxNonDeletedIndex()
-		if bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) >= 0 {
+		if segNum < 0 || bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) >= 0 {
 			segNum, index = seg, ind
 		}
 	}
@@ -468,12 +418,10 @@ func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
 }
 
 func (bwa *BWArr[T]) search(element T) (segNum, index int) {
-	for segNum = len(bwa.whiteSegments) - 1; segNum >= 0; segNum-- {
-		if bwa.total&(1<<segNum) == 0 {
-			continue
-		}
-		if index = bwa.whiteSegments[segNum].findRightmostNotDeleted(bwa.cmp, element); index >= 0 {
-			return segNum, index
+	// The oldest match wins (FIFO), and the higher the rank, the older the elements.
+	for seg := range bwa.activeSegmentsDesc {
+		if index = bwa.whiteSegments[seg].findRightmostNotDeleted(bwa.cmp, element); index >= 0 {
+			return seg, index
 		}
 	}
 	return -1, -1
@@ -487,6 +435,38 @@ func (bwa *BWArr[T]) ensureSeg(rank int) {
 	}
 	if len(bwa.whiteSegments[rank].elements) == 0 {
 		bwa.whiteSegments[rank] = makeSegment[T](rank)
+	}
+}
+
+// active reports whether the segment of the given rank currently holds data:
+// rank r is active iff bit r of total is set (the paper's active(i) predicate).
+func (bwa *BWArr[T]) active(rank int) bool {
+	return bwa.total&(1<<rank) != 0
+}
+
+// activeSegments yields the ranks of the segments that currently hold data, from the lowest rank
+// (the newest elements) to the highest (the oldest). Rank r is active iff bit r of total is set, so
+// the ranks to visit are the set bits of the element count: the walk takes one step per segment that
+// holds data, not one per allocated segment.
+//
+//	for rank := range bwa.activeSegments { ... }
+func (bwa *BWArr[T]) activeSegments(yield func(rank int) bool) {
+	for m := uint64(bwa.total); m != 0; m &= m - 1 { //nolint: gosec // total is always non-negative.
+		if !yield(bits.TrailingZeros64(m)) {
+			return
+		}
+	}
+}
+
+// activeSegmentsDesc is activeSegments in the opposite direction: highest rank, holding the oldest
+// elements, first.
+func (bwa *BWArr[T]) activeSegmentsDesc(yield func(rank int) bool) {
+	for m := uint64(bwa.total); m != 0; { //nolint: gosec // total is always non-negative.
+		rank := bits.Len64(m) - 1
+		m &= 1<<rank - 1 // Visited: only the lower ranks are left.
+		if !yield(rank) {
+			return
+		}
 	}
 }
 

@@ -453,3 +453,82 @@ func benchmarkReplace(b *testing.B, elemsOnStart, capacity int) {
 		bwa.ReplaceOrInsert(preparedData[i])
 	}
 }
+
+// --- Long deleted series worst cases ---
+// A single active segment (total is an exact power of two) carrying a contiguous
+// deleted series just under half the segment - the longest series that can exist.
+// Values are deleted in ascending order.
+
+const delSeriesElems = 128 * 1024
+const delSeriesHalf = delSeriesElems / 2
+
+func buildSingleSegmentWithDelSeries(b *testing.B, delFrom, delTo int64) *BWArr[int64] {
+	bwa := New(int64Cmp, delSeriesElems)
+	for i := range int64(delSeriesElems) {
+		bwa.Insert(i)
+	}
+	for v := delFrom; v < delTo; v++ {
+		if _, found := bwa.Delete(v); !found {
+			b.Fatalf("setup: value %d not found", v)
+		}
+	}
+	return bwa
+}
+
+// Search that lands inside the deleted series at the segment tail and must skip
+// over the whole series to the single live element above it.
+// (The series stops one short of the top: on main, a fully-deleted tail makes
+// findGTOE return len(elements) and AscendGreaterOrEqual panics - see notes.)
+func BenchmarkLongQA_SearchGTOEInDelSeries(b *testing.B) {
+	bwa := buildSingleSegmentWithDelSeries(b, delSeriesHalf+1, delSeriesElems-1)
+	iter := func(int64) bool { return false }
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		bwa.AscendGreaterOrEqual(delSeriesHalf+2, iter)
+	}
+}
+
+// Short range scan that crosses a maximal deleted series in the middle of the segment.
+func BenchmarkLongQA_AscendRangeAcrossDelSeries(b *testing.B) {
+	const runFrom = delSeriesElems / 4
+	const runTo = runFrom + delSeriesHalf - 1
+	bwa := buildSingleSegmentWithDelSeries(b, runFrom, runTo)
+	s := int64(0)
+	iter := func(v int64) bool { s += v; return true }
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		bwa.AscendRange(runFrom-8, runTo+8, iter)
+	}
+}
+
+// Full ordered sweep crossing a maximal deleted series in the middle of the segment.
+func BenchmarkLongQA_AscendAcrossDelSeries(b *testing.B) {
+	const runFrom = delSeriesElems / 4
+	bwa := buildSingleSegmentWithDelSeries(b, runFrom, runFrom+delSeriesHalf-1)
+	s := int64(0)
+	iter := func(v int64) bool { s += v; return true }
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		bwa.Ascend(iter)
+	}
+}
+
+// Unordered sweep over a segment whose middle is a maximal deleted series.
+func BenchmarkLongQA_UnorderedWalkAcrossDelSeries(b *testing.B) {
+	const runFrom = delSeriesElems / 4
+	bwa := buildSingleSegmentWithDelSeries(b, runFrom, runFrom+delSeriesHalf-1)
+	s := int64(0)
+	iter := func(v int64) bool { s += v; return true }
+
+	b.ResetTimer()
+	b.ReportAllocs()
+	for range b.N {
+		bwa.UnorderedWalk(iter)
+	}
+}

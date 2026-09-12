@@ -35,7 +35,7 @@
 [![CI](https://github.com/dronnix/bwarr/actions/workflows/ci.yml/badge.svg)](https://github.com/dronnix/bwarr/actions)
 [![codecov](https://codecov.io/gh/dronnix/bwarr/branch/main/graph/badge.svg)](https://codecov.io/gh/dronnix/bwarr)
 [![Go Reference](https://pkg.go.dev/badge/github.com/dronnix/bwarr.svg)](https://pkg.go.dev/github.com/dronnix/bwarr)
-[![Go Report Card](https://goreportcard.com/badge/github.com/dronnix/bwarr)](https://goreportcard.com/report/github.com/dronnix/bwarr)
+[![Linted by golangci-lint](https://img.shields.io/badge/linted%20by-golangci--lint-brightgreen)](https://golangci-lint.run/)
 
 The Black-White Array (aka BWArr) is a fast, ordered data structure based on arrays with ***$O(\log N)$*** **memory allocations**.
 
@@ -95,7 +95,7 @@ More methods will be added, also expect separate benchmarks for AMD64 and ARM64 
 
 ## Installation
 
-Requires Go 1.22 or higher.
+Requires Go 1.23 or higher.
 
 ```bash
 go get github.com/dronnix/bwarr

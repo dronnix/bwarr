@@ -707,6 +707,27 @@ func TestBWArr_Clone(t *testing.T) {
 	validateBWArr(t, newBwa)
 }
 
+func TestBWArr_CloneKeepsOptions(t *testing.T) {
+	t.Parallel()
+	const keep = 1 << 10
+	bwa := NewWithOptions(int64Cmp, 0, Options{ElementsKeepAllocated: keep})
+	for i := range int64(keep) {
+		bwa.Insert(i)
+	}
+
+	clone := bwa.Clone()
+	assert.Equal(t, bwa.maxSegmentRankToKeep, clone.maxSegmentRankToKeep)
+
+	// Shrinking the clone must retain segments exactly like the original does.
+	for i := range int64(keep) {
+		bwa.Delete(i)
+		clone.Delete(i)
+	}
+	for rank := range bwa.whiteSegments {
+		assert.Len(t, clone.whiteSegments[rank].elements, len(bwa.whiteSegments[rank].elements), "rank %d", rank)
+	}
+}
+
 func TestBWArr_Ascend(t *testing.T) {
 	t.Parallel()
 	type testCase struct {
@@ -1308,7 +1329,7 @@ func TestBWArr_DeleteAutoCompact(t *testing.T) {
 	assert.Len(t, testArray.whiteSegments[0].elements, 1)
 	// Segment with rank 1 is deleted
 	assert.Empty(t, testArray.whiteSegments[1].elements)
-	assert.Empty(t, testArray.whiteSegments[1].deleted)
+	assert.Nil(t, testArray.whiteSegments[1].deleted)
 }
 
 func TestBWArr_DeleteAutoCompactNoEffect(t *testing.T) {
@@ -1323,7 +1344,7 @@ func TestBWArr_DeleteAutoCompactNoEffect(t *testing.T) {
 	assert.Len(t, testArray.whiteSegments[0].elements, 1)
 	// Segment with rank 1 is preserved
 	assert.Len(t, testArray.whiteSegments[1].elements, 2)
-	assert.Len(t, testArray.whiteSegments[1].deleted, 2)
+	assert.NotNil(t, testArray.whiteSegments[1].deleted)
 }
 
 func int64Cmp(a, b int64) int {
@@ -1403,6 +1424,14 @@ func testNewBWArr[T any](t *testing.T, cmp CmpFunc[T]) {
 }
 
 func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
+	deleted := 0
+	for i := range bwa.whiteSegments {
+		if bwa.active(i) {
+			deleted += bwa.whiteSegments[i].deletedNum
+		}
+	}
+	require.Equal(t, deleted, bwa.deletedTotal, "deletedTotal must equal the sum of active segments' deletedNum")
+
 	if len(bwa.whiteSegments) == 0 || bwa.total == 0 {
 		return
 	}
@@ -1412,6 +1441,10 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 			continue
 		}
 		require.Len(t, bwa.whiteSegments[i].elements, 1<<i)
+		// Occupancy invariant: an active segment is always more than half live
+		// (consolidation fires at 50%), so it always has live elements to iterate.
+		require.LessOrEqual(t, bwa.whiteSegments[i].deletedNum, (1<<i-1)/2,
+			"active segment %d violates the occupancy invariant", i)
 		validateSegment(t, bwa.whiteSegments[i], bwa.cmp)
 	}
 }
@@ -1425,7 +1458,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 	}
 	for i, seg := range segs {
 		l := len(seg)
-		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), maxNonDeletedIdx: l - 1}
+		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: newLayeredBitSet(l)}
 	}
 	return &bwa
 }
@@ -1433,6 +1466,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 func bwaEqual[T any](t *testing.T, expected, actual *BWArr[T]) {
 	require.GreaterOrEqual(t, len(expected.whiteSegments), len(actual.whiteSegments))
 	require.Equal(t, expected.total, actual.total)
+	require.Equal(t, expected.deletedTotal, actual.deletedTotal)
 	for seg := range expected.whiteSegments {
 		if expected.total&(1<<seg) == 0 {
 			continue
@@ -1448,8 +1482,11 @@ type bwaIdx struct {
 
 func markDel[T any](bwa *BWArr[T], toDel ...bwaIdx) *BWArr[T] {
 	for i := range toDel {
-		bwa.whiteSegments[toDel[i].segNum].deleted[toDel[i].idx] = true
+		bwa.whiteSegments[toDel[i].segNum].deleted.Set(toDel[i].idx)
 		bwa.whiteSegments[toDel[i].segNum].deletedNum++
+		if bwa.active(toDel[i].segNum) {
+			bwa.deletedTotal++
+		}
 	}
 	return bwa
 }

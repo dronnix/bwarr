@@ -16,22 +16,25 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 		expectedSize int
 	}{
 		// Count words (8 bytes):
-		// whiteSegments 3, // total 1, cmp 1 --> // 3 + 1 + 1 + 1 = 6;
-		// 6 * 8 = 48 bytes;
+		// whiteSegments 3, total 1, deletedTotal 1, cmp 1, maxSegmentRankToKeep 1 --> 7;
+		// 7 * 8 = 56 bytes;
 		{
 			name:         "Empty",
 			bwarr:        &BWArr[int64]{},
-			expectedSize: 48,
+			expectedSize: 56,
 		},
 		{
 			name:         "New(0)",
 			bwarr:        New[int64](int64Cmp, 0),
-			expectedSize: 48,
+			expectedSize: 56,
 		},
 		{
+			// BWArr 56 + 4 segments * 40 (elements slice 24, bitset pointer 8, deletedNum 8) = 216;
+			// elements (1+2+4+8) * 8 = 120; per segment a bitset struct 48, a layers slice backing
+			// with capacity 4 * 24 = 96, and one 8-byte word: 4 * 152 = 608; total 944.
 			name:         "New(testAllocsSize)",
 			bwarr:        New[int64](int64Cmp, testAllocsSize),
-			expectedSize: 471,
+			expectedSize: 944,
 		},
 	}
 
@@ -45,9 +48,9 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 
 func TestBWArr_Allocs_New(t *testing.T) {
 	// Slice of segments - 1, BWArr struct - 1 --> 2;
-	// 4 segments, each contains two slices: elements and deleted flags --> 8;
-	// Total: 2 + 8 = 10;
-	const expectedAllocs = 10
+	// 4 segments, each: elements slice (1) + LayeredBitSet struct (1) + layers slice (1) + layer backing (1) --> 16;
+	// Total: 2 + 16 = 18;
+	const expectedAllocs = 18
 
 	allocs := testing.AllocsPerRun(100, func() {
 		bwarr := New[int64](int64Cmp, testAllocsSize)
@@ -259,7 +262,7 @@ func TestBWArr_Allocs_Clone(t *testing.T) {
 		c.Len() // Use the clone to prevent compiler optimizations
 	})
 
-	assert.Equal(t, 8.0, allocs, "Expected 8 memory allocations during Clone") // nolint:testifylint
+	assert.Equal(t, 14.0, allocs, "Expected 14 memory allocations during Clone") // nolint:testifylint
 }
 
 func TestBWArr_Allocs_Len(t *testing.T) {
@@ -498,9 +501,14 @@ func calculateSegmentSize[T any](seg *segment[T]) (size int) {
 	if len(seg.elements) > 0 {
 		size += len(seg.elements) * int(unsafe.Sizeof(seg.elements[0]))
 	}
-	// Add size of deleted slice
-	if len(seg.deleted) > 0 {
-		size += len(seg.deleted) * int(unsafe.Sizeof(seg.deleted[0]))
+	// Add size of the deleted bitset: the separately allocated struct, the backing array of the
+	// layers slice (its capacity, since that is what is allocated), and the words of every layer.
+	if seg.deleted != nil {
+		size += int(unsafe.Sizeof(*seg.deleted))
+		size += cap(seg.deleted.layers) * int(unsafe.Sizeof([]uint64(nil)))
+		for _, layer := range seg.deleted.layers {
+			size += len(layer) * int(unsafe.Sizeof(uint64(0)))
+		}
 	}
 	return size
 }
