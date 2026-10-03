@@ -167,7 +167,7 @@ func (bwa *BWArr[T]) DeleteMax() (deleted T, found bool) {
 
 // DeleteMin removes and returns the minimum element in the BWArr and true,
 // or the zero value of T and false if the BWArr is empty. The operation has
-// O(log N) amortized time complexity.
+// O((log N)^2) amortized time complexity.
 //
 // This method is useful for implementing priority queues. When multiple equal
 // minimum elements exist, the first inserted element (FIFO order) is removed.
@@ -200,7 +200,7 @@ func (bwa *BWArr[T]) Max() (maxElem T, found bool) {
 }
 
 // Min returns the minimum element in the BWArr and true, or the zero value
-// of T and false if the BWArr is empty. The operation has O(log N) time
+// of T and false if the BWArr is empty. The operation has O((log N)^2) time
 // complexity in the worst case.
 //
 // When multiple equal minimum elements exist, the first inserted element is returned.
@@ -409,6 +409,7 @@ func (bwa *BWArr[T]) max() (segNum, index int) { //nolint:dupl
 	for seg := range bwa.activeSegments {
 		// Greater or equal is used to provide stable behavior (return the oldest one):
 		// the ranks come in increasing order and the higher the rank, the older the elements.
+		// Within a segment, the last live element is already the oldest equal maximum.
 		ind := bwa.whiteSegments[seg].maxNonDeletedIndex()
 		if segNum < 0 || bwa.cmp(bwa.whiteSegments[seg].elements[ind], bwa.whiteSegments[segNum].elements[index]) >= 0 {
 			segNum, index = seg, ind
