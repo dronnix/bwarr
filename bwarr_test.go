@@ -4,6 +4,7 @@ import (
 	"math/rand"
 	"slices"
 	"sort"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -453,6 +454,49 @@ func TestBWArr_DelMaxStability(t *testing.T) { // Also covers Max stability.
 		validateBWArr(t, bwa)
 		assert.True(t, found, "should find element to delete")
 		assert.Equal(t, i, deletedElem.seq, "should delete the leftmost (first inserted) element with seq=%d", i)
+	}
+}
+
+func TestBWArr_MinMaxDuplicateRun(t *testing.T) {
+	t.Parallel()
+	tests := []struct {
+		name   string
+		peek   func(*BWArr[stabVal]) (stabVal, bool)
+		remove func(*BWArr[stabVal]) (stabVal, bool)
+	}{
+		{name: "min", peek: (*BWArr[stabVal]).Min, remove: (*BWArr[stabVal]).DeleteMin},
+		{name: "max", peek: (*BWArr[stabVal]).Max, remove: (*BWArr[stabVal]).DeleteMax},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			for _, count := range []int{1023, 1024} {
+				t.Run(strconv.Itoa(count), func(t *testing.T) {
+					t.Parallel()
+					bwa := New(stabValCmp, count)
+					for i := range count {
+						bwa.Insert(stabVal{val: 23, seq: i})
+					}
+
+					for i := range count {
+						want := stabVal{val: 23, seq: i}
+						for range 2 {
+							got, found := tt.peek(bwa)
+							require.True(t, found)
+							require.Equal(t, want, got)
+						}
+						got, found := tt.remove(bwa)
+						require.True(t, found)
+						require.Equal(t, want, got)
+						require.Equal(t, count-i-1, bwa.Len())
+					}
+					_, found := tt.peek(bwa)
+					assert.False(t, found)
+					_, found = tt.remove(bwa)
+					assert.False(t, found)
+				})
+			}
+		})
 	}
 }
 

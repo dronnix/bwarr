@@ -1,6 +1,7 @@
 package bwarr
 
 import (
+	"math/bits"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
@@ -599,6 +600,14 @@ func Test_segment_min(t *testing.T) {
 		want int
 	}{
 		{
+			name: "all deleted",
+			seg: segment[int64]{
+				elements: []int64{17, 23, 37, 42},
+				deleted:  boolsToLayeredBitSet([]bool{true, true, true, true}),
+			},
+			want: -1,
+		},
+		{
 			name: "single element",
 			seg: segment[int64]{
 				elements: []int64{42},
@@ -745,6 +754,55 @@ func Test_segment_min(t *testing.T) {
 			// Verify the returned index is not deleted
 			if got >= 0 && got < len(tt.seg.elements) {
 				assert.Falsef(t, tt.seg.deleted.Get(got), "min() returned deleted element at index %d", got)
+			}
+		})
+	}
+}
+
+func Test_segment_min_ComparisonCount(t *testing.T) {
+	t.Parallel()
+	const rank = 16
+	const size = 1 << rank
+	tests := []struct {
+		name           string
+		minBegin       int
+		minEnd         int
+		liveEnd        int
+		maxComparisons int
+	}{
+		{name: "all equal", minEnd: size, liveEnd: size, maxComparisons: bits.Len(uint(size)) + 2},
+		{name: "equal minimum prefix", minEnd: size / 2, liveEnd: size / 2, maxComparisons: bits.Len(uint(size)) + 2},
+		{name: "deleted prefix and equal suffix", minBegin: 128, minEnd: size/2 + 128, liveEnd: size / 4, maxComparisons: bits.Len(uint(size)) + 2},
+		{name: "unique minimum", minBegin: 128, minEnd: 129, liveEnd: 129, maxComparisons: 1},
+	}
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			t.Parallel()
+			seg := makeSegment[int64](rank)
+			for i := range seg.elements {
+				switch {
+				case i < tt.minBegin:
+					seg.elements[i] = 0
+				case i < tt.minEnd:
+					seg.elements[i] = 1
+				default:
+					seg.elements[i] = 2
+				}
+				if i < tt.minBegin || (i >= tt.liveEnd && i < tt.minEnd) {
+					seg.deleted.Set(i)
+					seg.deletedNum++
+				}
+			}
+
+			comparisons := 0
+			cmp := func(a, b int64) int {
+				comparisons++
+				return int64Cmp(a, b)
+			}
+			for range 2 {
+				comparisons = 0
+				assert.Equal(t, tt.liveEnd-1, seg.min(cmp))
+				assert.LessOrEqual(t, comparisons, tt.maxComparisons)
 			}
 		})
 	}

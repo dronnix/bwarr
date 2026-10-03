@@ -210,19 +210,18 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 }
 
 // returns minimum element index with respect to FIFO constraint: if we have
-// several equal minimum elements, returns the rightmost one.
+// several equal minimum elements, finds the rightmost one in O(log N) time.
 func (s *segment[T]) min(cmp CmpFunc[T]) int {
-	minIdx, maxIdx := s.minNonDeletedIndex(), s.maxNonDeletedIndex()
-	for i := minIdx + 1; i <= maxIdx; i++ {
-		if s.deleted.Get(i) { // deleted elements can appear only after non-deleted equal ones;
-			return minIdx
-		}
-		if cmp(s.elements[i], s.elements[minIdx]) != 0 {
-			return minIdx
-		}
-		minIdx = i
+	minIdx := s.minNonDeletedIndex()
+	if minIdx < 0 {
+		return -1
 	}
-	return minIdx
+	// Keep the unique-minimum fast path; only search when another live equal element follows.
+	nextIdx := minIdx + 1
+	if nextIdx == len(s.elements) || s.deleted.Get(nextIdx) || cmp(s.elements[nextIdx], s.elements[minIdx]) != 0 {
+		return minIdx
+	}
+	return s.findRightmostNotDeleted(cmp, s.elements[minIdx])
 }
 
 // returns index of the leftmost element that is greater or equal to val and is not deleted.
