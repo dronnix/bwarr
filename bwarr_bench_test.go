@@ -5,6 +5,8 @@ package bwarr
 import (
 	"math/rand"
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // Less by 1 than segment size to provoke segment allocation
@@ -339,8 +341,11 @@ func BenchmarkLongQA_DescendRangeWithDelSeries(b *testing.B) {
 func BenchmarkLongQA_UnorderedWalkRandom(b *testing.B) {
 	const elems = 128*1024 - 1
 	bwa := New(int64Cmp, elems)
+	expected_sum := int64(0)
 	for range elems {
-		bwa.Insert(rand.Int63())
+		x := int64(rand.Int31())
+		expected_sum += x
+		bwa.Insert(x)
 	}
 
 	s := int64(0)
@@ -354,6 +359,7 @@ func BenchmarkLongQA_UnorderedWalkRandom(b *testing.B) {
 	for range b.N {
 		bwa.UnorderedWalk(iter)
 	}
+	assert.Equal(b, expected_sum*int64(b.N), s)
 }
 
 func BenchmarkLongQA_UnorderedWalkWithDelSeries(b *testing.B) {
