@@ -82,18 +82,19 @@ func (bwa *BWArr[T]) Insert(element T) {
 	destSeg := &bwa.whiteSegments[destSegRank]
 
 	// Segments deactivate without cleanup, so a reused segment may carry stale deleted state - drop it.
-	if destSeg.deletedNum != 0 {
+	/*if destSeg.deletedNum() != 0 {
 		destSeg.resetDeleted()
-	}
+	}*/
 
 	// Put the new element at the end of the destination segment
 	destSeg.elements[destSegSize-1] = element
 
 	destReadPtr := destSegSize - 1
 	for segmentNumber := range destSegRank {
-		mergeSegments(&bwa.whiteSegments[segmentNumber], destSeg, bwa.cmp, destReadPtr)
+		mergeSegmentsDirty(&bwa.whiteSegments[segmentNumber], destSeg, bwa.cmp, destReadPtr, false)
 		destReadPtr -= 1 << segmentNumber
 	}
+	destSeg.initFenwick()
 	bwa.total++
 }
 
@@ -309,33 +310,15 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 // Iteration stops early if the iterator returns false. The operation visits
 // all elements in O(N) time.
 func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
-	for i := range bwa.activeSegments {
-		if !bwa.walkSegment(i, iterator) {
-			return
-		}
-	}
-}
-
-// walkSegment feeds the live elements of one segment to iterator in index order, and reports whether
-// the iterator wants more. The per-element loop lives here, not inside the range-over-func body of
-// UnorderedWalk: a body closure around it costs ~20% on a full walk.
-func (bwa *BWArr[T]) walkSegment(rank int, iterator IteratorFunc[T]) bool {
-	seg := &bwa.whiteSegments[rank]
-	elems := seg.elements
-	for w, word := range seg.deleted.layers[0] {
-		base := w << wordShift
-		// Zero bits are live elements; bits beyond len(elems) in the last word are phantom zeros.
-		for live := ^word; live != 0; live &= live - 1 {
-			j := base + bits.TrailingZeros64(live)
-			if j >= len(elems) {
-				break
-			}
-			if !iterator(elems[j]) {
-				return false
+	for r := range bwa.activeSegments {
+		for i := range bwa.whiteSegments[r].elements {
+			if !bwa.whiteSegments[r].deleted[i] {
+				if iterator(bwa.whiteSegments[r].elements[i]) == false {
+					return
+				}
 			}
 		}
 	}
-	return true
 }
 
 // Compact releases memory used by inactive segments and lazy-deleted elements.
@@ -353,20 +336,18 @@ func (bwa *BWArr[T]) Compact() {
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	seg := &bwa.whiteSegments[segNum]
 	deleted = seg.elements[index]
-	seg.deleted.Set(index)
-	seg.deletedNum++
+	seg.delete(index)
 	bwa.deletedTotal++
 
 	segmentCapacity := 1 << segNum
 	halfSegmentCapacity := segmentCapacity >> 1
-	if seg.deletedNum < halfSegmentCapacity {
+	if seg.deletedNum() < halfSegmentCapacity {
 		return deleted
 	}
 	if segNum == 0 {
 		bwa.total--
 		bwa.deletedTotal--
-		seg.deletedNum = 0
-		seg.deleted.Reset()
+		seg.resetDeleted()
 		return deleted
 	}
 	if !bwa.active(segNum - 1) { // Lower neighbor is free - demote into it; otherwise merge with it.
@@ -379,7 +360,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		moveNonDeletedValuesToSegmentEnd(seg)
 		// The lower-rank segment holds the newer elements (FIFO invariant), so lowSegIsNewer=true.
 		mergeSegmentsDirty(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity, true)
-		seg.deletedNum = bwa.whiteSegments[segNum-1].deletedNum
+		seg.initFenwick()
 	}
 	// Both consolidation paths remove exactly half a segment's worth of deleted elements from the accounting.
 	bwa.total -= halfSegmentCapacity

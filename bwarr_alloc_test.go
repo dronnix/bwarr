@@ -504,11 +504,8 @@ func calculateSegmentSize[T any](seg *segment[T]) (size int) {
 	// Add size of the deleted bitset: the separately allocated struct, the backing array of the
 	// layers slice (its capacity, since that is what is allocated), and the words of every layer.
 	if seg.deleted != nil {
-		size += int(unsafe.Sizeof(*seg.deleted))
-		size += cap(seg.deleted.layers) * int(unsafe.Sizeof([]uint64(nil)))
-		for _, layer := range seg.deleted.layers {
-			size += len(layer) * int(unsafe.Sizeof(uint64(0)))
-		}
+		size += int(unsafe.Sizeof(seg.deleted))
+		size += int(unsafe.Sizeof(seg.fenwick))
 	}
 	return size
 }

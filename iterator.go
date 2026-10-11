@@ -38,7 +38,7 @@ func newIterator[T any](bwa *BWArr[T], desc bool, bounds func(s *segment[T]) (fi
 		}
 		si[i] = segmentIterator[T]{
 			index: first, seg: bwa.whiteSegments[i], end: last,
-			word: bwa.whiteSegments[i].deleted.layers[0][first>>wordShift],
+			//word: bwa.whiteSegments[i].deleted.layers[0][first>>wordShift],
 			mask: 1 << (first & wordMask),
 		}
 		iter.segIters = append(iter.segIters, &si[i])
@@ -56,7 +56,7 @@ func newIterator[T any](bwa *BWArr[T], desc bool, bounds func(s *segment[T]) (fi
 
 func createAscIteratorBegin[T any](bwa *BWArr[T]) iterator[T] {
 	return newIterator(bwa, false, func(s *segment[T]) (int, int, bool) {
-		return s.minNonDeletedIndex(), s.maxNonDeletedIndex(), true
+		return s.minNonDeletedIndex(bwa.cmp), s.maxNonDeletedIndex(), true
 	})
 }
 
@@ -70,7 +70,7 @@ func createAscIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] {
 func createAscIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] {
 	return newIterator(bwa, false, func(s *segment[T]) (int, int, bool) {
 		last := s.findLess(bwa.cmp, elem)
-		return s.minNonDeletedIndex(), last, last >= 0
+		return s.minNonDeletedIndex(bwa.cmp), last, last >= 0
 	})
 }
 
@@ -85,7 +85,7 @@ func createAscIteratorFromTo[T any](bwa *BWArr[T], from, to T) iterator[T] {
 
 func createDescIteratorEnd[T any](bwa *BWArr[T]) iterator[T] {
 	return newIterator(bwa, true, func(s *segment[T]) (int, int, bool) {
-		return s.maxNonDeletedIndex(), s.minNonDeletedIndex(), true
+		return s.maxNonDeletedIndex(), s.minNonDeletedIndex(bwa.cmp), true
 	})
 }
 
@@ -99,7 +99,7 @@ func createDescIteratorGTOE[T any](bwa *BWArr[T], elem T) iterator[T] {
 func createDescIteratorLess[T any](bwa *BWArr[T], elem T) iterator[T] {
 	return newIterator(bwa, true, func(s *segment[T]) (int, int, bool) {
 		first := s.findLess(bwa.cmp, elem)
-		return first, s.minNonDeletedIndex(), first >= 0
+		return first, s.minNonDeletedIndex(bwa.cmp), first >= 0
 	})
 }
 
@@ -234,7 +234,7 @@ func (t *segmentIterator[T]) nextSlow(from int) bool {
 		return false
 	}
 	if from&wordMask == 0 { // Crossed a word boundary - reload the cache.
-		t.word = t.seg.deleted.layers[0][from>>wordShift]
+		//t.word = t.seg.deleted.layers[0][from>>wordShift]
 		if t.word&1 == 0 {
 			t.index = from
 			t.mask = 1
@@ -247,11 +247,11 @@ func (t *segmentIterator[T]) nextSlow(from int) bool {
 		idx += bit
 	} else {
 		// Long runs: the layered walk skips whole all-set words.
-		idx = t.seg.deleted.FindNextUnsetBit(idx | wordMask)
+		//idx = t.seg.deleted.FindNextUnsetBit(idx | wordMask)
 		if idx < 0 {
 			return false
 		}
-		t.word = t.seg.deleted.layers[0][idx>>wordShift]
+		//t.word = t.seg.deleted.layers[0][idx>>wordShift]
 	}
 	if idx > t.end {
 		return false
@@ -270,7 +270,7 @@ func (t *segmentIterator[T]) prevSlow(from int) bool {
 		return false
 	}
 	if from&wordMask == wordMask { // Crossed a word boundary - reload the cache.
-		t.word = t.seg.deleted.layers[0][from>>wordShift]
+		//t.word = t.seg.deleted.layers[0][from>>wordShift]
 		if t.word>>wordMask == 0 {
 			t.index = from
 			t.mask = 1 << wordMask
@@ -283,11 +283,11 @@ func (t *segmentIterator[T]) prevSlow(from int) bool {
 		idx += bit
 	} else {
 		// Long runs: the layered walk skips whole all-set words.
-		idx = t.seg.deleted.FindPrevUnsetBit(idx)
+		//idx = t.seg.deleted.FindPrevUnsetBit(idx)
 		if idx < 0 {
 			return false
 		}
-		t.word = t.seg.deleted.layers[0][idx>>wordShift]
+		//t.word = t.seg.deleted.layers[0][idx>>wordShift]
 	}
 	if idx < t.end {
 		return false

@@ -1427,7 +1427,7 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 	deleted := 0
 	for i := range bwa.whiteSegments {
 		if bwa.active(i) {
-			deleted += bwa.whiteSegments[i].deletedNum
+			deleted += bwa.whiteSegments[i].deletedNum()
 		}
 	}
 	require.Equal(t, deleted, bwa.deletedTotal, "deletedTotal must equal the sum of active segments' deletedNum")
@@ -1458,7 +1458,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 	}
 	for i, seg := range segs {
 		l := len(seg)
-		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: newLayeredBitSet(l)}
+		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), fenwick: make([]int, l)}
 	}
 	return &bwa
 }
@@ -1482,8 +1482,7 @@ type bwaIdx struct {
 
 func markDel[T any](bwa *BWArr[T], toDel ...bwaIdx) *BWArr[T] {
 	for i := range toDel {
-		bwa.whiteSegments[toDel[i].segNum].deleted.Set(toDel[i].idx)
-		bwa.whiteSegments[toDel[i].segNum].deletedNum++
+		bwa.whiteSegments[toDel[i].segNum].delete(toDel[i].idx)
 		if bwa.active(toDel[i].segNum) {
 			bwa.deletedTotal++
 		}

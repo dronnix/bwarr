@@ -16,9 +16,8 @@ func TestCreateDescIteratorEnd(t *testing.T) {
 	}
 
 	// Mark some elements as deleted
-	bwa.whiteSegments[2].deleted.Set(0) // Delete first element of third segment
-	bwa.whiteSegments[2].deleted.Set(3) // Delete last element of third segment
-	bwa.whiteSegments[2].deletedNum += 2
+	bwa.whiteSegments[2].delete(0) // Delete first element of third segment
+	bwa.whiteSegments[2].delete(3) // Delete last element of third segment
 
 	iter := createDescIteratorEnd(bwa)
 
@@ -43,9 +42,8 @@ func TestCreateAscIteratorBegin(t *testing.T) {
 	}
 
 	// Mark some elements as deleted
-	bwa.whiteSegments[2].deleted.Set(0) // Delete first element of third segment
-	bwa.whiteSegments[2].deleted.Set(3) // Delete last element of third segment
-	bwa.whiteSegments[2].deletedNum += 2
+	bwa.whiteSegments[2].delete(0) // Delete first element of third segment
+	bwa.whiteSegments[2].delete(3) // Delete last element of third segment
 
 	iter := createAscIteratorBegin(bwa)
 
@@ -72,9 +70,9 @@ func Test_segmentIteratorSkipGuards(t *testing.T) {
 		t.Parallel()
 		seg := makeSegment[int64](3) // 8 elements; 1..7 deleted, phantom zeros above.
 		for i := 1; i < 8; i++ {
-			seg.deleted.Set(i)
+			seg.delete(i)
 		}
-		it := segmentIterator[int64]{seg: seg, end: 7, word: seg.deleted.layers[0][0]}
+		it := segmentIterator[int64]{seg: seg, end: 7}
 		assert.False(t, it.nextSlow(1))
 	})
 
@@ -82,17 +80,17 @@ func Test_segmentIteratorSkipGuards(t *testing.T) {
 		t.Parallel()
 		seg := makeSegment[int64](6) // One fully set word.
 		for i := range 64 {
-			seg.deleted.Set(i)
+			seg.delete(i)
 		}
-		it := segmentIterator[int64]{seg: seg, end: 63, word: seg.deleted.layers[0][0]}
+		it := segmentIterator[int64]{seg: seg, end: 63}
 		assert.False(t, it.nextSlow(1))
 	})
 
 	t.Run("prevSlow: in-word skip lands before end", func(t *testing.T) {
 		t.Parallel()
 		seg := makeSegment[int64](3)
-		seg.deleted.Set(2)
-		it := segmentIterator[int64]{seg: seg, end: 2, word: seg.deleted.layers[0][0]}
+		seg.delete(2)
+		it := segmentIterator[int64]{seg: seg, end: 2}
 		assert.False(t, it.prevSlow(2))
 	})
 
@@ -100,9 +98,9 @@ func Test_segmentIteratorSkipGuards(t *testing.T) {
 		t.Parallel()
 		seg := makeSegment[int64](6)
 		for i := range 64 {
-			seg.deleted.Set(i)
+			seg.delete(i)
 		}
-		it := segmentIterator[int64]{seg: seg, end: 0, word: seg.deleted.layers[0][0]}
+		it := segmentIterator[int64]{seg: seg, end: 0}
 		assert.False(t, it.prevSlow(62))
 	})
 }
