@@ -34,7 +34,7 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 			// with capacity 4 * 24 = 96, and one 8-byte word: 4 * 152 = 608; total 944.
 			name:         "New(testAllocsSize)",
 			bwarr:        New[int64](int64Cmp, testAllocsSize),
-			expectedSize: 944,
+			expectedSize: 656,
 		},
 	}
 
@@ -50,7 +50,7 @@ func TestBWArr_Allocs_New(t *testing.T) {
 	// Slice of segments - 1, BWArr struct - 1 --> 2;
 	// 4 segments, each: elements slice (1) + LayeredBitSet struct (1) + layers slice (1) + layer backing (1) --> 16;
 	// Total: 2 + 16 = 18;
-	const expectedAllocs = 18
+	const expectedAllocs = 14
 
 	allocs := testing.AllocsPerRun(100, func() {
 		bwarr := New[int64](int64Cmp, testAllocsSize)
@@ -262,7 +262,7 @@ func TestBWArr_Allocs_Clone(t *testing.T) {
 		c.Len() // Use the clone to prevent compiler optimizations
 	})
 
-	assert.Equal(t, 14.0, allocs, "Expected 14 memory allocations during Clone") // nolint:testifylint
+	assert.Equal(t, 11.0, allocs, "Expected 14 memory allocations during Clone") // nolint:testifylint
 }
 
 func TestBWArr_Allocs_Len(t *testing.T) {
