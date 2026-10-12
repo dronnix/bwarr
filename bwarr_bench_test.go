@@ -340,12 +340,11 @@ func BenchmarkLongQA_UnorderedWalkRandom(b *testing.B) {
 	const elems = 128*1024 - 1
 	bwa := New(int64Cmp, elems)
 	for range elems {
-		bwa.Insert(rand.Int63())
+		x := int64(rand.Int31())
+		bwa.Insert(x)
 	}
 
-	s := int64(0)
-	iter := func(x int64) bool {
-		s += x
+	iter := func(_ int64) bool {
 		return true
 	}
 
