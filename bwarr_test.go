@@ -704,7 +704,7 @@ func TestBWArr_Clone(t *testing.T) {
 	for i := range 7 {
 		newBwa.Insert(int64(i))
 	}
-	validateBWArr(t, newBwa)
+	validateBWArr(t, newBwa) // 2 deleted, should be one
 }
 
 func TestBWArr_CloneKeepsOptions(t *testing.T) {
@@ -1437,7 +1437,7 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 	}
 
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		require.Len(t, bwa.whiteSegments[i].elements, 1<<i)
@@ -1458,7 +1458,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 	}
 	for i, seg := range segs {
 		l := len(seg)
-		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), fenwick: make([]int, l)}
+		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), fenwick: make([]int, l+1)}
 	}
 	return &bwa
 }

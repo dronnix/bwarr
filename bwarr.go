@@ -88,6 +88,7 @@ func (bwa *BWArr[T]) Insert(element T) {
 
 	// Put the new element at the end of the destination segment
 	destSeg.elements[destSegSize-1] = element
+	destSeg.deleted[destSegSize-1] = false
 
 	destReadPtr := destSegSize - 1
 	for segmentNumber := range destSegRank {
@@ -310,11 +311,13 @@ func (bwa *BWArr[T]) DescendRange(greaterOrEqual, lessThan T, iterator IteratorF
 // Iteration stops early if the iterator returns false. The operation visits
 // all elements in O(N) time.
 func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
-	for r := range bwa.activeSegments {
-		for i := range bwa.whiteSegments[r].elements {
-			if !bwa.whiteSegments[r].deleted[i] {
-				if iterator(bwa.whiteSegments[r].elements[i]) == false {
-					return
+	for r := range bwa.whiteSegments {
+		if bwa.active(r) {
+			for i := range bwa.whiteSegments[r].elements {
+				if !bwa.whiteSegments[r].deleted[i] {
+					if iterator(bwa.whiteSegments[r].elements[i]) == false {
+						return
+					}
 				}
 			}
 		}

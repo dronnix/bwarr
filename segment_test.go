@@ -653,6 +653,7 @@ func Test_segment_min(t *testing.T) {
 func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 	deleted, firstNonDelIdx, lastNonDelIdx := 0, 0, len(seg.elements)-1
 	metNonDel := false
+	var firstNotDeletedValue T
 	for i := range seg.elements {
 		if seg.deleted[i] {
 			deleted++
@@ -668,6 +669,9 @@ func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 		if !metNonDel {
 			firstNonDelIdx = i
 			metNonDel = true
+			firstNotDeletedValue = seg.elements[i]
+		} else if cmp(seg.elements[i], firstNotDeletedValue) == 0 {
+			firstNonDelIdx = i
 		}
 
 		if i >= len(seg.elements)-1 || seg.deleted[i+1] {
@@ -676,8 +680,8 @@ func validateSegment[T any](t *testing.T, seg segment[T], cmp CmpFunc[T]) {
 		assert.LessOrEqual(t, cmp(seg.elements[i], seg.elements[i+1]), 0)
 	}
 	assert.Equal(t, deleted, seg.deletedNum())
-	assert.GreaterOrEqual(t, firstNonDelIdx, seg.minNonDeletedIndex(cmp))
-	assert.LessOrEqual(t, lastNonDelIdx, seg.maxNonDeletedIndex())
+	assert.Equal(t, firstNonDelIdx, seg.minNonDeletedIndex(cmp))
+	assert.Equal(t, lastNonDelIdx, seg.maxNonDeletedIndex())
 }
 
 func segmentsEqual[T any](t *testing.T, expected, actual segment[T]) {
