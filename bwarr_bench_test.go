@@ -344,7 +344,7 @@ func BenchmarkLongQA_UnorderedWalkRandom(b *testing.B) {
 		bwa.Insert(x)
 	}
 
-	iter := func(x int64) bool {
+	iter := func(_ int64) bool {
 		return true
 	}
 

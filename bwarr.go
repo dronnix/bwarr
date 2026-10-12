@@ -81,11 +81,6 @@ func (bwa *BWArr[T]) Insert(element T) {
 	bwa.ensureSeg(destSegRank)
 	destSeg := &bwa.whiteSegments[destSegRank]
 
-	// Segments deactivate without cleanup, so a reused segment may carry stale deleted state - drop it.
-	/*if destSeg.deletedNum() != 0 {
-		destSeg.resetDeleted()
-	}*/
-
 	// Put the new element at the end of the destination segment
 	destSeg.elements[destSegSize-1] = element
 	destSeg.deleted[destSegSize-1] = false
@@ -315,7 +310,7 @@ func (bwa *BWArr[T]) UnorderedWalk(iterator IteratorFunc[T]) {
 		if bwa.active(r) {
 			for i := range bwa.whiteSegments[r].elements {
 				if !bwa.whiteSegments[r].deleted[i] {
-					if iterator(bwa.whiteSegments[r].elements[i]) == false {
+					if !iterator(bwa.whiteSegments[r].elements[i]) {
 						return
 					}
 				}

@@ -83,7 +83,7 @@ func copyTailWithBits[T any](dst *segment[T], writeIdx int, src *segment[T], rea
 // from segment is twice bigger than to segment, but has exactly half of
 // not-deleted elements. So in-place copy is correct and won't overflow
 func demoteSegment[T any](from, to *segment[T]) {
-	for r, w := 0, 0; r < len(from.elements); r += 1 {
+	for r, w := 0, 0; r < len(from.elements); r++ {
 		if !from.deleted[r] {
 			to.elements[w] = from.elements[r]
 			w++
@@ -188,7 +188,7 @@ func (s *segment[T]) findGTOE(cmp CmpFunc[T], val T) int {
 // If all elements are greater or equal to val, returns -1.
 func (s *segment[T]) findLess(cmp CmpFunc[T], val T) int {
 	lowerBound := s.findBound(cmp, val /*upperBound*/, false)
-	lowerBound -= 1
+	lowerBound--
 	if lowerBound >= 0 && s.deleted[lowerBound] {
 		lowerBound = s.prevNonDeletedBefore(lowerBound)
 	}
@@ -226,14 +226,12 @@ func (s *segment[T]) nextNonDeletedAfter(index int) int {
 }
 
 func (s *segment[T]) prevNonDeletedBefore(index int) int {
-	b := 0
-	endDeleted := 0
 	e := index - 1
-	if e >= 0 {
-		endDeleted = s.numDeleted(e)
-	} else {
+	if e < 0 {
 		return -1
 	}
+	b := 0
+	endDeleted := s.numDeleted(e)
 
 	for b < e {
 		m := b + ((e - b) >> 1)
@@ -266,18 +264,18 @@ func (s *segment[T]) deepCopy() segment[T] {
 
 func (s *segment[T]) delete(index int) {
 	s.deleted[index] = true
-	index += 1
+	index++
 	for index < len(s.fenwick) {
-		s.fenwick[index] += 1
+		s.fenwick[index]++
 		index += index & (-index)
 	}
-	s.fenwick[0] += 1
+	s.fenwick[0]++
 }
 
 // Num deleted elements till index (included). numDeleted(0) returns 1 if first element is deleted and 0 otherwise
 func (s *segment[T]) numDeleted(index int) int {
 	sum := 0
-	index += 1
+	index++
 	for index > 0 {
 		sum += s.fenwick[index]
 		index ^= index & (-index)

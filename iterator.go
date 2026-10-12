@@ -136,9 +136,9 @@ func (iter *iterator[T]) next() (*T, bool) { //nolint:dupl
 
 	// Advance to the segment's next live element. The fast path is inlined by hand:
 	// the compiler declines to inline it as a method, and the call costs ~15% on sweeps.
-	seg.index += 1
+	seg.index++
 	for seg.index <= seg.end && seg.seg.deleted[seg.index] {
-		seg.index += 1
+		seg.index++
 	}
 	if seg.index > seg.end { // Reached the end of the segment, remove it from the list.
 		iter.segIters = iter.segIters[1:]
@@ -177,9 +177,9 @@ func (iter *iterator[T]) prev() (*T, bool) { //nolint:dupl
 
 	// Advance to the segment's previous live element. The fast path is inlined by hand:
 	// the compiler declines to inline it as a method, and the call costs ~15% on sweeps.
-	seg.index -= 1
+	seg.index--
 	for seg.index >= seg.end && seg.seg.deleted[seg.index] {
-		seg.index -= 1
+		seg.index--
 	}
 	if seg.index < seg.end { // Reached the beginning of the segment, remove it from the list.
 		iter.segIters = iter.segIters[1:]

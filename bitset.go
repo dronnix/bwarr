@@ -2,6 +2,7 @@ package bwarr
 
 import (
 	"math/bits"
+	"slices"
 )
 
 // layeredBitSet is a special version of bitset, optimized for storing BWArr deleted elements.
@@ -178,7 +179,7 @@ func (s *layeredBitSet) FindLastUnsetBit() int {
 func (s *layeredBitSet) findFirstUnsetBit() int {
 	// Use top-bottom approach, optimized for tail deletions:
 	elemIdx := 0
-	for l := len(s.layers) - 1; l >= 0; l-- {
+	for l := range slices.Backward(s.layers) {
 		if elemIdx >= len(s.layers[l]) {
 			return -1 // summary layer points beyond actual data
 		}
