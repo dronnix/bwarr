@@ -280,13 +280,13 @@ func (s *segment[T]) delete(index int, cmp CmpFunc[T]) {
 	s.deleted[index] = true
 	if index == s.minIndex {
 		if index > 0 && cmp(s.elements[index-1], s.elements[index]) < 0 {
-			s.minIndex += 1
+			s.minIndex++
 		} else if index > 0 {
-			s.minIndex -= 1
+			s.minIndex--
 		}
 	}
 	if index == s.maxIndex {
-		s.maxIndex -= 1
+		s.maxIndex--
 	}
 	index++
 	for index < len(s.fenwick) {
@@ -310,7 +310,6 @@ func (s *segment[T]) numDeleted(index int) int {
 // returns the total number of deleted elements in segment
 func (s *segment[T]) initFenwick(cmp CmpFunc[T]) *segment[T] {
 	clear(s.fenwick)
-	//prefixSums := make([]int, len(s.elements)+1)
 	s.minIndex = 0
 	s.maxIndex = len(s.elements) - 1
 	for i := range s.deleted {
