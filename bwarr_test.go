@@ -704,7 +704,7 @@ func TestBWArr_Clone(t *testing.T) {
 	for i := range 7 {
 		newBwa.Insert(int64(i))
 	}
-	validateBWArr(t, newBwa)
+	validateBWArr(t, newBwa) // 2 deleted, should be one
 }
 
 func TestBWArr_CloneKeepsOptions(t *testing.T) {
@@ -1347,10 +1347,6 @@ func TestBWArr_DeleteAutoCompactNoEffect(t *testing.T) {
 	assert.NotNil(t, testArray.whiteSegments[1].deleted)
 }
 
-func int64Cmp(a, b int64) int {
-	return int(a - b)
-}
-
 type testStruct struct {
 	I   int
 	S   string
@@ -1427,7 +1423,7 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 	deleted := 0
 	for i := range bwa.whiteSegments {
 		if bwa.active(i) {
-			deleted += bwa.whiteSegments[i].deletedNum
+			deleted += bwa.whiteSegments[i].deletedNum()
 		}
 	}
 	require.Equal(t, deleted, bwa.deletedTotal, "deletedTotal must equal the sum of active segments' deletedNum")
@@ -1437,13 +1433,13 @@ func validateBWArr[T any](t *testing.T, bwa *BWArr[T]) {
 	}
 
 	for i := range bwa.whiteSegments {
-		if bwa.total&(1<<i) == 0 {
+		if !bwa.active(i) {
 			continue
 		}
 		require.Len(t, bwa.whiteSegments[i].elements, 1<<i)
 		// Occupancy invariant: an active segment is always more than half live
 		// (consolidation fires at 50%), so it always has live elements to iterate.
-		require.LessOrEqual(t, bwa.whiteSegments[i].deletedNum, (1<<i-1)/2,
+		require.LessOrEqual(t, bwa.whiteSegments[i].deletedNum(), (1<<i-1)/2,
 			"active segment %d violates the occupancy invariant", i)
 		validateSegment(t, bwa.whiteSegments[i], bwa.cmp)
 	}
@@ -1458,7 +1454,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 	}
 	for i, seg := range segs {
 		l := len(seg)
-		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: newLayeredBitSet(l)}
+		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), fenwick: make([]int, l+1), maxIndex: l - 1}
 	}
 	return &bwa
 }
@@ -1482,8 +1478,7 @@ type bwaIdx struct {
 
 func markDel[T any](bwa *BWArr[T], toDel ...bwaIdx) *BWArr[T] {
 	for i := range toDel {
-		bwa.whiteSegments[toDel[i].segNum].deleted.Set(toDel[i].idx)
-		bwa.whiteSegments[toDel[i].segNum].deletedNum++
+		bwa.whiteSegments[toDel[i].segNum].delete(toDel[i].idx, bwa.cmp)
 		if bwa.active(toDel[i].segNum) {
 			bwa.deletedTotal++
 		}
