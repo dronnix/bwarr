@@ -8,6 +8,8 @@ type segment[T any] struct {
 	elements []T // Stores user's data.
 	deleted  []bool
 	fenwick  []int // Fenwick sums. fenwick[i] = sum(deleted[i - lsb(i) + 1, i])
+	minIndex int
+	maxIndex int
 }
 
 func createSegments[T any](fromRank, toRank int) []segment[T] {
@@ -24,6 +26,8 @@ func makeSegment[T any](rank int) segment[T] {
 		elements: make([]T, l),
 		deleted:  make([]bool, l),
 		fenwick:  make([]int, l+1),
+		minIndex: 0,
+		maxIndex: l - 1,
 	}
 }
 
@@ -165,7 +169,12 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 // returns minimum element index with respect to FIFO constraint: if we have
 // several equal minimum elements, returns the rightmost (the oldest) one.
 func (s *segment[T]) min(cmp CmpFunc[T]) int {
-	return s.minNonDeletedIndex(cmp)
+	if s.deleted[s.minIndex] ||
+		(s.minIndex < len(s.elements)-1 && !s.deleted[s.minIndex+1] &&
+			cmp(s.elements[s.minIndex], s.elements[s.minIndex+1]) == 0) {
+		s.minIndex = s.minNonDeletedIndex(cmp)
+	}
+	return s.minIndex
 }
 
 // returns index of the leftmost element that is greater or equal to val and is not deleted.
@@ -202,7 +211,10 @@ func (s *segment[T]) minNonDeletedIndex(cmp CmpFunc[T]) int {
 }
 
 func (s *segment[T]) maxNonDeletedIndex() int {
-	return s.prevNonDeletedBefore(len(s.elements))
+	if s.deleted[s.maxIndex] {
+		s.maxIndex = s.prevNonDeletedBefore(len(s.elements))
+	}
+	return s.maxIndex
 }
 
 func (s *segment[T]) nextNonDeletedAfter(index int) int {
@@ -255,6 +267,8 @@ func (s *segment[T]) deepCopy() segment[T] {
 		elements: make([]T, len(s.elements)),
 		deleted:  make([]bool, len(s.elements)),
 		fenwick:  make([]int, len(s.elements)+1),
+		minIndex: s.minIndex,
+		maxIndex: s.maxIndex,
 	}
 	copy(newSeg.elements, s.elements)
 	copy(newSeg.deleted, s.deleted)
@@ -262,8 +276,18 @@ func (s *segment[T]) deepCopy() segment[T] {
 	return newSeg
 }
 
-func (s *segment[T]) delete(index int) {
+func (s *segment[T]) delete(index int, cmp CmpFunc[T]) {
 	s.deleted[index] = true
+	if index == s.minIndex {
+		if index > 0 && cmp(s.elements[index-1], s.elements[index]) < 0 {
+			s.minIndex += 1
+		} else if index > 0 {
+			s.minIndex -= 1
+		}
+	}
+	if index == s.maxIndex {
+		s.maxIndex -= 1
+	}
 	index++
 	for index < len(s.fenwick) {
 		s.fenwick[index]++
@@ -284,11 +308,14 @@ func (s *segment[T]) numDeleted(index int) int {
 }
 
 // returns the total number of deleted elements in segment
-func (s *segment[T]) initFenwick() *segment[T] {
+func (s *segment[T]) initFenwick(cmp CmpFunc[T]) *segment[T] {
 	clear(s.fenwick)
+	//prefixSums := make([]int, len(s.elements)+1)
+	s.minIndex = 0
+	s.maxIndex = len(s.elements) - 1
 	for i := range s.deleted {
 		if s.deleted[i] {
-			s.delete(i)
+			s.delete(i, cmp)
 		}
 	}
 	return s
@@ -301,6 +328,8 @@ func (s *segment[T]) deletedNum() int {
 func (s *segment[T]) resetDeleted() {
 	clear(s.fenwick)
 	clear(s.deleted)
+	s.minIndex = 0
+	s.maxIndex = len(s.elements) - 1
 }
 
 func calculateWhiteSegmentsQuantity(capacity int) int {

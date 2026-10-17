@@ -90,7 +90,7 @@ func (bwa *BWArr[T]) Insert(element T) {
 		mergeSegmentsDirty(&bwa.whiteSegments[segmentNumber], destSeg, bwa.cmp, destReadPtr, false)
 		destReadPtr -= 1 << segmentNumber
 	}
-	destSeg.initFenwick()
+	destSeg.initFenwick(bwa.cmp)
 	bwa.total++
 }
 
@@ -334,7 +334,7 @@ func (bwa *BWArr[T]) Compact() {
 func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 	seg := &bwa.whiteSegments[segNum]
 	deleted = seg.elements[index]
-	seg.delete(index)
+	seg.delete(index, bwa.cmp)
 	bwa.deletedTotal++
 
 	segmentCapacity := 1 << segNum
@@ -358,7 +358,7 @@ func (bwa *BWArr[T]) del(segNum, index int) (deleted T) {
 		moveNonDeletedValuesToSegmentEnd(seg)
 		// The lower-rank segment holds the newer elements (FIFO invariant), so lowSegIsNewer=true.
 		mergeSegmentsDirty(&bwa.whiteSegments[segNum-1], seg, bwa.cmp, halfSegmentCapacity, true)
-		seg.initFenwick()
+		seg.initFenwick(bwa.cmp)
 	}
 	// Both consolidation paths remove exactly half a segment's worth of deleted elements from the accounting.
 	bwa.total -= halfSegmentCapacity

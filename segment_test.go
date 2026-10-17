@@ -7,6 +7,10 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
+func int64Cmp(a, b int64) int {
+	return int(a - b)
+}
+
 func makeSegmentHelper1(elements []int64, deleted []bool) *segment[int64] {
 	l := len(elements)
 	s := segment[int64]{
@@ -14,7 +18,7 @@ func makeSegmentHelper1(elements []int64, deleted []bool) *segment[int64] {
 		deleted:  deleted,
 		fenwick:  make([]int, l+1),
 	}
-	s.initFenwick()
+	s.initFenwick(int64Cmp)
 	return &s
 }
 
@@ -144,7 +148,7 @@ func Test_mergeSegments(t *testing.T) {
 			copy(tt.result.deleted[seg2Len:], tt.seg2.deleted)
 			// Merge seg1 into result starting at position seg2Len
 			mergeSegmentsDirty(&tt.seg1, tt.result, int64Cmp, seg2Len, false)
-			tt.result.initFenwick() // The merge leaves the fenwick sums dirty, exactly as in Insert.
+			tt.result.initFenwick(int64Cmp) // The merge leaves the fenwick sums dirty, exactly as in Insert.
 			segmentsEqual(t, tt.expected, *tt.result)
 		})
 	}
@@ -205,7 +209,7 @@ func Test_mergeSegmentsForDel(t *testing.T) {
 			copy(tt.result.deleted[seg2Len:], tt.seg2.deleted)
 			// Merge seg1 into result starting at position seg2Len
 			mergeSegmentsDirty(&tt.seg1, tt.result, int64Cmp, seg2Len, true)
-			tt.result.initFenwick() // The merge leaves the fenwick sums dirty, exactly as in the delete consolidation.
+			tt.result.initFenwick(int64Cmp) // The merge leaves the fenwick sums dirty, exactly as in the delete consolidation.
 			segmentsEqual(t, tt.expected, *tt.result)
 		})
 	}

@@ -34,7 +34,7 @@ func TestBWArr_SizeOfEmpty(t *testing.T) {
 			// with capacity 4 * 24 = 96, and one 8-byte word: 4 * 152 = 608; total 944.
 			name:         "New(testAllocsSize)",
 			bwarr:        New[int64](int64Cmp, testAllocsSize),
-			expectedSize: 656,
+			expectedSize: 720,
 		},
 	}
 
@@ -179,7 +179,13 @@ func TestBWArr_Allocs_DeleteMax(t *testing.T) {
 
 	idx := 0
 	allocs := testing.AllocsPerRun(N, func() {
-		bwarr.DeleteMax()
+		deletedMax, isDeleted := bwarr.DeleteMax()
+		if idx == N {
+			assert.False(t, isDeleted, "Delete on empty array")
+		} else {
+			assert.True(t, isDeleted, "Never empty")
+			assert.Equal(t, N-idx-1, int(deletedMax), "Max is deleted")
+		}
 		idx++
 	})
 

@@ -1347,10 +1347,6 @@ func TestBWArr_DeleteAutoCompactNoEffect(t *testing.T) {
 	assert.NotNil(t, testArray.whiteSegments[1].deleted)
 }
 
-func int64Cmp(a, b int64) int {
-	return int(a - b)
-}
-
 type testStruct struct {
 	I   int
 	S   string
@@ -1458,7 +1454,7 @@ func makeInt64BWAFromWhite(segs [][]int64, total int) *BWArr[int64] {
 	}
 	for i, seg := range segs {
 		l := len(seg)
-		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), fenwick: make([]int, l+1)}
+		bwa.whiteSegments[i] = segment[int64]{elements: seg, deleted: make([]bool, l), fenwick: make([]int, l+1), maxIndex: l - 1}
 	}
 	return &bwa
 }
@@ -1482,7 +1478,7 @@ type bwaIdx struct {
 
 func markDel[T any](bwa *BWArr[T], toDel ...bwaIdx) *BWArr[T] {
 	for i := range toDel {
-		bwa.whiteSegments[toDel[i].segNum].delete(toDel[i].idx)
+		bwa.whiteSegments[toDel[i].segNum].delete(toDel[i].idx, bwa.cmp)
 		if bwa.active(toDel[i].segNum) {
 			bwa.deletedTotal++
 		}
