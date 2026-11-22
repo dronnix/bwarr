@@ -1,6 +1,9 @@
 [
   {
     "Date": 1791713615,
+    "Tags": [
+      "cpu: Apple M5 Max"
+    ],
     "Suites": [
       {
         "Goos": "darwin",
@@ -260,6 +263,9 @@
   },
   {
     "Date": 1791043270,
+    "Tags": [
+      "cpu: Apple M5 Max"
+    ],
     "Suites": [
       {
         "Goos": "darwin",

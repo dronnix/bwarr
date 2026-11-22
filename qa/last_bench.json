@@ -1,6 +1,9 @@
 [
   {
     "Date": 1791043733,
+    "Tags": [
+      "cpu: Apple M5 Max"
+    ],
     "Suites": [
       {
         "Goos": "darwin",
