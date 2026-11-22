@@ -793,12 +793,14 @@ func Test_segment_min_ComparisonCount(t *testing.T) {
 					seg.deletedNum++
 				}
 			}
+			validateSegment(t, seg, int64Cmp)
 
 			comparisons := 0
 			cmp := func(a, b int64) int {
 				comparisons++
 				return int64Cmp(a, b)
 			}
+			// Repeated queries must preserve both the result and the comparison bound.
 			for range 2 {
 				comparisons = 0
 				assert.Equal(t, tt.liveEnd-1, seg.min(cmp))

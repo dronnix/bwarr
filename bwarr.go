@@ -166,8 +166,9 @@ func (bwa *BWArr[T]) DeleteMax() (deleted T, found bool) {
 }
 
 // DeleteMin removes and returns the minimum element in the BWArr and true,
-// or the zero value of T and false if the BWArr is empty. The operation has
-// O((log N)^2) amortized time complexity.
+// or the zero value of T and false if the BWArr is empty. Finding the element
+// takes O((log N)^2) time in the worst case. Removal may consolidate a segment,
+// so the overall O((log N)^2) time bound is amortized.
 //
 // This method is useful for implementing priority queues. When multiple equal
 // minimum elements exist, the first inserted element (FIFO order) is removed.

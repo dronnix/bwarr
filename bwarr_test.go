@@ -477,9 +477,11 @@ func TestBWArr_MinMaxDuplicateRun(t *testing.T) {
 					for i := range count {
 						bwa.Insert(stabVal{val: 23, seq: i})
 					}
+					validateBWArr(t, bwa)
 
 					for i := range count {
 						want := stabVal{val: 23, seq: i}
+						// Repeated peeks must return the same FIFO element without consuming it.
 						for range 2 {
 							got, found := tt.peek(bwa)
 							require.True(t, found)
@@ -489,6 +491,7 @@ func TestBWArr_MinMaxDuplicateRun(t *testing.T) {
 						require.True(t, found)
 						require.Equal(t, want, got)
 						require.Equal(t, count-i-1, bwa.Len())
+						validateBWArr(t, bwa)
 					}
 					_, found := tt.peek(bwa)
 					assert.False(t, found)

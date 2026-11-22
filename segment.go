@@ -214,9 +214,11 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 func (s *segment[T]) min(cmp CmpFunc[T]) int {
 	minIdx := s.minNonDeletedIndex()
 	if minIdx < 0 {
+		// Direct callers may supply an all-deleted segment; active BWArr segments always have live elements.
 		return -1
 	}
-	// Keep the unique-minimum fast path; only search when another live equal element follows.
+	// Skip binary search when no live equal element follows.
+	// A deleted neighbour is enough to stop: deleted equal elements always sit right of live ones.
 	nextIdx := minIdx + 1
 	if nextIdx == len(s.elements) || s.deleted.Get(nextIdx) || cmp(s.elements[nextIdx], s.elements[minIdx]) != 0 {
 		return minIdx

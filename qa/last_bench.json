@@ -1,6 +1,6 @@
 [
   {
-    "Date": 1791043256,
+    "Date": 1791043733,
     "Suites": [
       {
         "Goos": "darwin",
@@ -10,7 +10,7 @@
           {
             "Name": "BenchmarkQA_Insert-18",
             "Runs": 1000000,
-            "NsPerOp": 102.1,
+            "NsPerOp": 102.5,
             "Mem": {
               "BytesPerOp": 34,
               "AllocsPerOp": 0,
@@ -20,7 +20,7 @@
           {
             "Name": "BenchmarkQA_ReplaceOrInsertNotFound-18",
             "Runs": 1000000,
-            "NsPerOp": 944.1,
+            "NsPerOp": 1023,
             "Mem": {
               "BytesPerOp": 34,
               "AllocsPerOp": 0,
@@ -30,37 +30,37 @@
           {
             "Name": "BenchmarkQA_ReplaceOrInsertFound-18",
             "Runs": 1000000,
-            "NsPerOp": 198.5,
+            "NsPerOp": 180.5,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 40.3
+              "MBPerSec": 44.32
             }
           },
           {
             "Name": "BenchmarkQA_HasFound-18",
             "Runs": 1000000,
-            "NsPerOp": 200.1,
+            "NsPerOp": 176.9,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 39.98
+              "MBPerSec": 45.23
             }
           },
           {
             "Name": "BenchmarkQA_HasNotFoundWorst-18",
             "Runs": 1000000,
-            "NsPerOp": 1640,
+            "NsPerOp": 1730,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
-              "MBPerSec": 4.88
+              "MBPerSec": 4.62
             }
           },
           {
             "Name": "BenchmarkQA_Min-18",
             "Runs": 1000000,
-            "NsPerOp": 76.11,
+            "NsPerOp": 74.26,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -70,7 +70,7 @@
           {
             "Name": "BenchmarkQA_Max-18",
             "Runs": 1000000,
-            "NsPerOp": 31.5,
+            "NsPerOp": 32.68,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -80,7 +80,7 @@
           {
             "Name": "BenchmarkQA_Delete-18",
             "Runs": 1000000,
-            "NsPerOp": 515.8,
+            "NsPerOp": 510.5,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -90,7 +90,7 @@
           {
             "Name": "BenchmarkQA_DeleteMin-18",
             "Runs": 1000000,
-            "NsPerOp": 34.19,
+            "NsPerOp": 34.15,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -100,7 +100,7 @@
           {
             "Name": "BenchmarkQA_DeleteMax-18",
             "Runs": 1000000,
-            "NsPerOp": 18.18,
+            "NsPerOp": 18.93,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -116,18 +116,18 @@
         "Benchmarks": [
           {
             "Name": "BenchmarkLongQA_InsertRandom-18",
-            "Runs": 312,
-            "NsPerOp": 7701834,
+            "Runs": 298,
+            "NsPerOp": 7819519,
             "Mem": {
-              "BytesPerOp": 1069888,
+              "BytesPerOp": 1069895,
               "AllocsPerOp": 104,
               "MBPerSec": 0
             }
           },
           {
             "Name": "BenchmarkLongQA_AscendRandom-18",
-            "Runs": 1298,
-            "NsPerOp": 1843933,
+            "Runs": 1267,
+            "NsPerOp": 1887116,
             "Mem": {
               "BytesPerOp": 1424,
               "AllocsPerOp": 2,
@@ -136,8 +136,8 @@
           },
           {
             "Name": "BenchmarkLongQA_AscendInc-18",
-            "Runs": 5605,
-            "NsPerOp": 433556,
+            "Runs": 5546,
+            "NsPerOp": 441916,
             "Mem": {
               "BytesPerOp": 1424,
               "AllocsPerOp": 2,
@@ -146,8 +146,8 @@
           },
           {
             "Name": "BenchmarkLongQA_AscendDec-18",
-            "Runs": 6891,
-            "NsPerOp": 345672,
+            "Runs": 6704,
+            "NsPerOp": 360353,
             "Mem": {
               "BytesPerOp": 1424,
               "AllocsPerOp": 2,
@@ -156,8 +156,8 @@
           },
           {
             "Name": "BenchmarkLongQA_AscendRange-18",
-            "Runs": 5574,
-            "NsPerOp": 428323,
+            "Runs": 5433,
+            "NsPerOp": 436458,
             "Mem": {
               "BytesPerOp": 1424,
               "AllocsPerOp": 2,
@@ -166,8 +166,8 @@
           },
           {
             "Name": "BenchmarkLongQA_AscendWithDelSeries-18",
-            "Runs": 5490,
-            "NsPerOp": 431329,
+            "Runs": 5302,
+            "NsPerOp": 448036,
             "Mem": {
               "BytesPerOp": 1424,
               "AllocsPerOp": 2,
@@ -176,8 +176,8 @@
           },
           {
             "Name": "BenchmarkLongQA_DescendRandom-18",
-            "Runs": 1285,
-            "NsPerOp": 1850989,
+            "Runs": 1261,
+            "NsPerOp": 1904814,
             "Mem": {
               "BytesPerOp": 1424,
               "AllocsPerOp": 2,
@@ -186,8 +186,8 @@
           },
           {
             "Name": "BenchmarkLongQA_DescendRangeWithDelSeries-18",
-            "Runs": 6974,
-            "NsPerOp": 342954,
+            "Runs": 6926,
+            "NsPerOp": 349676,
             "Mem": {
               "BytesPerOp": 1424,
               "AllocsPerOp": 2,
@@ -196,8 +196,8 @@
           },
           {
             "Name": "BenchmarkLongQA_UnorderedWalkRandom-18",
-            "Runs": 19440,
-            "NsPerOp": 122625,
+            "Runs": 18946,
+            "NsPerOp": 124117,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -206,8 +206,8 @@
           },
           {
             "Name": "BenchmarkLongQA_UnorderedWalkWithDelSeries-18",
-            "Runs": 20514,
-            "NsPerOp": 116192,
+            "Runs": 19570,
+            "NsPerOp": 120733,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
@@ -216,8 +216,8 @@
           },
           {
             "Name": "BenchmarkLongQA_SearchGTOEInDelSeries-18",
-            "Runs": 12674306,
-            "NsPerOp": 196.8,
+            "Runs": 12549789,
+            "NsPerOp": 192.2,
             "Mem": {
               "BytesPerOp": 1552,
               "AllocsPerOp": 2,
@@ -226,8 +226,8 @@
           },
           {
             "Name": "BenchmarkLongQA_AscendRangeAcrossDelSeries-18",
-            "Runs": 9545928,
-            "NsPerOp": 268.5,
+            "Runs": 9226442,
+            "NsPerOp": 254.9,
             "Mem": {
               "BytesPerOp": 1552,
               "AllocsPerOp": 2,
@@ -236,8 +236,8 @@
           },
           {
             "Name": "BenchmarkLongQA_AscendAcrossDelSeries-18",
-            "Runs": 19134,
-            "NsPerOp": 125673,
+            "Runs": 18663,
+            "NsPerOp": 128265,
             "Mem": {
               "BytesPerOp": 1552,
               "AllocsPerOp": 2,
@@ -246,8 +246,8 @@
           },
           {
             "Name": "BenchmarkLongQA_UnorderedWalkAcrossDelSeries-18",
-            "Runs": 39765,
-            "NsPerOp": 59568,
+            "Runs": 38391,
+            "NsPerOp": 62434,
             "Mem": {
               "BytesPerOp": 0,
               "AllocsPerOp": 0,
