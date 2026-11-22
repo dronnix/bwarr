@@ -1,6 +1,6 @@
 checks:
-    - name:
-      description: Checks the main BWA public operations regress
+    - name: Public operations
+      description: Checks for regressions in the main BWA public operations
       package: .
       benchmarks: []
       diff: (current.NsPerOp - base.NsPerOp) / base.NsPerOp * 100

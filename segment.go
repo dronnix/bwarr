@@ -210,19 +210,20 @@ func (s *segment[T]) findRightmostNotDeleted(cmp CmpFunc[T], val T) int {
 }
 
 // returns minimum element index with respect to FIFO constraint: if we have
-// several equal minimum elements, returns the rightmost one.
+// several equal minimum elements, finds the rightmost one in O(log N) time.
 func (s *segment[T]) min(cmp CmpFunc[T]) int {
-	minIdx, maxIdx := s.minNonDeletedIndex(), s.maxNonDeletedIndex()
-	for i := minIdx + 1; i <= maxIdx; i++ {
-		if s.deleted.Get(i) { // deleted elements can appear only after non-deleted equal ones;
-			return minIdx
-		}
-		if cmp(s.elements[i], s.elements[minIdx]) != 0 {
-			return minIdx
-		}
-		minIdx = i
+	minIdx := s.minNonDeletedIndex()
+	if minIdx < 0 {
+		// Direct callers may supply an all-deleted segment; active BWArr segments always have live elements.
+		return -1
 	}
-	return minIdx
+	// Skip binary search when no live equal element follows.
+	// A deleted neighbour is enough to stop: deleted equal elements always sit right of live ones.
+	nextIdx := minIdx + 1
+	if nextIdx == len(s.elements) || s.deleted.Get(nextIdx) || cmp(s.elements[nextIdx], s.elements[minIdx]) != 0 {
+		return minIdx
+	}
+	return s.findRightmostNotDeleted(cmp, s.elements[minIdx])
 }
 
 // returns index of the leftmost element that is greater or equal to val and is not deleted.
