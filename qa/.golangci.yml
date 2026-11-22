@@ -12,8 +12,10 @@ linters:
     - godot
     - err113
     - exhaustruct
+    - exhaustruct_v5
     - forcetypeassert
     - godox
+    - gomodguard
     - ireturn
     - lll
     - nlreturn
@@ -64,6 +66,7 @@ linters:
           - dupl
           - funlen
           - gocognit
+          - goconst
           - gocritic
           - gosec
           - maintidx

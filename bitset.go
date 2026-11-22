@@ -178,7 +178,7 @@ func (s *layeredBitSet) FindLastUnsetBit() int {
 func (s *layeredBitSet) findFirstUnsetBit() int {
 	// Use top-bottom approach, optimized for tail deletions:
 	elemIdx := 0
-	for l := len(s.layers) - 1; l >= 0; l-- {
+	for l := len(s.layers) - 1; l >= 0; l-- { //nolint:modernize // Hot path: keep the plain indexed loop.
 		if elemIdx >= len(s.layers[l]) {
 			return -1 // summary layer points beyond actual data
 		}
